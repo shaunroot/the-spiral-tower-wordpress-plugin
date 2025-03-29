@@ -1,0 +1,258 @@
+/**
+ * Styles for the Floor Template
+ * All styles are consolidated here for easy editing by users
+ */
+
+// Variables
+$background-color: #000;
+$content-bg-color: rgba(0, 0, 0, 0.6);
+$text-color: #fff;
+$subtitle-color: #e90303;
+$border-radius: 5px;
+$box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+$container-width: 80%;
+$container-max-width: 800px;
+$padding-standard: 20px;
+$padding-large: 30px;
+$margin-standard: 30px;
+$margin-large: 80px;
+
+/* --------------------------------------------------------
+ * 1. FULL VIEWPORT COVERAGE
+ * -------------------------------------------------------- */
+html, 
+html.floor-template-active,
+html.floor-fullscreen {
+  height: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body,
+body.floor-template-active,
+body.floor-fullscreen {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  overflow-x: hidden !important;
+  background: transparent !important;
+  max-width: 100% !important;
+}
+
+/* --------------------------------------------------------
+ * 2. HIDE WORDPRESS ELEMENTS
+ * -------------------------------------------------------- */
+/* Core hiding strategy */
+body * {
+  display: none !important;
+}
+
+/* Only show our specific elements */
+.spiral-tower-floor-wrapper,
+.spiral-tower-floor-wrapper *,
+.spiral-tower-floor-container,
+.spiral-tower-floor-container *,
+.spiral-tower-floor-header,
+.spiral-tower-floor-title,
+.spiral-tower-floor-title *,
+.spiral-tower-floor-content,
+.spiral-tower-floor-content * {
+  display: block !important;
+}
+
+/* Specifically hide WordPress elements */
+#wpadminbar,
+.admin-bar #wpadminbar,
+nav, 
+#site-navigation,
+.main-navigation,
+.menu,
+.menu-toggle,
+.site-header,
+.site-header-menu,
+.site-branding,
+#masthead,
+.nav-menu,
+.top-bar,
+.navigation-top,
+.primary-navigation,
+.navigation,
+.main-header,
+.header,
+#header,
+.site-footer,
+#colophon,
+.footer,
+footer {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+/* Hide common theme containers */
+body {
+  #page,
+  #content,
+  .site,
+  .site-content,
+  .content-area,
+  #wrapper,
+  #main,
+  .content-wrapper,
+  .container {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    display: none !important;
+  }
+}
+
+/* --------------------------------------------------------
+ * 3. FULLSCREEN BACKGROUND
+ * -------------------------------------------------------- */
+.spiral-tower-floor-wrapper {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+  background-color: $background-color !important; /* Fallback color */
+  z-index: 999999 !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  
+  /* Ensure the background image properly renders */
+  &[style*="background-image"] {
+    background-image: var(--background-image) !important;
+  }
+}
+
+/* --------------------------------------------------------
+ * 4. CONTENT CONTAINER
+ * -------------------------------------------------------- */
+.spiral-tower-floor-container {
+  width: $container-width !important;
+  max-width: $container-max-width !important;
+  margin: $margin-large auto !important;
+  position: relative !important;
+  z-index: 1000000 !important;
+  box-sizing: border-box !important;
+}
+
+/* Empty header placeholder */
+.spiral-tower-floor-header {
+  height: 50px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* --------------------------------------------------------
+ * 5. TITLE STYLING
+ * -------------------------------------------------------- */
+.spiral-tower-floor-title {
+  background-color: $content-bg-color !important;
+  padding: $padding-standard !important;
+  margin-bottom: $margin-standard !important;
+  border-radius: $border-radius !important;
+  box-shadow: $box-shadow !important;
+  box-sizing: border-box !important;
+  
+  h1 {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 2.5em !important;
+    color: $text-color !important;
+    font-weight: bold !important;
+    line-height: 1.2 !important;
+  }
+}
+
+.spiral-tower-floor-number {
+  font-size: 1.2em !important;
+  margin-bottom: 10px !important;
+  font-weight: bold !important;
+  color: $subtitle-color !important;
+}
+
+/* --------------------------------------------------------
+ * 6. CONTENT STYLING
+ * -------------------------------------------------------- */
+.spiral-tower-floor-content {
+  background-color: $content-bg-color !important;
+  padding: $padding-large !important;
+  border-radius: $border-radius !important;
+  box-shadow: $box-shadow !important;
+  box-sizing: border-box !important;
+  margin-bottom: $margin-large !important;
+  
+  /* Style content elements */
+  p, h1, h2, h3, h4, h5, h6, ul, ol, li, a, img, blockquote {
+    color: $text-color !important;
+    max-width: 100% !important;
+    display: block !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Allow inline elements to display properly */
+  a, strong, em, span, b, i {
+    display: inline !important;
+  }
+}
+
+/* --------------------------------------------------------
+ * 7. RESPONSIVE ADJUSTMENTS
+ * -------------------------------------------------------- */
+@media (max-width: 768px) {
+  .spiral-tower-floor-container {
+    width: 90% !important;
+    margin: 40px auto !important;
+  }
+  
+  .spiral-tower-floor-title {
+    padding: 15px !important;
+    
+    h1 {
+      font-size: 2em !important;
+    }
+  }
+  
+  .spiral-tower-floor-content {
+    padding: 20px !important;
+    margin-bottom: 40px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .spiral-tower-floor-container {
+    width: 95% !important;
+    margin: 20px auto !important;
+  }
+  
+  .spiral-tower-floor-title {
+    padding: 12px !important;
+    
+    h1 {
+      font-size: 1.8em !important;
+    }
+  }
+  
+  .spiral-tower-floor-number {
+    font-size: 1em !important;
+  }
+}

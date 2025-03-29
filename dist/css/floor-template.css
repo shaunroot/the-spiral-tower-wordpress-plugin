@@ -1,0 +1,235 @@
+/*!*********************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[0].use[2]!./node_modules/sass-loader/dist/cjs.js!./src/scss/floor-template.scss ***!
+  \*********************************************************************************************************************************************************************************************/
+/**
+ * Styles for the Floor Template
+ * All styles are consolidated here for easy editing by users
+ */
+/* --------------------------------------------------------
+ * 1. FULL VIEWPORT COVERAGE
+ * -------------------------------------------------------- */
+html,
+html.floor-template-active,
+html.floor-fullscreen {
+  height: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body,
+body.floor-template-active,
+body.floor-fullscreen {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  overflow-x: hidden !important;
+  background: transparent !important;
+  max-width: 100% !important;
+}
+
+/* --------------------------------------------------------
+ * 2. HIDE WORDPRESS ELEMENTS
+ * -------------------------------------------------------- */
+/* Core hiding strategy */
+body * {
+  display: none !important;
+}
+
+/* Only show our specific elements */
+.spiral-tower-floor-wrapper,
+.spiral-tower-floor-wrapper *,
+.spiral-tower-floor-container,
+.spiral-tower-floor-container *,
+.spiral-tower-floor-header,
+.spiral-tower-floor-title,
+.spiral-tower-floor-title *,
+.spiral-tower-floor-content,
+.spiral-tower-floor-content * {
+  display: block !important;
+}
+
+/* Specifically hide WordPress elements */
+#wpadminbar,
+.admin-bar #wpadminbar,
+nav,
+#site-navigation,
+.main-navigation,
+.menu,
+.menu-toggle,
+.site-header,
+.site-header-menu,
+.site-branding,
+#masthead,
+.nav-menu,
+.top-bar,
+.navigation-top,
+.primary-navigation,
+.navigation,
+.main-header,
+.header,
+#header,
+.site-footer,
+#colophon,
+.footer,
+footer {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+/* Hide common theme containers */
+body #page,
+body #content,
+body .site,
+body .site-content,
+body .content-area,
+body #wrapper,
+body #main,
+body .content-wrapper,
+body .container {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  display: none !important;
+}
+
+/* --------------------------------------------------------
+ * 3. FULLSCREEN BACKGROUND
+ * -------------------------------------------------------- */
+.spiral-tower-floor-wrapper {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+  background-color: #000 !important; /* Fallback color */
+  z-index: 999999 !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  /* Ensure the background image properly renders */
+}
+.spiral-tower-floor-wrapper[style*=background-image] {
+  background-image: var(--background-image) !important;
+}
+
+/* --------------------------------------------------------
+ * 4. CONTENT CONTAINER
+ * -------------------------------------------------------- */
+.spiral-tower-floor-container {
+  width: 80% !important;
+  max-width: 800px !important;
+  margin: 80px auto !important;
+  position: relative !important;
+  z-index: 1000000 !important;
+  box-sizing: border-box !important;
+}
+
+/* Empty header placeholder */
+.spiral-tower-floor-header {
+  height: 50px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* --------------------------------------------------------
+ * 5. TITLE STYLING
+ * -------------------------------------------------------- */
+.spiral-tower-floor-title {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  padding: 20px !important;
+  margin-bottom: 30px !important;
+  border-radius: 5px !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
+  box-sizing: border-box !important;
+}
+.spiral-tower-floor-title h1 {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 2.5em !important;
+  color: #fff !important;
+  font-weight: bold !important;
+  line-height: 1.2 !important;
+}
+
+.spiral-tower-floor-number {
+  font-size: 1.2em !important;
+  margin-bottom: 10px !important;
+  font-weight: bold !important;
+  color: #e90303 !important;
+}
+
+/* --------------------------------------------------------
+ * 6. CONTENT STYLING
+ * -------------------------------------------------------- */
+.spiral-tower-floor-content {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  padding: 30px !important;
+  border-radius: 5px !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
+  box-sizing: border-box !important;
+  margin-bottom: 80px !important;
+  /* Style content elements */
+  /* Allow inline elements to display properly */
+}
+.spiral-tower-floor-content p, .spiral-tower-floor-content h1, .spiral-tower-floor-content h2, .spiral-tower-floor-content h3, .spiral-tower-floor-content h4, .spiral-tower-floor-content h5, .spiral-tower-floor-content h6, .spiral-tower-floor-content ul, .spiral-tower-floor-content ol, .spiral-tower-floor-content li, .spiral-tower-floor-content a, .spiral-tower-floor-content img, .spiral-tower-floor-content blockquote {
+  color: #fff !important;
+  max-width: 100% !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+.spiral-tower-floor-content a, .spiral-tower-floor-content strong, .spiral-tower-floor-content em, .spiral-tower-floor-content span, .spiral-tower-floor-content b, .spiral-tower-floor-content i {
+  display: inline !important;
+}
+
+/* --------------------------------------------------------
+ * 7. RESPONSIVE ADJUSTMENTS
+ * -------------------------------------------------------- */
+@media (max-width: 768px) {
+  .spiral-tower-floor-container {
+    width: 90% !important;
+    margin: 40px auto !important;
+  }
+  .spiral-tower-floor-title {
+    padding: 15px !important;
+  }
+  .spiral-tower-floor-title h1 {
+    font-size: 2em !important;
+  }
+  .spiral-tower-floor-content {
+    padding: 20px !important;
+    margin-bottom: 40px !important;
+  }
+}
+@media (max-width: 480px) {
+  .spiral-tower-floor-container {
+    width: 95% !important;
+    margin: 20px auto !important;
+  }
+  .spiral-tower-floor-title {
+    padding: 12px !important;
+  }
+  .spiral-tower-floor-title h1 {
+    font-size: 1.8em !important;
+  }
+  .spiral-tower-floor-number {
+    font-size: 1em !important;
+  }
+}
+
+/*# sourceMappingURL=floor-template.css.map*/
