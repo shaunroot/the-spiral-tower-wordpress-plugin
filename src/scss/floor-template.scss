@@ -1,3 +1,513 @@
+
+Here is part of my wordpress plugin and a template for one of the custom posts.
+
+<?php
+/**
+ * Plugin Name: The Spiral Tower
+ * Plugin URI: 
+ * Description: Behold The Spiral Tower
+ * Version: 1.0.0
+ * Author: 
+ * Author URI: 
+ * License: GPL2
+ * Text Domain: spiral-tower
+ */
+
+// If this file is called directly, abort.
+if (!defined('WPINC')) {
+    die;
+}
+
+// Include component files
+require_once dirname(FILE) . '/includes/class-spiral-tower-floor-manager.php';
+require_once dirname(FILE) . '/includes/class-spiral-tower-room-manager.php';
+
+/
+ * Main Plugin Class
+ */
+class Spiral_Tower_Plugin
+{
+    /
+     * Floor Manager instance
+     */
+    public $floor_manager;
+
+    /**
+     * Room Manager instance
+     */
+    public $room_manager;
+
+    /**
+     * Initialize the plugin
+     */
+    public function __construct()
+    {
+        // Initialize components
+        $this->floor_manager = new Spiral_Tower_Floor_Manager();
+        $this->room_manager = new Spiral_Tower_Room_Manager();
+
+        // Register activation and deactivation hooks
+        register_activation_hook(FILE, array($this, 'activate'));
+        register_deactivation_hook(FILE, array($this, 'deactivate'));
+
+        // Register custom template for floors
+        add_filter('template_include', array($this, 'floor_template'));
+
+        // Enqueue custom styles for the floor template
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_floor_styles'));
+    }
+
+    /**
+     * Force our custom template for floors, bypassing theme completely
+     */
+    public function floor_template($template)
+    {
+        if (is_singular('floor')) {
+            // Always use our plugin template, regardless of theme
+            $plugin_template = plugin_dir_path(FILE) . 'templates/single-floor.php';
+            if (file_exists($plugin_template)) {
+                // Remove all actions on wp_head and wp_footer to prevent theme elements from loading
+                remove_all_actions('wp_head');
+                remove_all_actions('wp_footer');
+
+                // Re-add only the essential WordPress head actions
+                add_action('wp_head', 'wp_enqueue_scripts', 1);
+                add_action('wp_head', 'wp_print_styles', 8);
+                add_action('wp_head', 'wp_print_head_scripts', 9);
+
+                // Re-add only essential WordPress footer actions
+                add_action('wp_footer', 'wp_print_footer_scripts', 20);
+
+                return $plugin_template;
+            }
+        }
+        return $template;
+    }
+
+    /**
+     * Enqueue styles for floor template
+     */
+    public function enqueue_floor_styles()
+    {
+        if (is_singular('floor')) {
+            wp_enqueue_style(
+                'spiral-tower-floor-style',
+                plugin_dir_url(FILE) . 'dist/css/floor-template.css',
+                array(),
+                '1.0.0'
+            );
+        }
+    }
+
+    /**
+     * Activate the plugin
+     */
+    public function activate()
+    {
+        // Register post types and rewrite rules
+        $this->floor_manager->register_floor_post_type();
+        $this->floor_manager->add_floor_rewrite_rules();
+        $this->room_manager->register_room_post_type();
+
+        // Create floor author role
+        $this->floor_manager->create_floor_author_role();
+
+        // Flush rewrite rules
+        flush_rewrite_rules();
+    }
+
+    /**
+     * Deactivate the plugin
+     */
+    public function deactivate()
+    {
+        // Flush rewrite rules
+        flush_rewrite_rules();
+    }
+}
+
+// Initialize the plugin
+$spiral_tower_plugin = new Spiral_Tower_Plugin();
+
+<?php
+/**
+ * The template for displaying single floor
+ *
+ * @package Spiral Tower
+ */
+
+// Exit if accessed directly
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+// Don't load the normal header
+// Instead of get_header(), we'll handle everything ourselves
+
+// Get featured image URL
+$featured_image = '';
+if (has_post_thumbnail()) {
+    $featured_image_id = get_post_thumbnail_id();
+    $featured_image_array = wp_get_attachment_image_src($featured_image_id, 'full');
+    $featured_image = $featured_image_array[0];
+}
+
+// Get floor number
+$floor_number = get_post_meta(get_the_ID(), '_floor_number', true);
+
+?><!DOCTYPE html>
+<html <?php language_attributes(); ?> class="floor-template-active floor-fullscreen">
+<head>
+    <meta charset="<?php bloginfo('charset'); ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <?php wp_head(); // Keep this to ensure necessary WordPress scripts and styles are loaded ?>
+</head>
+
+<body <?php body_class('floor-template-active floor-fullscreen'); ?>>
+
+<div class="spiral-tower-floor-wrapper" <?php if ($featured_image): ?>style="--background-image: url('<?php echo esc_url($featured_image); ?>'); background-image: url('<?php echo esc_url($featured_image); ?>');"<?php endif; ?>>
+
+    <!-- Empty header placeholder -->
+    <div class="spiral-tower-floor-header">
+        <!-- This is intentionally left empty as requested -->
+    </div>
+
+    <div class="spiral-tower-floor-container">
+        <!-- Title box -->
+        <div class="spiral-tower-floor-title">
+            <?php if ($floor_number): ?>
+                <div class="spiral-tower-floor-number">Floor <?php echo esc_html($floor_number); ?></div>
+            <?php endif; ?>
+            <h1><?php the_title(); ?></h1>
+        </div>
+
+        <!-- Content box -->
+        <div class="spiral-tower-floor-content">
+            <?php the_content(); ?>
+        </div>
+    </div>
+</div>
+
+<?php wp_footer(); // Keep this to ensure necessary WordPress scripts are loaded ?>
+</body>
+</html>
+<?php
+// Don't load the normal footer
+// get_footer() is not called
+?>
+
+I would like to be able to apply this template to all Pages. let's update
+
+I can help you adapt your custom floor template to work with Pages as well. We'll need to modify your plugin to make the template available for the 'page' post type. Here's what we'll need to change:
+
+
+Updated Spiral Tower Plugin Code
+Code 
+Now, let's create the modified template file to replace the previous single-floor.php. We'll name it spiral-template.php to be more universal:
+
+
+Universal Spiral Template
+Code 
+Finally, you'll need to update your CSS file to make sure it works with both floors and pages:
+
+
+Updated CSS for Spiral Template
+Code 
+Implementation Guide
+Here's what I've done to make your Spiral Tower template work with Pages:
+
+Modified the main plugin file to:
+Add a metabox to Pages allowing users to opt-in to the Spiral Tower template
+Include a floor number option for pages
+Restructure the template inclusion logic to work with both Floors and Pages
+Rename functions to be more generic (e.g., "custom_template" instead of "floor_template")
+Created a universal template file (spiral-template.php):
+Works for both Floor post types and Pages
+Uses the same structure as your original template
+Handles featured images and floor numbers consistently
+Updated the CSS to:
+Include new class names for the universal template
+Maintain backward compatibility with any existing styles
+Keep the same visual appearance across all content types
+How to Use It
+Install your updated plugin
+When editing a Page, you'll see a new "Spiral Tower Template" metabox in the sidebar
+Check the box to enable the Spiral Tower template for that page
+Optionally enter a floor number if desired
+Save the page and view it - it will now use the same template as your Floor post type
+This approach gives you maximum flexibility - you can choose which pages use the Spiral Tower template, while your Floor post type continues to work as before.
+
+The updated CSS maintains all your original styling but adds support for the new universal class names, ensuring a consistent appearance regardless of which post type you're viewing.
+
+/** * Styles for the Floor Template * All styles are consolidated here for easy editing by users */ // Variables $background-color: #000; $content-bg-color: rgba(0, 0, 0, 0.6); $text-color: #fff; $subtitle-color: #e90303; $border-radius: 5px; $box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+pasted
+
+We are not using CSS. Update my scss
+
+I'll update the SCSS file to work with our new template structure, making sure it applies to both Floor post types and Pages while maintaining the same styling approach.
+
+
+Updated SCSS for Spiral Tower Template
+Code 
+I've updated your SCSS file to work with both the original Floor template and the new universal template structure. Here's what I modified:
+
+Added new class selectors for the universal template alongside your existing selectors:
+Added .spiral-template-active and .spiral-fullscreen classes to the HTML/body selectors
+Added all the universal template class names to the display whitelist (.spiral-tower-wrapper, .spiral-tower-container, etc.)
+Created parallel styling sections for each component:
+Section 3.1: Fullscreen background for the universal template
+Section 4.1: Content container for the universal template
+Section 5.1: Title styling for the universal template
+Section 6.1: Content styling for the universal template
+Updated responsive styles to apply to both class naming conventions
+Maintained all your original styling, including:
+The aggressive WordPress element hiding
+Your SCSS variables
+The fixed background image handling
+All your responsive breakpoints
+The important flags to ensure styles override any theme styles
+This approach allows both your original Floor post type templates and the new Page templates to have exactly the same appearance while sharing the same SCSS file. The file structure makes it easy to understand which sections apply to which template.
+
+To use this file, you'll need to:
+
+Save it to your plugin's SCSS source directory (likely in a /src/scss/ folder)
+Compile it to CSS using your build process
+Make sure it gets output to the path referenced in your plugin's enqueue_custom_styles() method
+The file should be compiled to the location referenced in:
+
+php
+wp_enqueue_style(
+    'spiral-tower-template-style',
+    plugin_dir_url(__FILE__) . 'dist/css/floor-template.css',
+    array(),
+    '1.0.0'
+);
+The updated SCSS maintains all your original aggressive styling techniques to ensure the template truly takes over the entire screen regardless of the theme.
+
+Whatever you did broken everything. I only see a white screen.
+
+I apologize for the issues you're experiencing. Let's troubleshoot the white screen problem by simplifying our approach.
+
+Instead of making major changes to your working plugin, let's create a minimal solution that preserves your existing functionality while just adding the ability to apply the template to pages.
+
+
+Simplified Plugin Fix to Apply Floor Template to Pages
+Code 
+This simplified approach should fix the white screen issue. Instead of creating a new template file and changing your CSS/SCSS structure, I've now:
+
+Added a simple metabox to Pages that allows you to enable the Floor template
+Made the existing floor_template() function check for Pages with this setting enabled
+Reused your exact existing single-floor.php template file for Pages
+Kept all your existing CSS/SCSS intact without any changes
+How to implement this fix:
+Replace your main plugin file (spiral-tower.php or similar) with this simplified version
+Keep your existing single-floor.php template file exactly as it is
+Keep your existing CSS/SCSS file exactly as it is
+How it works:
+When editing a Page, you'll now see a "Floor Template Settings" metabox in the sidebar. You can check "Use Floor Template" and optionally add a floor number.
+
+When a user views that Page, the plugin will:
+
+Detect the "_use_floor_template" setting is enabled
+Use the exact same template file (single-floor.php) that you're already using for Floors
+Apply the exact same CSS styling
+This approach is much less invasive and simply extends your existing functionality to Pages rather than creating a whole new template system.
+
+Why this should fix the white screen:
+The white screen was likely caused by one of these issues:
+
+The new template file not being found
+CSS conflicts with the new class names
+Issues with the updated CSS/JS enqueuing
+By reusing your exact existing template file and CSS, we avoid all these potential issues.
+
+Let me know if you continue to experience problems, and we can further troubleshoot.
+
+This is good. 
+
+Let's alter the SCSS so that headers and titles on the site always use the Google  Font "Metamorphous" and the larger areas of text use "Winky Sans".
+
+I'll help you update the SCSS to incorporate the Google Fonts "Metamorphous" for headers and titles, and "Winky Sans" for larger text areas. First, we need to update your SCSS to include these fonts.
+
+
+Updated SCSS with Custom Fonts
+Code 
+Now we need to modify the plugin to properly enqueue the Google Fonts and any custom fonts we need. Here's how to update your plugin file to include the fonts:
+
+
+Updated Plugin Font Enqueuing
+Code 
+Additionally, if you'd like to include a custom font like "Winky Sans" that's not available on Google Fonts, here are instructions for setting up your font files and folder structure:
+
+
+Custom Font Setup Instructions
+Code 
+How to Implement the Font Changes
+I've created three artifacts to help you implement the font changes to your Spiral Tower plugin:
+
+1. Updated SCSS with Custom Fonts
+The first artifact contains the updated SCSS file with:
+
+Font family variables for Metamorphous (headers) and Winky Sans (body text)
+Google Fonts import for Metamorphous
+Font-face declaration for Winky Sans (you'll need the actual font files)
+Updated styling to apply these fonts to the appropriate elements
+Additional typography enhancements (letter spacing, link styling, etc.)
+Replace your existing SCSS with this updated version. The changes primarily focus on adding the font declarations and applying them to the right elements while maintaining all your existing styling.
+
+2. Plugin Font Enqueuing Code
+The second artifact shows how to modify your plugin's enqueue_floor_styles() method to:
+
+Load the Google Fonts before your main stylesheet
+Make this work for both floor post types and pages with the floor template enabled
+Set up proper dependencies so fonts load before your CSS
+Add this code to your main plugin file, replacing the existing enqueue_floor_styles() method.
+
+3. Custom Font Setup Instructions
+The third artifact provides detailed instructions for:
+
+Setting up the folder structure to host your custom fonts
+Alternatives if you don't have the "Winky Sans" font files
+How to convert fonts to web-compatible formats
+Licensing considerations
+Important Notes
+About "Winky Sans":
+I couldn't find a Google Font called "Winky Sans" - if this is a custom font, you'll need the actual font files
+If you don't have the font files, you can replace it with a Google Font like Lato or Open Sans
+Font Loading Performance:
+The approach I've outlined preloads the fonts via Google Fonts
+This helps avoid "Flash of Unstyled Text" (FOUT) issues
+For even better performance, you could consider self-hosting the Google Fonts
+Testing:
+After implementing these changes, test on both floor post types and pages
+Ensure the fonts load correctly and there are no white screen issues
+Let me know if you need any clarification or have questions about implementing these changes!
+
+I don't want to download the font, I want to use the ones google provides.
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Winky+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
+
+I'll update the approach to use only Google Fonts without downloading anything. Based on the font links you provided, let's modify the SCSS and plugin code to use Metamorphous and Winky Sans directly from Google Fonts.
+
+
+Updated SCSS with Google Fonts Only
+Code 
+Now let's update the plugin to properly enqueue the Google Fonts:
+
+
+Updated Plugin Font Enqueuing for Google Fonts
+Code 
+Let's also update the template file to ensure proper font loading by adding the preconnect links directly to the template's head section:
+
+
+Updated Template Head Section
+Code 
+How to Implement Google Fonts in Your Spiral Tower Plugin
+I've provided three artifacts to help you implement the Google Fonts in your plugin:
+
+1. Updated SCSS with Google Font Variables
+The first artifact contains the updated SCSS file with:
+
+Font family variables set to 'Metamorphous' for headers and 'Winky Sans' for body text
+No @import statements in the SCSS since we'll handle the font loading via WordPress
+Font weight specifications (Winky Sans supports variable weights 300-900)
+Applied the fonts to all appropriate elements
+2. Updated Plugin Font Enqueuing
+The second artifact shows how to properly enqueue Google Fonts in WordPress:
+
+Uses the same font URL you provided
+Adds preconnect links for improved performance
+Works for both floor post types and pages with the template enabled
+Sets proper dependencies so fonts load before your CSS
+3. Updated Template Head Section
+The third artifact provides the HTML to add directly to your template's head section:
+
+Adds preconnect links for faster font loading
+Placed right before your wp_head() call
+Implementation Steps
+Update your SCSS file with the content from the first artifact
+Compile the SCSS to generate your CSS file
+Update your plugin's enqueue_floor_styles() method with the code from the second artifact
+Update your template file by replacing the head section with the content from the third artifact
+Notes about Winky Sans
+I noticed you're using "Winky Sans" with a variable font weight range (300..900)
+The SCSS includes appropriate font-weight settings to take advantage of this
+If Winky Sans becomes unavailable from Google Fonts in the future, you may need to substitute another font
+These changes will ensure both Metamorphous and Winky Sans are properly loaded from Google Fonts and applied to your template, with Metamorphous used for headers and titles, and Winky Sans used for the main text content.
+
+you broken everything again. Let's tail the apache error log
+
+I apologize for the issues. Let's check the Apache error log to identify what's causing the problem.
+
+To tail the Apache error log, you'll need to run a command in your server's terminal. The location of Apache error logs can vary depending on your server setup, but here are the most common locations and commands:
+
+For Ubuntu/Debian systems:
+
+bash
+tail -f /var/log/apache2/error.log
+For CentOS/RHEL systems:
+
+bash
+tail -f /var/log/httpd/error_log
+For cPanel servers:
+
+bash
+tail -f /usr/local/apache/logs/error_log
+If you're using a managed WordPress hosting service, you might need to access logs through their control panel or contact their support.
+
+When you run the tail command, please share the relevant error messages with me, and I'll help you fix the issues. I'll provide a much simpler approach that minimizes the risk of breaking your site.
+
+It's not a problem with a php error. Your scss is broken.
+
+I understand the issue is with the SCSS. Let's simplify our approach and create a working SCSS that just adds the Google Fonts without changing your existing functionality.
+
+
+Simplified SCSS with Google Fonts
+Code 
+Now let's update the template file to directly include the Google Fonts links in the head section:
+
+
+Simple Template Head Update
+Code 
+Simplified Approach to Adding Google Fonts
+I've created a much simpler solution that should avoid breaking your site. This approach makes minimal changes to your existing code.
+
+1. Updated SCSS File
+I've created a simplified version of your SCSS that:
+
+Keeps all your existing styles exactly as they were
+Adds only the font-family declarations where needed:
+'Metamorphous' for headings and the floor number
+'Winky Sans' for body text and regular content
+Avoids any complex changes that could break your styling
+2. Updated Template File
+Instead of modifying your plugin's PHP code to enqueue the fonts (which can be tricky to get right), I've updated your template file to directly include the Google Fonts in the head section:
+
+Added the preconnect links for Google Fonts
+Added the exact font link you provided
+Placed them before the wp_head() call to ensure they load early
+How to Implement This Solution:
+Update your SCSS file with the content from the first artifact
+This file keeps all your existing styles intact
+It only adds the font-family declarations where needed
+Update your template file (single-floor.php) with the content from the second artifact
+The only change is adding the Google Fonts links in the head section
+This approach is much safer because:
+
+We're not modifying your plugin's PHP code
+We're adding the fonts directly in the template
+We're making minimal changes to your SCSS
+We're avoiding any complex CSS that might break
+Try implementing these changes and let me know if you still encounter any issues.
+
+
+
+
+
+
 /**
  * Styles for the Floor Template
  * All styles are consolidated here for easy editing by users
@@ -40,6 +550,7 @@ body.floor-fullscreen {
   overflow-x: hidden !important;
   background: transparent !important;
   max-width: 100% !important;
+  font-family: 'Winky Sans', sans-serif !important;
 }
 
 /* --------------------------------------------------------
@@ -180,6 +691,7 @@ body {
     color: $text-color !important;
     font-weight: bold !important;
     line-height: 1.2 !important;
+    font-family: 'Metamorphous', serif !important;
   }
 }
 
@@ -188,6 +700,7 @@ body {
   margin-bottom: 10px !important;
   font-weight: bold !important;
   color: $subtitle-color !important;
+  font-family: 'Metamorphous', serif !important;
 }
 
 /* --------------------------------------------------------
@@ -202,11 +715,21 @@ body {
   margin-bottom: $margin-large !important;
   
   /* Style content elements */
-  p, h1, h2, h3, h4, h5, h6, ul, ol, li, a, img, blockquote {
+  p, ul, ol, li, blockquote {
     color: $text-color !important;
     max-width: 100% !important;
     display: block !important;
     box-sizing: border-box !important;
+    font-family: 'Winky Sans', sans-serif !important;
+  }
+  
+  /* Apply title font to headings */
+  h1, h2, h3, h4, h5, h6 {
+    color: $text-color !important;
+    max-width: 100% !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    font-family: 'Metamorphous', serif !important;
   }
   
   /* Allow inline elements to display properly */

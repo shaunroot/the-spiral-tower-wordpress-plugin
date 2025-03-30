@@ -4,6 +4,7 @@
 /**
  * Styles for the Floor Template
  * All styles are consolidated here for easy editing by users
+ * Updated with Google Fonts
  */
 /* --------------------------------------------------------
  * 1. FULL VIEWPORT COVERAGE
@@ -28,6 +29,8 @@ body.floor-fullscreen {
   overflow-x: hidden !important;
   background: transparent !important;
   max-width: 100% !important;
+  font-family: "Winky Sans", sans-serif !important;
+  font-weight: 400 !important;
 }
 
 /* --------------------------------------------------------
@@ -122,6 +125,8 @@ body .container {
   box-sizing: border-box !important;
   padding: 0 !important;
   margin: 0 !important;
+  font-family: "Winky Sans", sans-serif !important;
+  font-weight: 400 !important;
   /* Ensure the background image properly renders */
 }
 .spiral-tower-floor-wrapper[style*=background-image] {
@@ -165,6 +170,8 @@ body .container {
   color: #fff !important;
   font-weight: bold !important;
   line-height: 1.2 !important;
+  font-family: "Metamorphous", serif !important;
+  letter-spacing: 0.03em !important;
 }
 
 .spiral-tower-floor-number {
@@ -172,6 +179,7 @@ body .container {
   margin-bottom: 10px !important;
   font-weight: bold !important;
   color: #e90303 !important;
+  font-family: "Metamorphous", serif !important;
 }
 
 /* --------------------------------------------------------
@@ -184,17 +192,50 @@ body .container {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
   box-sizing: border-box !important;
   margin-bottom: 80px !important;
+  font-family: "Winky Sans", sans-serif !important;
+  font-weight: 400 !important;
   /* Style content elements */
+  /* Apply title font to headings */
   /* Allow inline elements to display properly */
+  /* Additional heading styles */
+  /* Bold text */
+  /* Links */
 }
-.spiral-tower-floor-content p, .spiral-tower-floor-content h1, .spiral-tower-floor-content h2, .spiral-tower-floor-content h3, .spiral-tower-floor-content h4, .spiral-tower-floor-content h5, .spiral-tower-floor-content h6, .spiral-tower-floor-content ul, .spiral-tower-floor-content ol, .spiral-tower-floor-content li, .spiral-tower-floor-content a, .spiral-tower-floor-content img, .spiral-tower-floor-content blockquote {
+.spiral-tower-floor-content p, .spiral-tower-floor-content ul, .spiral-tower-floor-content ol, .spiral-tower-floor-content li, .spiral-tower-floor-content blockquote {
   color: #fff !important;
   max-width: 100% !important;
   display: block !important;
   box-sizing: border-box !important;
+  font-family: "Winky Sans", sans-serif !important;
+  font-weight: 400 !important;
+  line-height: 1.6 !important;
+}
+.spiral-tower-floor-content h1, .spiral-tower-floor-content h2, .spiral-tower-floor-content h3, .spiral-tower-floor-content h4, .spiral-tower-floor-content h5, .spiral-tower-floor-content h6 {
+  color: #fff !important;
+  max-width: 100% !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  font-family: "Metamorphous", serif !important;
+  letter-spacing: 0.02em !important;
 }
 .spiral-tower-floor-content a, .spiral-tower-floor-content strong, .spiral-tower-floor-content em, .spiral-tower-floor-content span, .spiral-tower-floor-content b, .spiral-tower-floor-content i {
   display: inline !important;
+}
+.spiral-tower-floor-content h2 {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  padding-bottom: 0.3em !important;
+}
+.spiral-tower-floor-content strong, .spiral-tower-floor-content b {
+  font-weight: 700 !important;
+}
+.spiral-tower-floor-content a {
+  color: rgb(252.813559322, 85.186440678, 85.186440678) !important;
+  text-decoration: none !important;
+  transition: color 0.2s ease !important;
+}
+.spiral-tower-floor-content a:hover {
+  color: rgb(253.4618644068, 135.5381355932, 135.5381355932) !important;
+  text-decoration: underline !important;
 }
 
 /* --------------------------------------------------------
