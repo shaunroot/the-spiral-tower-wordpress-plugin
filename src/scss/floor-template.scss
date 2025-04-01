@@ -1,524 +1,24 @@
-
-Here is part of my wordpress plugin and a template for one of the custom posts.
-
-<?php
-/**
- * Plugin Name: The Spiral Tower
- * Plugin URI: 
- * Description: Behold The Spiral Tower
- * Version: 1.0.0
- * Author: 
- * Author URI: 
- * License: GPL2
- * Text Domain: spiral-tower
- */
-
-// If this file is called directly, abort.
-if (!defined('WPINC')) {
-    die;
-}
-
-// Include component files
-require_once dirname(FILE) . '/includes/class-spiral-tower-floor-manager.php';
-require_once dirname(FILE) . '/includes/class-spiral-tower-room-manager.php';
-
-/
- * Main Plugin Class
- */
-class Spiral_Tower_Plugin
-{
-    /
-     * Floor Manager instance
-     */
-    public $floor_manager;
-
-    /**
-     * Room Manager instance
-     */
-    public $room_manager;
-
-    /**
-     * Initialize the plugin
-     */
-    public function __construct()
-    {
-        // Initialize components
-        $this->floor_manager = new Spiral_Tower_Floor_Manager();
-        $this->room_manager = new Spiral_Tower_Room_Manager();
-
-        // Register activation and deactivation hooks
-        register_activation_hook(FILE, array($this, 'activate'));
-        register_deactivation_hook(FILE, array($this, 'deactivate'));
-
-        // Register custom template for floors
-        add_filter('template_include', array($this, 'floor_template'));
-
-        // Enqueue custom styles for the floor template
-        add_action('wp_enqueue_scripts', array($this, 'enqueue_floor_styles'));
-    }
-
-    /**
-     * Force our custom template for floors, bypassing theme completely
-     */
-    public function floor_template($template)
-    {
-        if (is_singular('floor')) {
-            // Always use our plugin template, regardless of theme
-            $plugin_template = plugin_dir_path(FILE) . 'templates/single-floor.php';
-            if (file_exists($plugin_template)) {
-                // Remove all actions on wp_head and wp_footer to prevent theme elements from loading
-                remove_all_actions('wp_head');
-                remove_all_actions('wp_footer');
-
-                // Re-add only the essential WordPress head actions
-                add_action('wp_head', 'wp_enqueue_scripts', 1);
-                add_action('wp_head', 'wp_print_styles', 8);
-                add_action('wp_head', 'wp_print_head_scripts', 9);
-
-                // Re-add only essential WordPress footer actions
-                add_action('wp_footer', 'wp_print_footer_scripts', 20);
-
-                return $plugin_template;
-            }
-        }
-        return $template;
-    }
-
-    /**
-     * Enqueue styles for floor template
-     */
-    public function enqueue_floor_styles()
-    {
-        if (is_singular('floor')) {
-            wp_enqueue_style(
-                'spiral-tower-floor-style',
-                plugin_dir_url(FILE) . 'dist/css/floor-template.css',
-                array(),
-                '1.0.0'
-            );
-        }
-    }
-
-    /**
-     * Activate the plugin
-     */
-    public function activate()
-    {
-        // Register post types and rewrite rules
-        $this->floor_manager->register_floor_post_type();
-        $this->floor_manager->add_floor_rewrite_rules();
-        $this->room_manager->register_room_post_type();
-
-        // Create floor author role
-        $this->floor_manager->create_floor_author_role();
-
-        // Flush rewrite rules
-        flush_rewrite_rules();
-    }
-
-    /**
-     * Deactivate the plugin
-     */
-    public function deactivate()
-    {
-        // Flush rewrite rules
-        flush_rewrite_rules();
-    }
-}
-
-// Initialize the plugin
-$spiral_tower_plugin = new Spiral_Tower_Plugin();
-
-<?php
-/**
- * The template for displaying single floor
- *
- * @package Spiral Tower
- */
-
-// Exit if accessed directly
-if (!defined('ABSPATH')) {
-    exit;
-}
-
-// Don't load the normal header
-// Instead of get_header(), we'll handle everything ourselves
-
-// Get featured image URL
-$featured_image = '';
-if (has_post_thumbnail()) {
-    $featured_image_id = get_post_thumbnail_id();
-    $featured_image_array = wp_get_attachment_image_src($featured_image_id, 'full');
-    $featured_image = $featured_image_array[0];
-}
-
-// Get floor number
-$floor_number = get_post_meta(get_the_ID(), '_floor_number', true);
-
-?><!DOCTYPE html>
-<html <?php language_attributes(); ?> class="floor-template-active floor-fullscreen">
-<head>
-    <meta charset="<?php bloginfo('charset'); ?>">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <?php wp_head(); // Keep this to ensure necessary WordPress scripts and styles are loaded ?>
-</head>
-
-<body <?php body_class('floor-template-active floor-fullscreen'); ?>>
-
-<div class="spiral-tower-floor-wrapper" <?php if ($featured_image): ?>style="--background-image: url('<?php echo esc_url($featured_image); ?>'); background-image: url('<?php echo esc_url($featured_image); ?>');"<?php endif; ?>>
-
-    <!-- Empty header placeholder -->
-    <div class="spiral-tower-floor-header">
-        <!-- This is intentionally left empty as requested -->
-    </div>
-
-    <div class="spiral-tower-floor-container">
-        <!-- Title box -->
-        <div class="spiral-tower-floor-title">
-            <?php if ($floor_number): ?>
-                <div class="spiral-tower-floor-number">Floor <?php echo esc_html($floor_number); ?></div>
-            <?php endif; ?>
-            <h1><?php the_title(); ?></h1>
-        </div>
-
-        <!-- Content box -->
-        <div class="spiral-tower-floor-content">
-            <?php the_content(); ?>
-        </div>
-    </div>
-</div>
-
-<?php wp_footer(); // Keep this to ensure necessary WordPress scripts are loaded ?>
-</body>
-</html>
-<?php
-// Don't load the normal footer
-// get_footer() is not called
-?>
-
-I would like to be able to apply this template to all Pages. let's update
-
-I can help you adapt your custom floor template to work with Pages as well. We'll need to modify your plugin to make the template available for the 'page' post type. Here's what we'll need to change:
-
-
-Updated Spiral Tower Plugin Code
-Code 
-Now, let's create the modified template file to replace the previous single-floor.php. We'll name it spiral-template.php to be more universal:
-
-
-Universal Spiral Template
-Code 
-Finally, you'll need to update your CSS file to make sure it works with both floors and pages:
-
-
-Updated CSS for Spiral Template
-Code 
-Implementation Guide
-Here's what I've done to make your Spiral Tower template work with Pages:
-
-Modified the main plugin file to:
-Add a metabox to Pages allowing users to opt-in to the Spiral Tower template
-Include a floor number option for pages
-Restructure the template inclusion logic to work with both Floors and Pages
-Rename functions to be more generic (e.g., "custom_template" instead of "floor_template")
-Created a universal template file (spiral-template.php):
-Works for both Floor post types and Pages
-Uses the same structure as your original template
-Handles featured images and floor numbers consistently
-Updated the CSS to:
-Include new class names for the universal template
-Maintain backward compatibility with any existing styles
-Keep the same visual appearance across all content types
-How to Use It
-Install your updated plugin
-When editing a Page, you'll see a new "Spiral Tower Template" metabox in the sidebar
-Check the box to enable the Spiral Tower template for that page
-Optionally enter a floor number if desired
-Save the page and view it - it will now use the same template as your Floor post type
-This approach gives you maximum flexibility - you can choose which pages use the Spiral Tower template, while your Floor post type continues to work as before.
-
-The updated CSS maintains all your original styling but adds support for the new universal class names, ensuring a consistent appearance regardless of which post type you're viewing.
-
-/** * Styles for the Floor Template * All styles are consolidated here for easy editing by users */ // Variables $background-color: #000; $content-bg-color: rgba(0, 0, 0, 0.6); $text-color: #fff; $subtitle-color: #e90303; $border-radius: 5px; $box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-
-pasted
-
-We are not using CSS. Update my scss
-
-I'll update the SCSS file to work with our new template structure, making sure it applies to both Floor post types and Pages while maintaining the same styling approach.
-
-
-Updated SCSS for Spiral Tower Template
-Code 
-I've updated your SCSS file to work with both the original Floor template and the new universal template structure. Here's what I modified:
-
-Added new class selectors for the universal template alongside your existing selectors:
-Added .spiral-template-active and .spiral-fullscreen classes to the HTML/body selectors
-Added all the universal template class names to the display whitelist (.spiral-tower-wrapper, .spiral-tower-container, etc.)
-Created parallel styling sections for each component:
-Section 3.1: Fullscreen background for the universal template
-Section 4.1: Content container for the universal template
-Section 5.1: Title styling for the universal template
-Section 6.1: Content styling for the universal template
-Updated responsive styles to apply to both class naming conventions
-Maintained all your original styling, including:
-The aggressive WordPress element hiding
-Your SCSS variables
-The fixed background image handling
-All your responsive breakpoints
-The important flags to ensure styles override any theme styles
-This approach allows both your original Floor post type templates and the new Page templates to have exactly the same appearance while sharing the same SCSS file. The file structure makes it easy to understand which sections apply to which template.
-
-To use this file, you'll need to:
-
-Save it to your plugin's SCSS source directory (likely in a /src/scss/ folder)
-Compile it to CSS using your build process
-Make sure it gets output to the path referenced in your plugin's enqueue_custom_styles() method
-The file should be compiled to the location referenced in:
-
-php
-wp_enqueue_style(
-    'spiral-tower-template-style',
-    plugin_dir_url(__FILE__) . 'dist/css/floor-template.css',
-    array(),
-    '1.0.0'
-);
-The updated SCSS maintains all your original aggressive styling techniques to ensure the template truly takes over the entire screen regardless of the theme.
-
-Whatever you did broken everything. I only see a white screen.
-
-I apologize for the issues you're experiencing. Let's troubleshoot the white screen problem by simplifying our approach.
-
-Instead of making major changes to your working plugin, let's create a minimal solution that preserves your existing functionality while just adding the ability to apply the template to pages.
-
-
-Simplified Plugin Fix to Apply Floor Template to Pages
-Code 
-This simplified approach should fix the white screen issue. Instead of creating a new template file and changing your CSS/SCSS structure, I've now:
-
-Added a simple metabox to Pages that allows you to enable the Floor template
-Made the existing floor_template() function check for Pages with this setting enabled
-Reused your exact existing single-floor.php template file for Pages
-Kept all your existing CSS/SCSS intact without any changes
-How to implement this fix:
-Replace your main plugin file (spiral-tower.php or similar) with this simplified version
-Keep your existing single-floor.php template file exactly as it is
-Keep your existing CSS/SCSS file exactly as it is
-How it works:
-When editing a Page, you'll now see a "Floor Template Settings" metabox in the sidebar. You can check "Use Floor Template" and optionally add a floor number.
-
-When a user views that Page, the plugin will:
-
-Detect the "_use_floor_template" setting is enabled
-Use the exact same template file (single-floor.php) that you're already using for Floors
-Apply the exact same CSS styling
-This approach is much less invasive and simply extends your existing functionality to Pages rather than creating a whole new template system.
-
-Why this should fix the white screen:
-The white screen was likely caused by one of these issues:
-
-The new template file not being found
-CSS conflicts with the new class names
-Issues with the updated CSS/JS enqueuing
-By reusing your exact existing template file and CSS, we avoid all these potential issues.
-
-Let me know if you continue to experience problems, and we can further troubleshoot.
-
-This is good. 
-
-Let's alter the SCSS so that headers and titles on the site always use the Google  Font "Metamorphous" and the larger areas of text use "Winky Sans".
-
-I'll help you update the SCSS to incorporate the Google Fonts "Metamorphous" for headers and titles, and "Winky Sans" for larger text areas. First, we need to update your SCSS to include these fonts.
-
-
-Updated SCSS with Custom Fonts
-Code 
-Now we need to modify the plugin to properly enqueue the Google Fonts and any custom fonts we need. Here's how to update your plugin file to include the fonts:
-
-
-Updated Plugin Font Enqueuing
-Code 
-Additionally, if you'd like to include a custom font like "Winky Sans" that's not available on Google Fonts, here are instructions for setting up your font files and folder structure:
-
-
-Custom Font Setup Instructions
-Code 
-How to Implement the Font Changes
-I've created three artifacts to help you implement the font changes to your Spiral Tower plugin:
-
-1. Updated SCSS with Custom Fonts
-The first artifact contains the updated SCSS file with:
-
-Font family variables for Metamorphous (headers) and Winky Sans (body text)
-Google Fonts import for Metamorphous
-Font-face declaration for Winky Sans (you'll need the actual font files)
-Updated styling to apply these fonts to the appropriate elements
-Additional typography enhancements (letter spacing, link styling, etc.)
-Replace your existing SCSS with this updated version. The changes primarily focus on adding the font declarations and applying them to the right elements while maintaining all your existing styling.
-
-2. Plugin Font Enqueuing Code
-The second artifact shows how to modify your plugin's enqueue_floor_styles() method to:
-
-Load the Google Fonts before your main stylesheet
-Make this work for both floor post types and pages with the floor template enabled
-Set up proper dependencies so fonts load before your CSS
-Add this code to your main plugin file, replacing the existing enqueue_floor_styles() method.
-
-3. Custom Font Setup Instructions
-The third artifact provides detailed instructions for:
-
-Setting up the folder structure to host your custom fonts
-Alternatives if you don't have the "Winky Sans" font files
-How to convert fonts to web-compatible formats
-Licensing considerations
-Important Notes
-About "Winky Sans":
-I couldn't find a Google Font called "Winky Sans" - if this is a custom font, you'll need the actual font files
-If you don't have the font files, you can replace it with a Google Font like Lato or Open Sans
-Font Loading Performance:
-The approach I've outlined preloads the fonts via Google Fonts
-This helps avoid "Flash of Unstyled Text" (FOUT) issues
-For even better performance, you could consider self-hosting the Google Fonts
-Testing:
-After implementing these changes, test on both floor post types and pages
-Ensure the fonts load correctly and there are no white screen issues
-Let me know if you need any clarification or have questions about implementing these changes!
-
-I don't want to download the font, I want to use the ones google provides.
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Winky+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
-
-I'll update the approach to use only Google Fonts without downloading anything. Based on the font links you provided, let's modify the SCSS and plugin code to use Metamorphous and Winky Sans directly from Google Fonts.
-
-
-Updated SCSS with Google Fonts Only
-Code 
-Now let's update the plugin to properly enqueue the Google Fonts:
-
-
-Updated Plugin Font Enqueuing for Google Fonts
-Code 
-Let's also update the template file to ensure proper font loading by adding the preconnect links directly to the template's head section:
-
-
-Updated Template Head Section
-Code 
-How to Implement Google Fonts in Your Spiral Tower Plugin
-I've provided three artifacts to help you implement the Google Fonts in your plugin:
-
-1. Updated SCSS with Google Font Variables
-The first artifact contains the updated SCSS file with:
-
-Font family variables set to 'Metamorphous' for headers and 'Winky Sans' for body text
-No @import statements in the SCSS since we'll handle the font loading via WordPress
-Font weight specifications (Winky Sans supports variable weights 300-900)
-Applied the fonts to all appropriate elements
-2. Updated Plugin Font Enqueuing
-The second artifact shows how to properly enqueue Google Fonts in WordPress:
-
-Uses the same font URL you provided
-Adds preconnect links for improved performance
-Works for both floor post types and pages with the template enabled
-Sets proper dependencies so fonts load before your CSS
-3. Updated Template Head Section
-The third artifact provides the HTML to add directly to your template's head section:
-
-Adds preconnect links for faster font loading
-Placed right before your wp_head() call
-Implementation Steps
-Update your SCSS file with the content from the first artifact
-Compile the SCSS to generate your CSS file
-Update your plugin's enqueue_floor_styles() method with the code from the second artifact
-Update your template file by replacing the head section with the content from the third artifact
-Notes about Winky Sans
-I noticed you're using "Winky Sans" with a variable font weight range (300..900)
-The SCSS includes appropriate font-weight settings to take advantage of this
-If Winky Sans becomes unavailable from Google Fonts in the future, you may need to substitute another font
-These changes will ensure both Metamorphous and Winky Sans are properly loaded from Google Fonts and applied to your template, with Metamorphous used for headers and titles, and Winky Sans used for the main text content.
-
-you broken everything again. Let's tail the apache error log
-
-I apologize for the issues. Let's check the Apache error log to identify what's causing the problem.
-
-To tail the Apache error log, you'll need to run a command in your server's terminal. The location of Apache error logs can vary depending on your server setup, but here are the most common locations and commands:
-
-For Ubuntu/Debian systems:
-
-bash
-tail -f /var/log/apache2/error.log
-For CentOS/RHEL systems:
-
-bash
-tail -f /var/log/httpd/error_log
-For cPanel servers:
-
-bash
-tail -f /usr/local/apache/logs/error_log
-If you're using a managed WordPress hosting service, you might need to access logs through their control panel or contact their support.
-
-When you run the tail command, please share the relevant error messages with me, and I'll help you fix the issues. I'll provide a much simpler approach that minimizes the risk of breaking your site.
-
-It's not a problem with a php error. Your scss is broken.
-
-I understand the issue is with the SCSS. Let's simplify our approach and create a working SCSS that just adds the Google Fonts without changing your existing functionality.
-
-
-Simplified SCSS with Google Fonts
-Code 
-Now let's update the template file to directly include the Google Fonts links in the head section:
-
-
-Simple Template Head Update
-Code 
-Simplified Approach to Adding Google Fonts
-I've created a much simpler solution that should avoid breaking your site. This approach makes minimal changes to your existing code.
-
-1. Updated SCSS File
-I've created a simplified version of your SCSS that:
-
-Keeps all your existing styles exactly as they were
-Adds only the font-family declarations where needed:
-'Metamorphous' for headings and the floor number
-'Winky Sans' for body text and regular content
-Avoids any complex changes that could break your styling
-2. Updated Template File
-Instead of modifying your plugin's PHP code to enqueue the fonts (which can be tricky to get right), I've updated your template file to directly include the Google Fonts in the head section:
-
-Added the preconnect links for Google Fonts
-Added the exact font link you provided
-Placed them before the wp_head() call to ensure they load early
-How to Implement This Solution:
-Update your SCSS file with the content from the first artifact
-This file keeps all your existing styles intact
-It only adds the font-family declarations where needed
-Update your template file (single-floor.php) with the content from the second artifact
-The only change is adding the Google Fonts links in the head section
-This approach is much safer because:
-
-We're not modifying your plugin's PHP code
-We're adding the fonts directly in the template
-We're making minimal changes to your SCSS
-We're avoiding any complex CSS that might break
-Try implementing these changes and let me know if you still encounter any issues.
-
-
-
-
-
-
 /**
  * Styles for the Floor Template
  * All styles are consolidated here for easy editing by users
+ * Now with dynamic color support based on background image or custom colors
  */
 
-// Variables
-$background-color: #000;
-$content-bg-color: rgba(0, 0, 0, 0.6);
-$text-color: #fff;
-$subtitle-color: #e90303;
-$border-radius: 5px;
+:root {
+    // Default colors (fallbacks)
+    --background-color: #000;
+    --title-bg-color: rgba(20, 20, 20, 0.85);
+    --content-bg-color: rgba(35, 35, 35, 0.85);
+    --title-text-color: #fff;
+    --content-text-color: #e6e6e6;
+    --subtitle-color: #e90303;
+
+    --title-font: 'Metamorphous', serif;
+    --body-font: 'Winky Sans', sans-serif;
+}
+
+// Variables - non-color styles remain the same
+$border-radius: 15px;
 $box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 $container-width: 80%;
 $container-max-width: 800px;
@@ -528,37 +28,37 @@ $margin-standard: 30px;
 $margin-large: 80px;
 
 /* --------------------------------------------------------
- * 1. FULL VIEWPORT COVERAGE
- * -------------------------------------------------------- */
-html, 
+   * 1. FULL VIEWPORT COVERAGE
+   * -------------------------------------------------------- */
+html,
 html.floor-template-active,
 html.floor-fullscreen {
-  height: 100% !important;
-  min-height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 body,
 body.floor-template-active,
 body.floor-fullscreen {
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 100vh !important;
-  overflow-x: hidden !important;
-  background: transparent !important;
-  max-width: 100% !important;
-  font-family: 'Winky Sans', sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
+    background: transparent !important;
+    max-width: 100% !important;
+    font-family: var(--body-font) !important;
 }
 
 /* --------------------------------------------------------
- * 2. HIDE WORDPRESS ELEMENTS
- * -------------------------------------------------------- */
+   * 2. HIDE WORDPRESS ELEMENTS
+   * -------------------------------------------------------- */
 /* Core hiding strategy */
 body * {
-  display: none !important;
+    display: none !important;
 }
 
 /* Only show our specific elements */
@@ -571,13 +71,13 @@ body * {
 .spiral-tower-floor-title *,
 .spiral-tower-floor-content,
 .spiral-tower-floor-content * {
-  display: block !important;
+    display: block !important;
 }
 
 /* Specifically hide WordPress elements */
 #wpadminbar,
 .admin-bar #wpadminbar,
-nav, 
+nav,
 #site-navigation,
 .main-navigation,
 .menu,
@@ -598,184 +98,518 @@ nav,
 #colophon,
 .footer,
 footer {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  height: 0 !important;
-  width: 0 !important;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
 }
 
 /* Hide common theme containers */
 body {
-  #page,
-  #content,
-  .site,
-  .site-content,
-  .content-area,
-  #wrapper,
-  #main,
-  .content-wrapper,
-  .container {
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    display: none !important;
-  }
+
+    #page,
+    #content,
+    .site,
+    .site-content,
+    .content-area,
+    #wrapper,
+    #main,
+    .content-wrapper,
+    .container {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        display: none !important;
+    }
 }
 
 /* --------------------------------------------------------
- * 3. FULLSCREEN BACKGROUND
- * -------------------------------------------------------- */
+   * 3. FULLSCREEN BACKGROUND
+   * -------------------------------------------------------- */
 .spiral-tower-floor-wrapper {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 100vh !important;
-  background-size: cover !important;
-  background-position: center center !important;
-  background-repeat: no-repeat !important;
-  background-attachment: fixed !important;
-  background-color: $background-color !important; /* Fallback color */
-  z-index: 999999 !important;
-  overflow-y: auto !important;
-  box-sizing: border-box !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  
-  /* Ensure the background image properly renders */
-  &[style*="background-image"] {
-    background-image: var(--background-image) !important;
-  }
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100vh !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    background-color: var(--background-color, #000) !important;
+    /* Use CSS variable with fallback */
+    z-index: 999999 !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+
+    /* Ensure the background image properly renders */
+    &[style*="background-image"] {
+        background-image: var(--background-image) !important;
+    }
 }
 
 /* --------------------------------------------------------
  * 4. CONTENT CONTAINER
  * -------------------------------------------------------- */
-.spiral-tower-floor-container {
-  width: $container-width !important;
-  max-width: $container-max-width !important;
-  margin: $margin-large auto !important;
-  position: relative !important;
-  z-index: 1000000 !important;
-  box-sizing: border-box !important;
-}
-
-/* Empty header placeholder */
-.spiral-tower-floor-header {
-  height: 50px !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
+ .spiral-tower-floor-container {
+    width: $container-width !important;
+    max-width: $container-max-width !important;
+    /* Center the container horizontally and vertically */
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 1000000 !important;
+    box-sizing: border-box !important;
+    
+    /* Animation properties for fade effect */
+    transition: opacity 2.0s ease !important;
+    opacity: 0 !important; /* Initially hidden */
 }
 
 /* --------------------------------------------------------
  * 5. TITLE STYLING
  * -------------------------------------------------------- */
-.spiral-tower-floor-title {
-  background-color: $content-bg-color !important;
-  padding: $padding-standard !important;
-  margin-bottom: $margin-standard !important;
-  border-radius: $border-radius !important;
-  box-shadow: $box-shadow !important;
-  box-sizing: border-box !important;
-  
-  h1 {
+ .spiral-tower-floor-title {
+    width: 100% !important;
     margin: 0 !important;
-    padding: 0 !important;
-    font-size: 2.5em !important;
-    color: $text-color !important;
-    font-weight: bold !important;
-    line-height: 1.2 !important;
-    font-family: 'Metamorphous', serif !important;
-  }
+    border-radius: 0 !important;
+    background-color: var(--title-bg-color, rgba(20, 20, 20, 0.85)) !important;
+    padding: $padding-standard !important;
+    box-shadow: $box-shadow !important;
+    box-sizing: border-box !important;
+    position: fixed !important; /* Fixed at the top */
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 1000001 !important;
+    cursor: pointer !important; /* Indicate it's clickable */
+
+    h1 {
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 1.5em !important;
+        color: var(--title-text-color, #fff) !important;
+        font-weight: bold !important;
+        line-height: 1.2 !important;
+        font-family: var(--title-font, 'Metamorphous', serif) !important;
+        letter-spacing: -0.5px;
+        text-align: center;
+    }
 }
 
 .spiral-tower-floor-number {
-  font-size: 1.2em !important;
-  margin-bottom: 10px !important;
-  font-weight: bold !important;
-  color: $subtitle-color !important;
-  font-family: 'Metamorphous', serif !important;
+    font-size: 0.8em !important;
+    margin-bottom: 6px !important;
+    font-weight: bold !important;
+    color: var(--subtitle-color, #e90303) !important;
+    font-family: var(--title-font) !important;
+    text-align: center;;
 }
 
 /* --------------------------------------------------------
- * 6. CONTENT STYLING
- * -------------------------------------------------------- */
+   * 6. CONTENT STYLING
+   * -------------------------------------------------------- */
 .spiral-tower-floor-content {
-  background-color: $content-bg-color !important;
-  padding: $padding-large !important;
-  border-radius: $border-radius !important;
-  box-shadow: $box-shadow !important;
-  box-sizing: border-box !important;
-  margin-bottom: $margin-large !important;
-  
-  /* Style content elements */
-  p, ul, ol, li, blockquote {
-    color: $text-color !important;
-    max-width: 100% !important;
-    display: block !important;
+    background-color: var(--content-bg-color, rgba(0, 0, 0, 0.6)) !important;
+    padding: $padding-large !important;
+    border-radius: $border-radius !important;
+    box-shadow: $box-shadow !important;
     box-sizing: border-box !important;
-    font-family: 'Winky Sans', sans-serif !important;
-  }
-  
-  /* Apply title font to headings */
-  h1, h2, h3, h4, h5, h6 {
-    color: $text-color !important;
-    max-width: 100% !important;
-    display: block !important;
-    box-sizing: border-box !important;
-    font-family: 'Metamorphous', serif !important;
-  }
-  
-  /* Allow inline elements to display properly */
-  a, strong, em, span, b, i {
-    display: inline !important;
-  }
+    margin-bottom: $margin-large !important;
+    color: var(--content-text-color, #e6e6e6) !important;
+    position: relative !important;
+
+    /* Style content elements */
+    p,
+    ul,
+    ol,
+    li,
+    blockquote {
+        color: var(--content-text-color, #e6e6e6) !important;
+        max-width: 100% !important;
+        display: block !important;
+        box-sizing: border-box !important;
+        font-family: var(--body-font) !important;
+        letter-spacing: -0.5px;
+        font-size: 2rem;
+    }
+
+    /* Apply title font to headings */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: var(--title-text-color, #fff) !important;
+        max-width: 100% !important;
+        display: block !important;
+        box-sizing: border-box !important;
+        font-family: var(--title-font) !important;
+    }
+
+    /* Allow inline elements to display properly */
+    a,
+    strong,
+    em,
+    span,
+    b,
+    i {
+        display: inline !important;
+    }
+
+    /* Style links with accent color */
+    a {
+        color: var(--subtitle-color, #e90303) !important;
+        text-decoration: none !important;
+
+        &:hover {
+            text-decoration: underline !important;
+        }
+    }
 }
 
 /* --------------------------------------------------------
  * 7. RESPONSIVE ADJUSTMENTS
  * -------------------------------------------------------- */
 @media (max-width: 768px) {
-  .spiral-tower-floor-container {
-    width: 90% !important;
-    margin: 40px auto !important;
-  }
-  
-  .spiral-tower-floor-title {
-    padding: 15px !important;
-    
-    h1 {
-      font-size: 2em !important;
+    .spiral-tower-floor-container {
+        width: 90% !important;
+        margin: 0 auto !important;
     }
-  }
-  
-  .spiral-tower-floor-content {
-    padding: 20px !important;
-    margin-bottom: 40px !important;
-  }
+
+    .spiral-tower-floor-title {
+        padding: 15px !important;
+
+        h1 {
+            font-size: 2em !important;
+        }
+    }
+
+    .spiral-tower-floor-content {
+        padding: 20px !important;
+        margin-bottom: 40px !important;
+    }
 }
 
 @media (max-width: 480px) {
-  .spiral-tower-floor-container {
-    width: 95% !important;
-    margin: 20px auto !important;
-  }
-  
-  .spiral-tower-floor-title {
-    padding: 12px !important;
-    
-    h1 {
-      font-size: 1.8em !important;
+    .spiral-tower-floor-container {
+        width: 95% !important;
+        margin: 0 auto !important;
     }
-  }
-  
-  .spiral-tower-floor-number {
-    font-size: 1em !important;
-  }
+
+    .spiral-tower-floor-title {
+        padding: 12px !important;
+
+        h1 {
+            font-size: 1.8em !important;
+        }
+    }
+
+    .spiral-tower-floor-number {
+        font-size: 1em !important;
+    }
+}
+
+/* --------------------------------------------------------
+ * 8. Animation 
+ * -------------------------------------------------------- */
+/* When title is hovered, show the container */
+.spiral-tower-floor-title:hover ~ .spiral-tower-floor-container,
+.spiral-tower-floor-container:hover {
+    opacity: 1 !important;
+}
+
+/* --------------------------------------------------------
+ * 9. YouTube Background 
+ * -------------------------------------------------------- */
+ #youtube-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.youtube-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+#youtube-player {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100vw;
+    height: 56.25vw; /* 16:9 aspect ratio (9/16*100) */
+    min-height: 100vh;
+    min-width: 177.78vh; /* 16:9 aspect ratio (16/9*100) */
+    transform: translate(-50%, -50%);
+    border: none;
+}
+
+#youtube-background.audio-only {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+#youtube-background.audio-only iframe {
+    visibility: hidden;
+}
+
+#youtube-background.audio-only {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Allow sound toggle to display */
+#sound-toggle-btn,
+#sound-toggle-btn * {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, .5);
+  padding: 4px;  
+}
+
+
+
+
+
+/* --------------------------------------------------------
+ * 10. Portals
+ * -------------------------------------------------------- */
+/* Portal styles for the Spiral Tower */
+
+.spiral-tower-portals-wrapper {
+    margin-top: 40px;
+    font-family: 'Winky Sans', sans-serif;
+}
+
+.spiral-tower-portals-title {
+    padding: 15px 20px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+.spiral-tower-portals-title h2 {
+    margin: 0;
+    font-family: 'Metamorphous', serif;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+}
+
+.spiral-tower-portals-content {
+    padding: 25px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.spiral-tower-portals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.spiral-tower-portal-card {
+    display: flex;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.spiral-tower-portal-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.spiral-tower-portal-card:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+}
+
+.portal-icon {
+    width: 60px;
+    height: 60px;
+    margin-right: 15px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.portal-gateway {
+    background: radial-gradient(circle, rgba(55,145,255,1) 0%, rgba(0,30,120,1) 100%);
+}
+
+.portal-gateway:after {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 10px rgba(55, 145, 255, 0.8);
+    animation: portal-pulse 2s infinite;
+}
+
+.portal-vortex {
+    background: radial-gradient(circle, rgba(143,0,255,1) 0%, rgba(60,0,120,1) 100%);
+}
+
+.portal-vortex:after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: conic-gradient(
+        rgba(143, 0, 255, 0),
+        rgba(143, 0, 255, 0.8),
+        rgba(143, 0, 255, 0)
+    );
+    animation: portal-spin 3s linear infinite;
+}
+
+.portal-door {
+    background: radial-gradient(circle, rgba(170,120,50,1) 0%, rgba(90,60,30,1) 100%);
+}
+
+.portal-door:after {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 50px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(200, 150, 80, 0.8);
+    border-radius: 3px;
+}
+
+.portal-invisible {
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    /* Removed fading animation */
+}
+
+.portal-custom img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.spiral-tower-portal-info {
+    flex-grow: 1;
+}
+
+.spiral-tower-portal-title {
+    margin: 0 0 5px 0;
+    font-family: 'Metamorphous', serif;
+    font-size: 1.3rem;
+}
+
+.spiral-tower-portal-type {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    opacity: 0.8;
+}
+
+.spiral-tower-portal-destination {
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.spiral-tower-portal-destination span {
+    display: block;
+    opacity: 0.7;
+    margin-bottom: 3px;
+}
+
+.spiral-tower-portal-link {
+    color: inherit;
+    text-decoration: none;
+    position: relative;
+    padding-bottom: 2px;
+}
+
+.spiral-tower-portal-link:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background-color: currentColor;
+    transition: width 0.3s ease;
+}
+
+.spiral-tower-portal-link:hover:after {
+    width: 100%;
+}
+
+@keyframes portal-pulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.7;
+    }
+    50% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.8);
+        opacity: 0.7;
+    }
+}
+
+@keyframes portal-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Removed portal-fade animation */
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .spiral-tower-portals-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .spiral-tower-portals-title h2 {
+        font-size: 1.5rem;
+    }
 }

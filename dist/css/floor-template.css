@@ -4,11 +4,22 @@
 /**
  * Styles for the Floor Template
  * All styles are consolidated here for easy editing by users
- * Updated with Google Fonts
+ * Now with dynamic color support based on background image or custom colors
  */
+:root {
+  --background-color: #000;
+  --title-bg-color: rgba(20, 20, 20, 0.85);
+  --content-bg-color: rgba(35, 35, 35, 0.85);
+  --title-text-color: #fff;
+  --content-text-color: #e6e6e6;
+  --subtitle-color: #e90303;
+  --title-font: "Metamorphous", serif;
+  --body-font: "Winky Sans", sans-serif;
+}
+
 /* --------------------------------------------------------
- * 1. FULL VIEWPORT COVERAGE
- * -------------------------------------------------------- */
+   * 1. FULL VIEWPORT COVERAGE
+   * -------------------------------------------------------- */
 html,
 html.floor-template-active,
 html.floor-fullscreen {
@@ -29,13 +40,12 @@ body.floor-fullscreen {
   overflow-x: hidden !important;
   background: transparent !important;
   max-width: 100% !important;
-  font-family: "Winky Sans", sans-serif !important;
-  font-weight: 400 !important;
+  font-family: var(--body-font) !important;
 }
 
 /* --------------------------------------------------------
- * 2. HIDE WORDPRESS ELEMENTS
- * -------------------------------------------------------- */
+   * 2. HIDE WORDPRESS ELEMENTS
+   * -------------------------------------------------------- */
 /* Core hiding strategy */
 body * {
   display: none !important;
@@ -104,8 +114,8 @@ body .container {
 }
 
 /* --------------------------------------------------------
- * 3. FULLSCREEN BACKGROUND
- * -------------------------------------------------------- */
+   * 3. FULLSCREEN BACKGROUND
+   * -------------------------------------------------------- */
 .spiral-tower-floor-wrapper {
   position: fixed !important;
   top: 0 !important;
@@ -119,14 +129,13 @@ body .container {
   background-position: center center !important;
   background-repeat: no-repeat !important;
   background-attachment: fixed !important;
-  background-color: #000 !important; /* Fallback color */
+  background-color: var(--background-color, #000) !important;
+  /* Use CSS variable with fallback */
   z-index: 999999 !important;
   overflow-y: auto !important;
   box-sizing: border-box !important;
   padding: 0 !important;
   margin: 0 !important;
-  font-family: "Winky Sans", sans-serif !important;
-  font-weight: 400 !important;
   /* Ensure the background image properly renders */
 }
 .spiral-tower-floor-wrapper[style*=background-image] {
@@ -139,102 +148,111 @@ body .container {
 .spiral-tower-floor-container {
   width: 80% !important;
   max-width: 800px !important;
-  margin: 80px auto !important;
-  position: relative !important;
+  /* Center the container horizontally and vertically */
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
   z-index: 1000000 !important;
   box-sizing: border-box !important;
-}
-
-/* Empty header placeholder */
-.spiral-tower-floor-header {
-  height: 50px !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
+  /* Animation properties for fade effect */
+  transition: opacity 2s ease !important;
+  opacity: 0 !important; /* Initially hidden */
 }
 
 /* --------------------------------------------------------
  * 5. TITLE STYLING
  * -------------------------------------------------------- */
 .spiral-tower-floor-title {
-  background-color: rgba(0, 0, 0, 0.6) !important;
+  width: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background-color: var(--title-bg-color, rgba(20, 20, 20, 0.85)) !important;
   padding: 20px !important;
-  margin-bottom: 30px !important;
-  border-radius: 5px !important;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
   box-sizing: border-box !important;
+  position: fixed !important; /* Fixed at the top */
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 1000001 !important;
+  cursor: pointer !important; /* Indicate it's clickable */
 }
 .spiral-tower-floor-title h1 {
   margin: 0 !important;
   padding: 0 !important;
-  font-size: 2.5em !important;
-  color: #fff !important;
+  font-size: 1.5em !important;
+  color: var(--title-text-color, #fff) !important;
   font-weight: bold !important;
   line-height: 1.2 !important;
-  font-family: "Metamorphous", serif !important;
-  letter-spacing: 0.03em !important;
+  font-family: var(--title-font, "Metamorphous", serif) !important;
+  letter-spacing: -0.5px;
+  text-align: center;
 }
 
 .spiral-tower-floor-number {
-  font-size: 1.2em !important;
-  margin-bottom: 10px !important;
+  font-size: 0.8em !important;
+  margin-bottom: 6px !important;
   font-weight: bold !important;
-  color: #e90303 !important;
-  font-family: "Metamorphous", serif !important;
+  color: var(--subtitle-color, #e90303) !important;
+  font-family: var(--title-font) !important;
+  text-align: center;
 }
 
 /* --------------------------------------------------------
- * 6. CONTENT STYLING
- * -------------------------------------------------------- */
+   * 6. CONTENT STYLING
+   * -------------------------------------------------------- */
 .spiral-tower-floor-content {
-  background-color: rgba(0, 0, 0, 0.6) !important;
+  background-color: var(--content-bg-color, rgba(0, 0, 0, 0.6)) !important;
   padding: 30px !important;
-  border-radius: 5px !important;
+  border-radius: 15px !important;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
   box-sizing: border-box !important;
   margin-bottom: 80px !important;
-  font-family: "Winky Sans", sans-serif !important;
-  font-weight: 400 !important;
+  color: var(--content-text-color, #e6e6e6) !important;
+  position: relative !important;
   /* Style content elements */
   /* Apply title font to headings */
   /* Allow inline elements to display properly */
-  /* Additional heading styles */
-  /* Bold text */
-  /* Links */
+  /* Style links with accent color */
 }
-.spiral-tower-floor-content p, .spiral-tower-floor-content ul, .spiral-tower-floor-content ol, .spiral-tower-floor-content li, .spiral-tower-floor-content blockquote {
-  color: #fff !important;
+.spiral-tower-floor-content p,
+.spiral-tower-floor-content ul,
+.spiral-tower-floor-content ol,
+.spiral-tower-floor-content li,
+.spiral-tower-floor-content blockquote {
+  color: var(--content-text-color, #e6e6e6) !important;
   max-width: 100% !important;
   display: block !important;
   box-sizing: border-box !important;
-  font-family: "Winky Sans", sans-serif !important;
-  font-weight: 400 !important;
-  line-height: 1.6 !important;
+  font-family: var(--body-font) !important;
+  letter-spacing: -0.5px;
+  font-size: 2rem;
 }
-.spiral-tower-floor-content h1, .spiral-tower-floor-content h2, .spiral-tower-floor-content h3, .spiral-tower-floor-content h4, .spiral-tower-floor-content h5, .spiral-tower-floor-content h6 {
-  color: #fff !important;
+.spiral-tower-floor-content h1,
+.spiral-tower-floor-content h2,
+.spiral-tower-floor-content h3,
+.spiral-tower-floor-content h4,
+.spiral-tower-floor-content h5,
+.spiral-tower-floor-content h6 {
+  color: var(--title-text-color, #fff) !important;
   max-width: 100% !important;
   display: block !important;
   box-sizing: border-box !important;
-  font-family: "Metamorphous", serif !important;
-  letter-spacing: 0.02em !important;
+  font-family: var(--title-font) !important;
 }
-.spiral-tower-floor-content a, .spiral-tower-floor-content strong, .spiral-tower-floor-content em, .spiral-tower-floor-content span, .spiral-tower-floor-content b, .spiral-tower-floor-content i {
+.spiral-tower-floor-content a,
+.spiral-tower-floor-content strong,
+.spiral-tower-floor-content em,
+.spiral-tower-floor-content span,
+.spiral-tower-floor-content b,
+.spiral-tower-floor-content i {
   display: inline !important;
 }
-.spiral-tower-floor-content h2 {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-  padding-bottom: 0.3em !important;
-}
-.spiral-tower-floor-content strong, .spiral-tower-floor-content b {
-  font-weight: 700 !important;
-}
 .spiral-tower-floor-content a {
-  color: rgb(252.813559322, 85.186440678, 85.186440678) !important;
+  color: var(--subtitle-color, #e90303) !important;
   text-decoration: none !important;
-  transition: color 0.2s ease !important;
 }
 .spiral-tower-floor-content a:hover {
-  color: rgb(253.4618644068, 135.5381355932, 135.5381355932) !important;
   text-decoration: underline !important;
 }
 
@@ -244,7 +262,7 @@ body .container {
 @media (max-width: 768px) {
   .spiral-tower-floor-container {
     width: 90% !important;
-    margin: 40px auto !important;
+    margin: 0 auto !important;
   }
   .spiral-tower-floor-title {
     padding: 15px !important;
@@ -260,7 +278,7 @@ body .container {
 @media (max-width: 480px) {
   .spiral-tower-floor-container {
     width: 95% !important;
-    margin: 20px auto !important;
+    margin: 0 auto !important;
   }
   .spiral-tower-floor-title {
     padding: 12px !important;
@@ -270,6 +288,288 @@ body .container {
   }
   .spiral-tower-floor-number {
     font-size: 1em !important;
+  }
+}
+/* --------------------------------------------------------
+ * 8. Animation 
+ * -------------------------------------------------------- */
+/* When title is hovered, show the container */
+.spiral-tower-floor-title:hover ~ .spiral-tower-floor-container,
+.spiral-tower-floor-container:hover {
+  opacity: 1 !important;
+}
+
+/* --------------------------------------------------------
+ * 9. YouTube Background 
+ * -------------------------------------------------------- */
+#youtube-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.youtube-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#youtube-player {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  height: 56.25vw; /* 16:9 aspect ratio (9/16*100) */
+  min-height: 100vh;
+  min-width: 177.78vh; /* 16:9 aspect ratio (16/9*100) */
+  transform: translate(-50%, -50%);
+  border: none;
+}
+
+#youtube-background.audio-only {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#youtube-background.audio-only iframe {
+  visibility: hidden;
+}
+
+#youtube-background.audio-only {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Allow sound toggle to display */
+#sound-toggle-btn,
+#sound-toggle-btn * {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 4px;
+}
+
+/* --------------------------------------------------------
+ * 10. Portals
+ * -------------------------------------------------------- */
+/* Portal styles for the Spiral Tower */
+.spiral-tower-portals-wrapper {
+  margin-top: 40px;
+  font-family: "Winky Sans", sans-serif;
+}
+
+.spiral-tower-portals-title {
+  padding: 15px 20px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+.spiral-tower-portals-title h2 {
+  margin: 0;
+  font-family: "Metamorphous", serif;
+  font-size: 1.8rem;
+  letter-spacing: 1px;
+}
+
+.spiral-tower-portals-content {
+  padding: 25px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+
+.spiral-tower-portals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.spiral-tower-portal-card {
+  display: flex;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.spiral-tower-portal-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.spiral-tower-portal-card:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+}
+
+.portal-icon {
+  width: 60px;
+  height: 60px;
+  margin-right: 15px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.portal-gateway {
+  background: radial-gradient(circle, rgb(55, 145, 255) 0%, rgb(0, 30, 120) 100%);
+}
+
+.portal-gateway:after {
+  content: "";
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 10px rgba(55, 145, 255, 0.8);
+  animation: portal-pulse 2s infinite;
+}
+
+.portal-vortex {
+  background: radial-gradient(circle, rgb(143, 0, 255) 0%, rgb(60, 0, 120) 100%);
+}
+
+.portal-vortex:after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: conic-gradient(rgba(143, 0, 255, 0), rgba(143, 0, 255, 0.8), rgba(143, 0, 255, 0));
+  animation: portal-spin 3s linear infinite;
+}
+
+.portal-door {
+  background: radial-gradient(circle, rgb(170, 120, 50) 0%, rgb(90, 60, 30) 100%);
+}
+
+.portal-door:after {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 50px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(200, 150, 80, 0.8);
+  border-radius: 3px;
+}
+
+.portal-invisible {
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  /* Removed fading animation */
+}
+
+.portal-custom img {
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+  border-radius: 50%;
+}
+
+.spiral-tower-portal-info {
+  flex-grow: 1;
+}
+
+.spiral-tower-portal-title {
+  margin: 0 0 5px 0;
+  font-family: "Metamorphous", serif;
+  font-size: 1.3rem;
+}
+
+.spiral-tower-portal-type {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+
+.spiral-tower-portal-destination {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.spiral-tower-portal-destination span {
+  display: block;
+  opacity: 0.7;
+  margin-bottom: 3px;
+}
+
+.spiral-tower-portal-link {
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+  padding-bottom: 2px;
+}
+
+.spiral-tower-portal-link:after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: currentColor;
+  transition: width 0.3s ease;
+}
+
+.spiral-tower-portal-link:hover:after {
+  width: 100%;
+}
+
+@keyframes portal-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+}
+@keyframes portal-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+/* Removed portal-fade animation */
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .spiral-tower-portals-grid {
+    grid-template-columns: 1fr;
+  }
+  .spiral-tower-portals-title h2 {
+    font-size: 1.5rem;
   }
 }
 

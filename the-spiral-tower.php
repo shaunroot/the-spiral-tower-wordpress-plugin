@@ -18,6 +18,7 @@ if (!defined('WPINC')) {
 // Include component files
 require_once dirname(__FILE__) . '/includes/class-spiral-tower-floor-manager.php';
 require_once dirname(__FILE__) . '/includes/class-spiral-tower-room-manager.php';
+require_once dirname(__FILE__) . '/includes/class-spiral-tower-portal-manager.php';
 
 
 /**
@@ -36,6 +37,11 @@ class Spiral_Tower_Plugin
     public $room_manager;
 
     /**
+     * Portal Manager instance
+     */
+    public $portal_manager;
+
+    /**
      * Initialize the plugin
      */
     public function __construct()
@@ -43,6 +49,7 @@ class Spiral_Tower_Plugin
         // Initialize components
         $this->floor_manager = new Spiral_Tower_Floor_Manager();
         $this->room_manager = new Spiral_Tower_Room_Manager();
+        $this->portal_manager = new Spiral_Tower_Portal_Manager();
 
         // Register activation and deactivation hooks
         register_activation_hook(__FILE__, array($this, 'activate'));
@@ -77,14 +84,25 @@ class Spiral_Tower_Plugin
     /**
      * Render metabox content
      */
+    /**
+     * Render metabox content
+     */
     public function render_floor_template_metabox($post)
     {
         // Add nonce for security
         wp_nonce_field('floor_template_metabox', 'floor_template_metabox_nonce');
 
-        // Get saved value
+        // Get saved values
         $use_floor_template = get_post_meta($post->ID, '_use_floor_template', true);
         $floor_number = get_post_meta($post->ID, '_floor_number', true);
+
+        // Get style field values
+        $background_youtube_url = get_post_meta($post->ID, '_background_youtube_url', true);
+        $title_color = get_post_meta($post->ID, '_title_color', true);
+        $title_bg_color = get_post_meta($post->ID, '_title_background_color', true);
+        $content_color = get_post_meta($post->ID, '_content_color', true);
+        $content_bg_color = get_post_meta($post->ID, '_content_background_color', true);
+        $floor_number_color = get_post_meta($post->ID, '_floor_number_color', true);
 
         ?>
         <p>
@@ -98,9 +116,55 @@ class Spiral_Tower_Plugin
             <input type="number" id="floor_number" name="floor_number" value="<?php echo esc_attr($floor_number); ?>" min="1"
                 style="width:100%;" />
         </p>
+
+        <!-- Style Fields -->
+        <p>
+            <label for="background_youtube_url">Background YouTube URL:</label><br>
+            <input type="text" id="background_youtube_url" name="background_youtube_url"
+                value="<?php echo esc_attr($background_youtube_url); ?>" style="width:100%;" />
+        </p>
+        <p>
+            <label for="background_youtube_url">Background YouTube URL:</label><br>
+            <input type="text" id="background_youtube_url" name="background_youtube_url"
+                value="<?php echo esc_attr($background_youtube_url); ?>" style="width:100%;" />
+        </p>
+        <p>
+            <label>
+                <input type="checkbox" name="youtube_audio_only" value="1" <?php checked(get_post_meta($post->ID, '_youtube_audio_only', true), '1'); ?> />
+                Audio only
+            </label>
+        </p>
+        <p>
+            <label for="title_color">Title Color:</label><br>
+            <input type="text" id="title_color" name="title_color" value="<?php echo esc_attr($title_color); ?>"
+                style="width:100%;" />
+        </p>
+        <p>
+            <label for="title_background_color">Title Background Color:</label><br>
+            <input type="text" id="title_background_color" name="title_background_color"
+                value="<?php echo esc_attr($title_bg_color); ?>" style="width:100%;" />
+        </p>
+        <p>
+            <label for="content_color">Content Color:</label><br>
+            <input type="text" id="content_color" name="content_color" value="<?php echo esc_attr($content_color); ?>"
+                style="width:100%;" />
+        </p>
+        <p>
+            <label for="content_background_color">Content Background Color:</label><br>
+            <input type="text" id="content_background_color" name="content_background_color"
+                value="<?php echo esc_attr($content_bg_color); ?>" style="width:100%;" />
+        </p>
+        <p>
+            <label for="floor_number_color">Floor Number Color:</label><br>
+            <input type="text" id="floor_number_color" name="floor_number_color"
+                value="<?php echo esc_attr($floor_number_color); ?>" style="width:100%;" />
+        </p>
         <?php
     }
 
+    /**
+     * Save metabox data
+     */
     /**
      * Save metabox data
      */
@@ -122,8 +186,24 @@ class Spiral_Tower_Plugin
 
         // Save floor number if provided
         if (isset($_POST['floor_number'])) {
-            $floor_number = sanitize_text_field($_POST['floor_number']);
-            update_post_meta($post_id, '_floor_number', $floor_number);
+            update_post_meta($post_id, '_floor_number', sanitize_text_field($_POST['floor_number']));
+        }
+
+        // Save style fields
+        $fields = array(
+            'background_youtube_url',
+            'title_color',
+            'title_background_color',
+            'content_color',
+            'content_background_color',
+            'floor_number_color',
+            'youtube_audio_only',
+        );
+
+        foreach ($fields as $field) {
+            if (isset($_POST[$field])) {
+                update_post_meta($post_id, '_' . $field, sanitize_text_field($_POST[$field]));
+            }
         }
     }
 
@@ -179,6 +259,7 @@ class Spiral_Tower_Plugin
         return $template;
     }
 
+
     /**
      * Enqueue styles for floor template
      */
@@ -218,7 +299,7 @@ class Spiral_Tower_Plugin
             // Add Google Fonts
             wp_enqueue_style(
                 'spiral-tower-google-fonts',
-                'https://fonts.googleapis.com/css2?family=Metamorphous&family=Winky+Sans:ital,wght@0,300..900;1,300..900&display=swap',
+                'https://fonts.googleapis.com/css2?family=Bilbo&family=Metamorphous&family=Winky+Sans:ital,wght@0,300..900;1,300..900&display=swap',
                 array(),
                 null
             );
@@ -229,6 +310,24 @@ class Spiral_Tower_Plugin
                 plugin_dir_url(__FILE__) . 'dist/css/floor-template.css',
                 array('spiral-tower-google-fonts'),
                 '1.0.0'
+            );
+
+            // Add the color extractor script
+            wp_enqueue_script(
+                'spiral-tower-color-extractor',
+                plugin_dir_url(__FILE__) . 'assets/js/color-extractor.js',
+                array(),  // No dependencies needed
+                '1.0.0',
+                true     // Load in footer
+            );
+
+            // Add the color extractor script
+            wp_enqueue_script(
+                'spiral-tower-misc-useful-stuff',
+                plugin_dir_url(__FILE__) . 'assets/js/misc-useful-stuff.js',
+                array(),  // No dependencies needed
+                '1.0.0',
+                true     // Load in footer
             );
         }
     }

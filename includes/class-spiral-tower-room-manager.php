@@ -24,10 +24,10 @@ class Spiral_Tower_Room_Manager
         // Admin UI customizations
         add_filter('manage_room_posts_columns', array($this, 'add_room_columns'));
         add_action('manage_room_posts_custom_column', array($this, 'display_room_columns'), 10, 2);
-        
+
         // Create entrance room when a floor is created
         add_action('save_post_floor', array($this, 'create_entrance_room'), 10, 3);
-        
+
         // Floor author specific features for rooms
         add_filter('user_has_cap', array($this, 'restrict_room_editing'), 10, 3);
         add_action('pre_get_posts', array($this, 'filter_rooms_for_authors'));
@@ -72,18 +72,18 @@ class Spiral_Tower_Room_Manager
         );
 
         register_post_type('room', $args);
-        
+
         // Add room capabilities to floor_author role
         $this->add_room_capabilities_to_floor_author();
     }
-    
+
     /**
      * Add room capabilities to floor_author role
      */
     private function add_room_capabilities_to_floor_author()
     {
         $role = get_role('floor_author');
-        
+
         if ($role) {
             // Room management capabilities
             $role->add_cap('edit_room', true);
@@ -91,7 +91,7 @@ class Spiral_Tower_Room_Manager
             $role->add_cap('edit_published_rooms', true);
             $role->add_cap('read_room', true);
             $role->add_cap('read_private_rooms', true);
-            
+
             // Restrict capabilities
             $role->add_cap('edit_others_rooms', false);
             $role->add_cap('delete_room', false);
@@ -99,7 +99,7 @@ class Spiral_Tower_Room_Manager
             $role->add_cap('delete_published_rooms', false);
             $role->add_cap('delete_others_rooms', false);
             $role->add_cap('publish_rooms', false);
-            
+
             // Allow floor authors to create rooms (unlike floors)
             $role->add_cap('create_rooms', true);
         }
@@ -113,12 +113,12 @@ class Spiral_Tower_Room_Manager
         add_meta_box(
             'room_floor_meta_box',
             'Room Floor',
-            array($this, 'display_room_floor_meta_box'),
+            array($this, 'display_room_meta_box'),
             'room',
             'side',
             'high'
         );
-        
+
         add_meta_box(
             'room_type_meta_box',
             'Room Type',
@@ -132,18 +132,26 @@ class Spiral_Tower_Room_Manager
     /**
      * Display Room Floor Meta Box
      */
-    public function display_room_floor_meta_box($post)
+    public function display_room_meta_box($post)
     {
         // Add nonce for security
         wp_nonce_field('room_floor_nonce_action', 'room_floor_nonce');
 
         // Get the current floor ID value
         $floor_id = get_post_meta($post->ID, '_room_floor_id', true);
-        
+
+        // Get the style field values
+        $background_youtube_url = get_post_meta($post->ID, '_background_youtube_url', true);
+        $youtube_audio_only = get_post_meta($post->ID, '_youtube_audio_only', true) === '1';
+        $title_color = get_post_meta($post->ID, '_title_color', true);
+        $title_bg_color = get_post_meta($post->ID, '_title_background_color', true);
+        $content_color = get_post_meta($post->ID, '_content_color', true);
+        $content_bg_color = get_post_meta($post->ID, '_content_background_color', true);
+
         // Get current user
         $user = wp_get_current_user();
         $is_floor_author = in_array('floor_author', (array) $user->roles);
-        
+
         // If floor author, only show their floors; otherwise show all floors
         $args = array(
             'post_type' => 'floor',
@@ -152,13 +160,13 @@ class Spiral_Tower_Room_Manager
             'meta_key' => '_floor_number',
             'order' => 'ASC'
         );
-        
+
         if ($is_floor_author) {
             $args['author'] = $user->ID;
         }
-        
+
         $floors = get_posts($args);
-        
+
         if (empty($floors)) {
             echo '<p>No floors available. ';
             if ($is_floor_author) {
@@ -169,7 +177,7 @@ class Spiral_Tower_Room_Manager
             echo '</p>';
             return;
         }
-        
+
         echo '<label for="room_floor_id">Select Floor:</label>';
         echo '<select id="room_floor_id" name="room_floor_id" style="width:100%">';
         foreach ($floors as $floor) {
@@ -179,6 +187,40 @@ class Spiral_Tower_Room_Manager
             echo '</option>';
         }
         echo '</select>';
+
+        // Added style fields
+        echo '<p>';
+        echo '<label for="background_youtube_url">Background YouTube URL:</label>';
+        echo '<input type="text" id="background_youtube_url" name="background_youtube_url" value="' . esc_attr($background_youtube_url) . '" style="width:100%">';
+        echo '</p>';
+
+        // Add YouTube audio controls
+        echo '<p>';
+        echo '<label>';
+        echo '<input type="checkbox" name="youtube_audio_only" value="1" ' . checked($youtube_audio_only, true, false) . ' /> ';
+        echo 'Audio only';
+        echo '</label>';
+        echo '</p>';
+
+        echo '<p>';
+        echo '<label for="title_color">Title Color:</label>';
+        echo '<input type="text" id="title_color" name="title_color" value="' . esc_attr($title_color) . '" style="width:100%">';
+        echo '</p>';
+
+        echo '<p>';
+        echo '<label for="title_background_color">Title Background Color:</label>';
+        echo '<input type="text" id="title_background_color" name="title_background_color" value="' . esc_attr($title_bg_color) . '" style="width:100%">';
+        echo '</p>';
+
+        echo '<p>';
+        echo '<label for="content_color">Content Color:</label>';
+        echo '<input type="text" id="content_color" name="content_color" value="' . esc_attr($content_color) . '" style="width:100%">';
+        echo '</p>';
+
+        echo '<p>';
+        echo '<label for="content_background_color">Content Background Color:</label>';
+        echo '<input type="text" id="content_background_color" name="content_background_color" value="' . esc_attr($content_bg_color) . '" style="width:100%">';
+        echo '</p>';
     }
 
     /**
@@ -194,7 +236,7 @@ class Spiral_Tower_Room_Manager
         if (empty($room_type)) {
             $room_type = 'normal'; // Default type
         }
-        
+
         // Room types
         $types = array(
             'entrance' => 'Entrance (Default room for the floor)',
@@ -203,7 +245,7 @@ class Spiral_Tower_Room_Manager
             'treasure' => 'Treasure Room',
             'secret' => 'Secret Room'
         );
-        
+
         echo '<div style="margin-bottom:10px;">';
         foreach ($types as $type => $label) {
             echo '<div style="margin-bottom:5px;">';
@@ -212,7 +254,7 @@ class Spiral_Tower_Room_Manager
             echo '</div>';
         }
         echo '</div>';
-        
+
         // Display a note about entrance rooms
         echo '<p class="description">Note: Only one entrance room is allowed per floor. Creating a new entrance will replace the old one.</p>';
     }
@@ -226,31 +268,55 @@ class Spiral_Tower_Room_Manager
         if (get_post_type($post_id) !== 'room') {
             return;
         }
-        
+
         // Save Floor ID
         if (isset($_POST['room_floor_nonce']) && wp_verify_nonce($_POST['room_floor_nonce'], 'room_floor_nonce_action')) {
             if (isset($_POST['room_floor_id'])) {
                 update_post_meta($post_id, '_room_floor_id', sanitize_text_field($_POST['room_floor_id']));
             }
+
+            // Save the style fields
+            if (isset($_POST['background_youtube_url'])) {
+                update_post_meta($post_id, '_background_youtube_url', sanitize_text_field($_POST['background_youtube_url']));
+            }
+
+            // Save YouTube audio settings
+            update_post_meta($post_id, '_youtube_audio_only', isset($_POST['youtube_audio_only']) ? '1' : '0');
+
+            if (isset($_POST['title_color'])) {
+                update_post_meta($post_id, '_title_color', sanitize_text_field($_POST['title_color']));
+            }
+
+            if (isset($_POST['title_background_color'])) {
+                update_post_meta($post_id, '_title_background_color', sanitize_text_field($_POST['title_background_color']));
+            }
+
+            if (isset($_POST['content_color'])) {
+                update_post_meta($post_id, '_content_color', sanitize_text_field($_POST['content_color']));
+            }
+
+            if (isset($_POST['content_background_color'])) {
+                update_post_meta($post_id, '_content_background_color', sanitize_text_field($_POST['content_background_color']));
+            }
         }
-        
+
         // Save Room Type
         if (isset($_POST['room_type_nonce']) && wp_verify_nonce($_POST['room_type_nonce'], 'room_type_nonce_action')) {
             if (isset($_POST['room_type'])) {
                 $room_type = sanitize_text_field($_POST['room_type']);
                 $old_type = get_post_meta($post_id, '_room_type', true);
                 $floor_id = isset($_POST['room_floor_id']) ? sanitize_text_field($_POST['room_floor_id']) : get_post_meta($post_id, '_room_floor_id', true);
-                
+
                 // If changing to entrance type, handle the logic
                 if ($room_type === 'entrance' && $old_type !== 'entrance' && !empty($floor_id)) {
                     $this->handle_entrance_room_change($post_id, $floor_id);
                 }
-                
+
                 update_post_meta($post_id, '_room_type', $room_type);
             }
         }
     }
-    
+
     /**
      * Handle changing a room to an entrance room
      */
@@ -275,13 +341,13 @@ class Spiral_Tower_Room_Manager
                 )
             )
         ));
-        
+
         // Change any existing entrance rooms to normal rooms
         foreach ($existing_entrances as $entrance) {
             update_post_meta($entrance->ID, '_room_type', 'normal');
         }
     }
-    
+
     /**
      * Add Room Meta to REST API
      */
@@ -299,7 +365,7 @@ class Spiral_Tower_Room_Manager
                 'type' => 'integer',
             ]
         ]);
-        
+
         register_rest_field('room', 'room_type', [
             'get_callback' => function ($post) {
                 return get_post_meta($post['id'], '_room_type', true);
@@ -350,14 +416,14 @@ class Spiral_Tower_Room_Manager
                     echo 'No floor assigned';
                 }
                 break;
-                
+
             case 'room_type':
                 $room_type = get_post_meta($post_id, '_room_type', true);
                 echo esc_html(ucfirst($room_type ?: 'Normal'));
                 break;
         }
     }
-    
+
     /**
      * Create entrance room when a new floor is created
      */
@@ -367,7 +433,7 @@ class Spiral_Tower_Room_Manager
         if ($update) {
             return;
         }
-        
+
         // Check if this floor already has an entrance room
         $existing_entrances = get_posts(array(
             'post_type' => 'room',
@@ -386,34 +452,34 @@ class Spiral_Tower_Room_Manager
                 )
             )
         ));
-        
+
         // If an entrance room already exists, don't create another one
         if (!empty($existing_entrances)) {
             return;
         }
-        
+
         // Get floor number for reference
         $floor_number = get_post_meta($post_id, '_floor_number', true);
-        
+
         // Create the entrance room
         $entrance_room = array(
-            'post_title'    => 'Entrance to Floor ' . $floor_number,
-            'post_content'  => 'This is the entrance room for Floor ' . $floor_number . '.',
-            'post_status'   => 'publish',
-            'post_type'     => 'room',
-            'post_author'   => $post->post_author,
+            'post_title' => 'Entrance to Floor ' . $floor_number,
+            'post_content' => 'This is the entrance room for Floor ' . $floor_number . '.',
+            'post_status' => 'publish',
+            'post_type' => 'room',
+            'post_author' => $post->post_author,
         );
-        
+
         // Insert the post and get the ID
         $room_id = wp_insert_post($entrance_room);
-        
+
         // Set room meta data
         if ($room_id && !is_wp_error($room_id)) {
             update_post_meta($room_id, '_room_floor_id', $post_id);
             update_post_meta($room_id, '_room_type', 'entrance');
         }
     }
-    
+
     /**
      * Only allow floor authors to edit rooms on their floors
      */
@@ -443,23 +509,23 @@ class Spiral_Tower_Room_Manager
 
         // Get current user
         $user = get_user_by('id', $user_id);
-        
+
         // If not a floor author, return normal capabilities
         if (!$user || !in_array('floor_author', (array) $user->roles)) {
             return $allcaps;
         }
-        
+
         // Get the floor ID for this room
         $floor_id = get_post_meta($post_id, '_room_floor_id', true);
-        
+
         if (!$floor_id) {
             // If no floor assigned, return normal capabilities
             return $allcaps;
         }
-        
+
         // Get the floor
         $floor = get_post($floor_id);
-        
+
         // Check if user is the floor author
         if ($floor && $floor->post_author == $user_id) {
             // User is the floor author, grant room editing capabilities
@@ -477,7 +543,7 @@ class Spiral_Tower_Room_Manager
 
         return $allcaps;
     }
-    
+
     /**
      * Make sure floor authors can only view rooms on their floors in admin
      */
@@ -505,13 +571,13 @@ class Spiral_Tower_Room_Manager
             'posts_per_page' => -1,
             'fields' => 'ids'
         ));
-        
+
         if (empty($floors)) {
             // If author has no floors, show no rooms
             $query->set('post__in', array(0)); // This ensures no posts are returned
             return;
         }
-        
+
         // Modify query to only show rooms on this author's floors
         $query->set('meta_query', array(
             array(

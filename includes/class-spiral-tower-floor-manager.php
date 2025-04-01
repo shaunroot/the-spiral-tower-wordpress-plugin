@@ -19,7 +19,7 @@ class Spiral_Tower_Floor_Manager
         add_action('add_meta_boxes', array($this, 'add_floor_number_meta_box'));
 
         // Save post meta
-        add_action('save_post', array($this, 'save_floor_number'));
+        add_action('save_post', array($this, 'save_floor_meta'));
 
         // Add REST API support
         add_action('rest_api_init', array($this, 'add_floor_number_to_rest_api'));
@@ -255,51 +255,121 @@ class Spiral_Tower_Floor_Manager
         );
     }
 
-    /**
-     * Display Floor Number Meta Box
-     */
     public function display_floor_number_meta_box($post)
     {
         // Add nonce for security
         wp_nonce_field('floor_number_nonce_action', 'floor_number_nonce');
-
-        // Get the current value
+    
+        // Get the current values
         $floor_number = get_post_meta($post->ID, '_floor_number', true);
-
+        $background_youtube_url = get_post_meta($post->ID, '_background_youtube_url', true);
+        $youtube_audio_only = get_post_meta($post->ID, '_youtube_audio_only', true) === '1';
+        $title_color = get_post_meta($post->ID, '_title_color', true);
+        $title_bg_color = get_post_meta($post->ID, '_title_background_color', true);
+        $content_color = get_post_meta($post->ID, '_content_color', true);
+        $content_bg_color = get_post_meta($post->ID, '_content_background_color', true);
+        $floor_number_color = get_post_meta($post->ID, '_floor_number_color', true);
+    
+        echo '<p>';
         echo '<label for="floor_number">Floor Number:</label>';
         echo '<input type="number" id="floor_number" name="floor_number" value="' . esc_attr($floor_number) . '" style="width:100%">';
+        echo '</p>';
+    
+        echo '<p>';
+        echo '<label for="background_youtube_url">Background YouTube URL:</label>';
+        echo '<input type="text" id="background_youtube_url" name="background_youtube_url" value="' . esc_attr($background_youtube_url) . '" style="width:100%">';
+        echo '</p>';
+        
+        // Add YouTube audio controls       
+        echo '<p>';
+        echo '<label>';
+        echo '<input type="checkbox" name="youtube_audio_only" value="1" ' . checked($youtube_audio_only, true, false) . ' /> ';
+        echo 'Audio only';
+        echo '</label>';
+        echo '</p>';
+        
+        echo '<p>';
+        echo '<label for="title_color">Title Color:</label>';
+        echo '<input type="text" id="title_color" name="title_color" value="' . esc_attr($title_color) . '" style="width:100%">';
+        echo '</p>';
+    
+        echo '<p>';
+        echo '<label for="title_background_color">Title Background Color:</label>';
+        echo '<input type="text" id="title_background_color" name="title_background_color" value="' . esc_attr($title_bg_color) . '" style="width:100%">';
+        echo '</p>';
+    
+        echo '<p>';
+        echo '<label for="content_color">Content Color:</label>';
+        echo '<input type="text" id="content_color" name="content_color" value="' . esc_attr($content_color) . '" style="width:100%">';
+        echo '</p>';
+    
+        echo '<p>';
+        echo '<label for="content_background_color">Content Background Color:</label>';
+        echo '<input type="text" id="content_background_color" name="content_background_color" value="' . esc_attr($content_bg_color) . '" style="width:100%">';
+        echo '</p>';
+    
+        echo '<p>';
+        echo '<label for="floor_number_color">Floor Number Color:</label>';
+        echo '<input type="text" id="floor_number_color" name="floor_number_color" value="' . esc_attr($floor_number_color) . '" style="width:100%">';
+        echo '</p>';
     }
 
-    /**
-     * Save Floor Number
-     */
-    public function save_floor_number($post_id)
+
+    public function save_floor_meta($post_id)
     {
         // Check if nonce is set
         if (!isset($_POST['floor_number_nonce'])) {
             return;
         }
-
+    
         // Verify nonce
         if (!wp_verify_nonce($_POST['floor_number_nonce'], 'floor_number_nonce_action')) {
             return;
         }
-
+    
         // Check if this is an autosave
         if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
             return;
         }
-
+    
         // Check user permissions
         if (isset($_POST['post_type']) && 'floor' == $_POST['post_type']) {
             if (!current_user_can('edit_post', $post_id)) {
                 return;
             }
         }
-
+    
         // Save floor number if it's set
         if (isset($_POST['floor_number'])) {
             update_post_meta($post_id, '_floor_number', sanitize_text_field($_POST['floor_number']));
+        }
+        
+        // Save the style fields
+        if (isset($_POST['background_youtube_url'])) {
+            update_post_meta($post_id, '_background_youtube_url', sanitize_text_field($_POST['background_youtube_url']));
+        }
+        
+        // Save YouTube audio settings
+        update_post_meta($post_id, '_youtube_audio_only', isset($_POST['youtube_audio_only']) ? '1' : '0');
+    
+        if (isset($_POST['title_color'])) {
+            update_post_meta($post_id, '_title_color', sanitize_text_field($_POST['title_color']));
+        }
+    
+        if (isset($_POST['title_background_color'])) {
+            update_post_meta($post_id, '_title_background_color', sanitize_text_field($_POST['title_background_color']));
+        }
+    
+        if (isset($_POST['content_color'])) {
+            update_post_meta($post_id, '_content_color', sanitize_text_field($_POST['content_color']));
+        }
+    
+        if (isset($_POST['content_background_color'])) {
+            update_post_meta($post_id, '_content_background_color', sanitize_text_field($_POST['content_background_color']));
+        }
+    
+        if (isset($_POST['floor_number_color'])) {
+            update_post_meta($post_id, '_floor_number_color', sanitize_text_field($_POST['floor_number_color']));
         }
     }
 
@@ -667,3 +737,4 @@ class Spiral_Tower_Floor_Manager
         }
     }
 }
+

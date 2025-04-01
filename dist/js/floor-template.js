@@ -1,25 +1,28 @@
 /******/ (() => { // webpackBootstrap
-/******/ 	var __webpack_modules__ = ({
-
-/***/ "./src/scss/floor-template.scss":
+/******/ 	"use strict";
+/******/ 	// The require scope
+/******/ 	var __webpack_require__ = {};
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
 /*!**************************************!*\
   !*** ./src/scss/floor-template.scss ***!
   \**************************************/
-/***/ (() => {
+__webpack_require__.r(__webpack_exports__);
+// extracted by mini-css-extract-plugin
 
-throw new Error("Module build failed (from ./node_modules/mini-css-extract-plugin/dist/loader.js):\nHookWebpackError: Module build failed (from ./node_modules/sass-loader/dist/cjs.js):\nexpected \"{\".\n   ╷\n17 │ if (!defined('WPINC')) {\r\n   │     ^\n   ╵\n  src\\scss\\floor-template.scss 17:5  root stylesheet\n    at tryRunOrWebpackError (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\webpack\\lib\\HookWebpackError.js:86:9)\n    at __webpack_require_module__ (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\webpack\\lib\\Compilation.js:5301:12)\n    at __webpack_require__ (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\webpack\\lib\\Compilation.js:5258:18)\n    at M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\webpack\\lib\\Compilation.js:5330:20\n    at symbolIterator (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\neo-async\\async.js:3485:9)\n    at done (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\neo-async\\async.js:3527:9)\n    at Hook.eval [as callAsync] (eval at create (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\tapable\\lib\\HookCodeFactory.js:33:10), <anonymous>:15:1)\n    at Hook.CALL_ASYNC_DELEGATE [as _callAsync] (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\tapable\\lib\\Hook.js:18:14)\n    at M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\webpack\\lib\\Compilation.js:5236:43\n    at symbolIterator (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\neo-async\\async.js:3482:9)\n-- inner error --\nError: Module build failed (from ./node_modules/sass-loader/dist/cjs.js):\nexpected \"{\".\n   ╷\n17 │ if (!defined('WPINC')) {\r\n   │     ^\n   ╵\n  src\\scss\\floor-template.scss 17:5  root stylesheet\n    at Object.<anonymous> (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\css-loader\\dist\\cjs.js!M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\postcss-loader\\dist\\cjs.js??ruleSet[1].rules[0].use[2]!M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\sass-loader\\dist\\cjs.js!M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\src\\scss\\floor-template.scss:1:7)\n    at M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\webpack\\lib\\javascript\\JavascriptModulesPlugin.js:494:10\n    at Hook.eval [as call] (eval at create (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\tapable\\lib\\HookCodeFactory.js:19:10), <anonymous>:7:1)\n    at Hook.CALL_DELEGATE [as _call] (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\tapable\\lib\\Hook.js:14:14)\n    at M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\webpack\\lib\\Compilation.js:5303:39\n    at tryRunOrWebpackError (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\webpack\\lib\\HookWebpackError.js:81:7)\n    at __webpack_require_module__ (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\webpack\\lib\\Compilation.js:5301:12)\n    at __webpack_require__ (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\webpack\\lib\\Compilation.js:5258:18)\n    at M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\webpack\\lib\\Compilation.js:5330:20\n    at symbolIterator (M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\neo-async\\async.js:3485:9)\n\nGenerated code for M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\css-loader\\dist\\cjs.js!M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\postcss-loader\\dist\\cjs.js??ruleSet[1].rules[0].use[2]!M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\node_modules\\sass-loader\\dist\\cjs.js!M:\\[ Code ]\\www\\shaunroot.net\\wp-content\\plugins\\the-spiral-tower\\src\\scss\\floor-template.scss\n1 | throw new Error(\"Module build failed (from ./node_modules/sass-loader/dist/cjs.js):\\nexpected \\\"{\\\".\\n   ╷\\n17 │ if (!defined('WPINC')) {\\r\\n   │     ^\\n   ╵\\n  src\\\\scss\\\\floor-template.scss 17:5  root stylesheet\");");
-
-/***/ })
-
-/******/ 	});
-/************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module doesn't tell about it's top-level declarations so it can't be inlined
-/******/ 	var __webpack_exports__ = {};
-/******/ 	__webpack_modules__["./src/scss/floor-template.scss"]();
-/******/ 	
 /******/ })()
 ;
 //# sourceMappingURL=floor-template.js.map

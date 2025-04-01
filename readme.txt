@@ -268,3 +268,21 @@ After changing the variables, run `npm start` or `npm run build` to recompile th
 ## License
 
 This plugin is licensed under the GPL v2 or later.
+
+
+
+
+
+spiral-tower/
+├── includes/
+│   ├── class-spiral-tower-floor-manager.php
+│   └── class-spiral-tower-room-manager.php
+├── templates/
+│   └── single-floor.php
+├── dist/
+│   └── css/
+│       └── floor-template.css
+├── assets/              (new folder)
+│   └── js/              (new folder)
+│       └── color-extractor.js    (new file)
+└── spiral-tower.php
