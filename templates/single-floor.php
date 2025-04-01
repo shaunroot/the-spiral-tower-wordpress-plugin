@@ -82,9 +82,9 @@ $youtube_audio_only = get_post_meta(get_the_ID(), '_youtube_audio_only', true) =
         </div>
 
         <?php
-        // Add hook for portals display
-        do_action('spiral_tower_after_floor_content', get_the_ID());
-        ?>
+            // Add hook for portals display
+            do_action('spiral_tower_after_floor_content', get_the_ID());
+            ?>
 
     </div>
 

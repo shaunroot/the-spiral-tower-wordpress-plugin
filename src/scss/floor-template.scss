@@ -396,6 +396,60 @@ body {
 /* --------------------------------------------------------
  * 10. Portals
  * -------------------------------------------------------- */
+
+.spiral-tower-portals-section {
+    margin-top: 30px;
+    padding: 20px;
+}
+
+.spiral-tower-portals-section h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-family: 'Metamorphous', serif;
+    font-size: 1.6rem;
+}
+
+.spiral-tower-portals-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.spiral-tower-portal-item {
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.spiral-tower-portal-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.spiral-tower-portal-item h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-family: 'Metamorphous', serif;
+    font-size: 1.2rem;
+}
+
+.spiral-tower-portal-details {
+    font-family: 'Winky Sans', sans-serif;
+    font-size: 0.9rem;
+}
+
+.spiral-tower-portal-details a {
+    color: inherit;
+    text-decoration: underline;
+    transition: all 0.2s ease;
+}
+
+.spiral-tower-portal-details a:hover {
+    opacity: 0.8;
+}
+
 /* Portal styles for the Spiral Tower */
 
 .spiral-tower-portals-wrapper {
@@ -518,7 +572,7 @@ body {
 .portal-invisible {
     border: 2px dashed rgba(255, 255, 255, 0.3);
     background: rgba(255, 255, 255, 0.1);
-    /* Removed fading animation */
+    animation: portal-fade 4s infinite alternate;
 }
 
 .portal-custom img {
@@ -601,7 +655,14 @@ body {
     }
 }
 
-/* Removed portal-fade animation */
+@keyframes portal-fade {
+    0%, 100% {
+        opacity: 0.3;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
