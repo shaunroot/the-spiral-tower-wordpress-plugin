@@ -17,20 +17,20 @@ $content_color = get_post_meta($post_id, '_content_color', true);
 $content_bg_color = get_post_meta($post_id, '_content_background_color', true);
 
 // Apply default styles if not set
-if (empty($title_color)) $title_color = '#ffffff';
-if (empty($title_bg_color)) $title_bg_color = 'rgba(0,0,0,0.7)';
-if (empty($content_color)) $content_color = '#ffffff';
-if (empty($content_bg_color)) $content_bg_color = 'rgba(0,0,0,0.5)';
+if (empty($title_color))
+    $title_color = '#ffffff';
+if (empty($title_bg_color))
+    $title_bg_color = 'rgba(0,0,0,0.7)';
+if (empty($content_color))
+    $content_color = '#ffffff';
+if (empty($content_bg_color))
+    $content_bg_color = 'rgba(0,0,0,0.5)';
 
 ?>
 <div class="spiral-tower-portals-wrapper">
-    <div class="spiral-tower-portals-title" style="color: <?php echo esc_attr($title_color); ?>; background-color: <?php echo esc_attr($title_bg_color); ?>;">
-        <h2>Portals</h2>
-    </div>
-    
-    <div class="spiral-tower-portals-content" style="color: <?php echo esc_attr($content_color); ?>; background-color: <?php echo esc_attr($content_bg_color); ?>;">
+    <div class="spiral-tower-portals-content">
         <div class="spiral-tower-portals-grid">
-            <?php foreach ($portals as $portal): 
+            <?php foreach ($portals as $portal):
                 $portal_type = get_post_meta($portal->ID, '_portal_type', true);
                 $portal_position_x = get_post_meta($portal->ID, '_position_x', true);
                 $portal_position_y = get_post_meta($portal->ID, '_position_y', true);
@@ -39,18 +39,18 @@ if (empty($content_bg_color)) $content_bg_color = 'rgba(0,0,0,0.5)';
                 $destination_floor_id = get_post_meta($portal->ID, '_destination_floor_id', true);
                 $destination_room_id = get_post_meta($portal->ID, '_destination_room_id', true);
                 $custom_image = '';
-                
+
                 if ($portal_type === 'custom') {
                     $custom_image_id = get_post_meta($portal->ID, '_custom_image', true);
                     if ($custom_image_id) {
                         $custom_image = wp_get_attachment_image_url($custom_image_id, 'medium');
                     }
                 }
-                
+
                 // Get destination title and URL
                 $destination_title = '';
                 $destination_url = '';
-                
+
                 if ($destination_type === 'floor' && !empty($destination_floor_id)) {
                     $floor = get_post($destination_floor_id);
                     if ($floor) {
@@ -65,18 +65,21 @@ if (empty($content_bg_color)) $content_bg_color = 'rgba(0,0,0,0.5)';
                         $destination_url = get_permalink($room->ID);
                     }
                 }
-                
+
                 // Skip portals with invalid destinations
                 if (empty($destination_title) || empty($destination_url)) {
                     continue;
                 }
-                
+
                 // Format portal type for display
                 $portal_type_display = ucfirst($portal_type);
-                
+
                 // Get portal icon/image based on type
                 $portal_icon = '';
                 switch ($portal_type) {
+                    case 'text':
+                        $portal_icon = '<div class="portal-icon portal-gateway">' . esc_html($destination_title) . '</div>';
+                        break;
                     case 'gateway':
                         $portal_icon = '<div class="portal-icon portal-gateway"></div>';
                         break;
@@ -97,20 +100,27 @@ if (empty($content_bg_color)) $content_bg_color = 'rgba(0,0,0,0.5)';
                         }
                         break;
                 }
-            ?>
-            <div class="spiral-tower-portal-card">
-                <?php echo $portal_icon; ?>
-                <div class="spiral-tower-portal-info">
-                    <h3 class="spiral-tower-portal-title"><?php echo esc_html($portal->post_title); ?></h3>
-                    <div class="spiral-tower-portal-type"><?php echo esc_html($portal_type_display); ?></div>
-                    <div class="spiral-tower-portal-destination">
-                        <span>Leads to:</span>
-                        <a href="<?php echo esc_url($destination_url); ?>" class="spiral-tower-portal-link">
-                            <?php echo esc_html($destination_title); ?>
-                        </a>
+                ?>
+
+                <a href="<?php echo esc_url($destination_url); ?>" class="spiral-tower-portal-link floor-transition-link">
+                    <?php echo $portal_icon; ?>
+                </a>
+
+                <!-- <div class="spiral-tower-portal-card">
+                    <?php echo $portal_icon; ?>
+                    <div class="spiral-tower-portal-info">
+                        <h3 class="spiral-tower-portal-title"><?php echo esc_html($portal->post_title); ?></h3>
+                        <div class="spiral-tower-portal-type"><?php echo esc_html($portal_type_display); ?></div>
+                        <div class="spiral-tower-portal-destination">
+                            <span>Leads to:</span>
+                            <a href="<?php echo esc_url($destination_url); ?>"
+                                class="spiral-tower-portal-link floor-transition-link">
+                                <?php echo esc_html($destination_title); ?>
+                            </a>
+                        </div>
                     </div>
-                </div>
-            </div>
+                </div> -->
+
             <?php endforeach; ?>
         </div>
     </div>

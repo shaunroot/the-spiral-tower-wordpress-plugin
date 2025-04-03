@@ -4,6 +4,8 @@
  * Now with dynamic color support based on background image or custom colors
  */
 
+ @use 'portal';
+
 :root {
     // Default colors (fallbacks)
     --background-color: #000;
@@ -58,7 +60,7 @@ body.floor-fullscreen {
    * -------------------------------------------------------- */
 /* Core hiding strategy */
 body * {
-    display: none !important;
+    // display: none !important;
 }
 
 /* Only show our specific elements */
@@ -71,7 +73,7 @@ body * {
 .spiral-tower-floor-title *,
 .spiral-tower-floor-content,
 .spiral-tower-floor-content * {
-    display: block !important;
+    display: block;
 }
 
 /* Specifically hide WordPress elements */
@@ -389,288 +391,20 @@ body {
   padding: 4px;  
 }
 
-
-
-
-
-/* --------------------------------------------------------
- * 10. Portals
- * -------------------------------------------------------- */
-
-.spiral-tower-portals-section {
-    margin-top: 30px;
-    padding: 20px;
+// Start invisible javascript will trigger fade in
+#youtube-background {
+    opacity: 0;
+    animation: youtube-fade-in 6s forwards;
 }
 
-.spiral-tower-portals-section h2 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-family: 'Metamorphous', serif;
-    font-size: 1.6rem;
-}
-
-.spiral-tower-portals-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-}
-
-.spiral-tower-portal-item {
-    padding: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    background-color: rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-}
-
-.spiral-tower-portal-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.spiral-tower-portal-item h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-family: 'Metamorphous', serif;
-    font-size: 1.2rem;
-}
-
-.spiral-tower-portal-details {
-    font-family: 'Winky Sans', sans-serif;
-    font-size: 0.9rem;
-}
-
-.spiral-tower-portal-details a {
-    color: inherit;
-    text-decoration: underline;
-    transition: all 0.2s ease;
-}
-
-.spiral-tower-portal-details a:hover {
-    opacity: 0.8;
-}
-
-/* Portal styles for the Spiral Tower */
-
-.spiral-tower-portals-wrapper {
-    margin-top: 40px;
-    font-family: 'Winky Sans', sans-serif;
-}
-
-.spiral-tower-portals-title {
-    padding: 15px 20px;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-}
-
-.spiral-tower-portals-title h2 {
-    margin: 0;
-    font-family: 'Metamorphous', serif;
-    font-size: 1.8rem;
-    letter-spacing: 1px;
-}
-
-.spiral-tower-portals-content {
-    padding: 25px;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
-}
-
-.spiral-tower-portals-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
-}
-
-.spiral-tower-portal-card {
-    display: flex;
-    padding: 15px;
-    border-radius: 8px;
-    background-color: rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.spiral-tower-portal-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.spiral-tower-portal-card:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
-}
-
-.portal-icon {
-    width: 60px;
-    height: 60px;
-    margin-right: 15px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-    position: relative;
-    overflow: hidden;
-}
-
-.portal-gateway {
-    background: radial-gradient(circle, rgba(55,145,255,1) 0%, rgba(0,30,120,1) 100%);
-}
-
-.portal-gateway:after {
-    content: '';
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 3px solid rgba(255, 255, 255, 0.7);
-    box-shadow: 0 0 10px rgba(55, 145, 255, 0.8);
-    animation: portal-pulse 2s infinite;
-}
-
-.portal-vortex {
-    background: radial-gradient(circle, rgba(143,0,255,1) 0%, rgba(60,0,120,1) 100%);
-}
-
-.portal-vortex:after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: conic-gradient(
-        rgba(143, 0, 255, 0),
-        rgba(143, 0, 255, 0.8),
-        rgba(143, 0, 255, 0)
-    );
-    animation: portal-spin 3s linear infinite;
-}
-
-.portal-door {
-    background: radial-gradient(circle, rgba(170,120,50,1) 0%, rgba(90,60,30,1) 100%);
-}
-
-.portal-door:after {
-    content: '';
-    position: absolute;
-    width: 30px;
-    height: 50px;
-    background-color: rgba(0, 0, 0, 0.6);
-    border: 2px solid rgba(200, 150, 80, 0.8);
-    border-radius: 3px;
-}
-
-.portal-invisible {
-    border: 2px dashed rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.1);
-    animation: portal-fade 4s infinite alternate;
-}
-
-.portal-custom img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-}
-
-.spiral-tower-portal-info {
-    flex-grow: 1;
-}
-
-.spiral-tower-portal-title {
-    margin: 0 0 5px 0;
-    font-family: 'Metamorphous', serif;
-    font-size: 1.3rem;
-}
-
-.spiral-tower-portal-type {
-    font-size: 0.9rem;
-    margin-bottom: 8px;
-    opacity: 0.8;
-}
-
-.spiral-tower-portal-destination {
-    font-size: 0.85rem;
-    line-height: 1.4;
-}
-
-.spiral-tower-portal-destination span {
-    display: block;
-    opacity: 0.7;
-    margin-bottom: 3px;
-}
-
-.spiral-tower-portal-link {
-    color: inherit;
-    text-decoration: none;
-    position: relative;
-    padding-bottom: 2px;
-}
-
-.spiral-tower-portal-link:after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 1px;
-    background-color: currentColor;
-    transition: width 0.3s ease;
-}
-
-.spiral-tower-portal-link:hover:after {
-    width: 100%;
-}
-
-@keyframes portal-pulse {
-    0% {
-        transform: scale(0.8);
-        opacity: 0.7;
+@keyframes youtube-fade-in {
+    0%, 50% {
+        opacity: 0;
     }
-    50% {
-        transform: scale(1);
+    51% {
+        opacity: 0;
+    }
+    100% {
         opacity: 1;
-    }
-    100% {
-        transform: scale(0.8);
-        opacity: 0.7;
-    }
-}
-
-@keyframes portal-spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes portal-fade {
-    0%, 100% {
-        opacity: 0.3;
-    }
-    50% {
-        opacity: 0.6;
-    }
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .spiral-tower-portals-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .spiral-tower-portals-title h2 {
-        font-size: 1.5rem;
     }
 }

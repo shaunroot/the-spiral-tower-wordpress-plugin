@@ -586,6 +586,6 @@ class Spiral_Tower_Portal_Manager
         }
         
         // Load the portals template
-        include plugin_dir_path(dirname(__FILE__)) . 'templates/portals.php';
+        include plugin_dir_path(dirname(__FILE__)) . 'templates/portal.php';
     }
 }

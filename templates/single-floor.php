@@ -39,11 +39,14 @@ $youtube_audio_only = get_post_meta(get_the_ID(), '_youtube_audio_only', true) =
     data-title-bg-color="<?php echo esc_attr($title_bg_color); ?>"
     data-content-color="<?php echo esc_attr($content_color); ?>"
     data-content-bg-color="<?php echo esc_attr($content_bg_color); ?>"
-    data-floor-number-color="<?php echo esc_attr($floor_number_color); ?>">
-
-    <!-- Always set the background image in audio-only mode or when there's no YouTube video -->
-    <div class="spiral-tower-floor-wrapper" <?php if ($featured_image && (empty($background_youtube_url) || $youtube_audio_only)): ?>style="--background-image: url('<?php echo esc_url($featured_image); ?>'); background-image: url('<?php echo esc_url($featured_image); ?>');"
-        <?php endif; ?>>
+    data-floor-number-color="<?php echo esc_attr($floor_number_color); ?>"
+    data-barba="wrapper">  
+    
+    <div class="spiral-tower-floor-wrapper"
+         data-barba="container" data-barba-namespace="floor-<?php echo get_the_ID(); ?>" 
+         <?php if ($featured_image && (empty($youtube_id) || $youtube_audio_only)): ?>
+            style="--background-image: url('<?php echo esc_url($featured_image); ?>'); background-image: url('<?php echo esc_url($featured_image); ?>');"
+         <?php endif; ?>>
 
 
 
