@@ -23,7 +23,7 @@ define('SPIRAL_TOWER_PLUGIN_URL', plugin_dir_url(__FILE__));
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-floor-manager.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-room-manager.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-portal-manager.php';
-
+require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/elevator.php';
 
 /**
  * Main Plugin Class
@@ -67,8 +67,8 @@ class Spiral_Tower_Plugin
 
         // Add metabox for pages to use floor template
         add_action('add_meta_boxes', array($this, 'add_floor_template_metabox'));
-        add_action('save_post', array($this, 'save_floor_template_meta'));
-    }
+        add_action('save_post', array($this, 'save_floor_template_meta'));   
+    } 
 
     /**
      * Add metabox to enable floor template for pages

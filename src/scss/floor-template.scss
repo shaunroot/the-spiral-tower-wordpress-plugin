@@ -1,10 +1,11 @@
 /**
  * Styles for the Floor Template
  * All styles are consolidated here for easy editing by users
- * Now with dynamic color support based on background image or custom colors
+ * Now with dynamic color support based on background image or custom colors ////
  */
 
  @use 'portal';
+ @use 'elevator';
 
 :root {
     // Default colors (fallbacks)
@@ -13,11 +14,11 @@
     --content-bg-color: rgba(35, 35, 35, 0.85);
     --title-text-color: #fff;
     --content-text-color: #e6e6e6;
-    --subtitle-color: #e90303;
+    --subtitle-color: #e90303; 
 
     --title-font: 'Metamorphous', serif;
     --body-font: 'Winky Sans', sans-serif;
-}
+} 
 
 // Variables - non-color styles remain the same
 $border-radius: 15px;
@@ -30,8 +31,8 @@ $margin-standard: 30px;
 $margin-large: 80px;
 
 /* --------------------------------------------------------
-   * 1. FULL VIEWPORT COVERAGE
-   * -------------------------------------------------------- */
+* 1. FULL VIEWPORT COVERAGE
+* -------------------------------------------------------- */
 html,
 html.floor-template-active,
 html.floor-fullscreen {
@@ -206,7 +207,7 @@ body {
         text-align: center;
     }
 }
-
+ 
 .spiral-tower-floor-number {
     font-size: 0.8em !important;
     margin-bottom: 6px !important;

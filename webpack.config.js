@@ -14,10 +14,12 @@ module.exports = (env, argv) => {
     output: {
       filename: 'js/[name].js', // We won't use this but webpack requires it
       path: path.resolve(__dirname, 'dist'),
+      publicPath: '/',
     },
     plugins: [
       new CleanWebpackPlugin({
         cleanStaleWebpackAssets: false, // Only clean on build, not on watch
+        cleanOnceBeforeBuildPatterns: ['**/*', '!images/**'],
       }),
       new MiniCssExtractPlugin({
         filename: 'css/[name].css',
@@ -29,7 +31,12 @@ module.exports = (env, argv) => {
           test: /\.scss$/,
           use: [
             MiniCssExtractPlugin.loader,
-            'css-loader',
+            {
+              loader: 'css-loader',
+              options: {
+                url: false, // This disables URL processing in CSS
+              },
+            },
             {
               loader: 'postcss-loader',
               options: {
@@ -40,7 +47,7 @@ module.exports = (env, argv) => {
                 },
               },
             },
-            'sass-loader',
+            'sass-loader', 
           ],
         },
       ],

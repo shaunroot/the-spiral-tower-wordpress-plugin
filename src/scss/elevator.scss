@@ -1,0 +1,225 @@
+/* * Elevator CSS Styles
+ * For the Spiral Tower Elevator
+ * Last Updated: 2025-04-04 
+ * Includes background-size adjustments for 2x structural images
+ * and split animated background using fixed divs.
+ */
+
+/* * Define the keyframes for background-position animations
+ */
+ @keyframes scrollBackgroundLeft {
+    from { background-position: 0 0; }
+    to   { background-position: -256px 0; } /* Scroll left */
+ }
+
+@keyframes scrollBackgroundRight {
+    from { background-position: 0 0; }
+    to   { background-position: 256px 0; } /* Scroll right */
+ }
+ 
+/* * Styles for the main body element and nested structure
+ */
+body.elevator-fullscreen {
+
+    /* Reset and base styles */
+    .elevator-template-active * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .elevator-template-active body, 
+    .elevator-template-active html {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #333333; /* Base color */
+    }
+
+    /* Container for the three columns */
+    .elevator-container {
+        display: flex;
+        min-height: 100vh; 
+        width: 1411px; /* Adjust if needed based on original image widths */
+        margin: 0 auto;
+        position: relative; /* Children positioned relative to this */
+    }
+
+    /* Left column */
+    .elevator-left {
+        width: 302px; /* Should match original_left_width if image filled it */
+        background-image: url('/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile left.jpg');
+        background-repeat: repeat-y;
+        /* --- Adjust Size for 2x Image --- */
+        /* Replace placeholders with actual 1x dimensions! */
+        background-size: 302px 2048px !important; 
+        box-shadow: -195px 0 1200px 0px rgba(0, 0, 0, 0.7);
+        position: relative;
+        z-index: 1; 
+    }
+
+    /* Center column */
+    .elevator-center {
+        width: 807px; /* Adjust if needed based on original image widths */
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        flex-grow: 1;
+    }
+
+    .elevator-top {
+        background-image: url('/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile top.jpg');
+        background-repeat: repeat-x;
+        /* --- Adjust Size for 2x Image --- */
+        /* Replace placeholders with actual 1x dimensions! */
+        background-size: 807px 771px !important; 
+        height: 771px; /* Should match original_top_height */
+        flex-shrink: 0;
+    }
+
+    .elevator-middle {
+        background-image: url('/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile center.jpg');
+        background-repeat: repeat-y;
+        /* --- Adjust Size for 2x Image --- */
+        /* Replace placeholders with actual 1x dimensions! */
+        background-size: 807px 386px !important; 
+        flex-grow: 1;
+        position: relative;
+        min-height: 386px; /* Example min-height, adjust if needed */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .elevator-bottom {
+        background-image: url('/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile bottom.jpg');
+        background-repeat: repeat-x;
+        /* --- Adjust Size for 2x Image --- */
+        /* Replace placeholders with actual 1x dimensions! */
+        background-size: 807px 638px !important; 
+        height: 638px; /* Should match original_bottom_height */
+        flex-shrink: 0;
+    }
+
+    /* Right column */
+    .elevator-right {
+        width: 302px; /* Should match original_right_width if image filled it */
+        background-image: url('/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile right.jpg');
+        background-repeat: repeat-y;
+         /* --- Adjust Size for 2x Image --- */
+         /* Replace placeholders with actual 1x dimensions! */
+        background-size: 302px 2048px !important; 
+        box-shadow: 195px 0 1200px 0px rgba(0, 0, 0, 0.7);
+        position: relative;
+        z-index: 1; 
+    }
+
+    /* Floor list panel */
+    .elevator-floor-list {
+        width: 100%;
+        padding: 20px 0;
+        display: flex;
+        justify-content: center; 
+        align-items: center;
+        position: relative; 
+    } 
+
+    .elevator-panel {
+        width: 80%;
+        max-width: 600px;
+        padding: 50px;
+        color: #fff;
+        margin-left: -15px;
+        position: relative; 
+        margin-top: -500px; /* Your value */
+        margin-bottom: -500px; /* Your value */ 
+        z-index: 2; /* Ensure panel is above columns */     
+    }
+
+    .elevator-panel h2 { 
+       text-align: center;
+       margin-bottom: 20px;
+       font-size: 28px;
+       color: #f0f0f0;
+       text-transform: uppercase;
+       letter-spacing: 2px;
+    }
+
+    ul.floor-buttons { 
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: block;
+    }
+
+    .floor-button { 
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(0,0,0,0.8);
+        border: 2px solid #555;
+        border-radius: 5px;
+        padding: 10px;
+        text-decoration: none;
+        color: #fff;
+        transition: all 0.3s ease;
+        text-align: center;
+        height: 100%;
+        margin: 20px;
+    }
+
+    .floor-button:hover { 
+        background-color: rgba(10,10,10,0.8);
+        border-color: #888;
+        transform: scale(1.05);
+    }
+
+    .floor-number { 
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #f0f0f0;
+    }
+
+    .floor-title { 
+        font-size: 14px;
+        color: #ccc;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    /* --- End of nested rules --- */
+} /* --- End of body.elevator-fullscreen rules --- */
+
+
+/* * Styles for the fixed background divs (using the 1x animated tile)
+ */
+.fixed-background {
+    position: fixed;
+    top: 0;
+    height: 100vh; /* Cover full viewport height */
+    z-index: -1;  /* Sit behind all other content */
+
+    /* Common background properties */
+    background-image: url('/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - bg tile.jpg') !important;
+    background-size: 256px 256px !important; 
+    background-repeat: repeat !important; 
+    background-position: 0 0; /* Base position (NO !important) */
+}
+
+/* Left half styles */
+.fixed-background.left-half {
+    left: 0;
+    width: 50%; /* Cover left 50% of viewport */
+    animation: scrollBackgroundRight 10s linear infinite !important; /* Scroll RIGHT */
+}
+
+/* Right half styles */
+.fixed-background.right-half {
+    right: 0; /* Align to the right edge */
+    width: 50%; /* Cover right 50% of viewport */
+    animation: scrollBackgroundLeft 10s linear infinite !important; /* Scroll LEFT */
+}
