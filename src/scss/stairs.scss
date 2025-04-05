@@ -19,17 +19,17 @@
  
 /* * Styles for the main body element and nested structure
  */
-body.elevator-fullscreen {
+body.stairs-fullscreen {
 
     /* Reset and base styles */
-    .elevator-template-active * {
+    .stairs-template-active * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
     }
 
-    .elevator-template-active body, 
-    .elevator-template-active html {
+    .stairs-template-active body, 
+    .stairs-template-active html {
         height: 100%;
         width: 100%;
         margin: 0;
@@ -38,7 +38,7 @@ body.elevator-fullscreen {
     }
 
     /* Container for the three columns */
-    .elevator-container {
+    .stairs-container {
         display: flex;
         min-height: 100vh; 
         width: 1411px; /* Adjust if needed based on original image widths */
@@ -47,7 +47,7 @@ body.elevator-fullscreen {
     }
 
     /* Left column */
-    .elevator-left {
+    .stairs-left {
         width: 302px; /* Should match original_left_width if image filled it */
         background-image: url('/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile left.jpg');
         background-repeat: repeat-y;
@@ -60,7 +60,7 @@ body.elevator-fullscreen {
     }
 
     /* Center column */
-    .elevator-center {
+    .stairs-center {
         width: 807px; /* Adjust if needed based on original image widths */
         display: flex;
         flex-direction: column;
@@ -68,7 +68,7 @@ body.elevator-fullscreen {
         flex-grow: 1;
     }
 
-    .elevator-top {
+    .stairs-top {
         background-image: url('/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile top.jpg');
         background-repeat: repeat-x;
         /* --- Adjust Size for 2x Image --- */
@@ -78,7 +78,7 @@ body.elevator-fullscreen {
         flex-shrink: 0;
     }
 
-    .elevator-middle {
+    .stairs-middle {
         background-image: url('/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile center.jpg');
         background-repeat: repeat-y;
         /* --- Adjust Size for 2x Image --- */
@@ -92,7 +92,7 @@ body.elevator-fullscreen {
         justify-content: center;
     }
 
-    .elevator-bottom {
+    .stairs-bottom {
         background-image: url('/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile bottom.jpg');
         background-repeat: repeat-x;
         /* --- Adjust Size for 2x Image --- */
@@ -103,7 +103,7 @@ body.elevator-fullscreen {
     }
 
     /* Right column */
-    .elevator-right {
+    .stairs-right {
         width: 302px; /* Should match original_right_width if image filled it */
         background-image: url('/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile right.jpg');
         background-repeat: repeat-y;
@@ -116,7 +116,7 @@ body.elevator-fullscreen {
     }
 
     /* Floor list panel */
-    .elevator-floor-list {
+    .stairs-floor-list {
         width: 100%;
         padding: 20px 0;
         display: flex;
@@ -125,19 +125,19 @@ body.elevator-fullscreen {
         position: relative; 
     } 
 
-    .elevator-panel {
+    .stairs-panel {
         width: 80%;
         max-width: 600px;
         padding: 50px;
         color: #fff;
         margin-left: -15px;
         position: relative; 
-        margin-top: -500px; /* Your value */
+        margin-top: -400px; /* Your value */
         margin-bottom: -500px; /* Your value */ 
         z-index: 2; /* Ensure panel is above columns */     
     }
 
-    .elevator-panel h2 { 
+    .stairs-panel h2 { 
        text-align: center;
        margin-bottom: 20px;
        font-size: 28px;
@@ -192,7 +192,7 @@ body.elevator-fullscreen {
         white-space: nowrap;
     }
     /* --- End of nested rules --- */
-} /* --- End of body.elevator-fullscreen rules --- */
+} /* --- End of body.stairs-fullscreen rules --- */
 
 
 /* * Styles for the fixed background divs (using the 1x animated tile)

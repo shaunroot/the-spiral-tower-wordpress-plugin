@@ -37,7 +37,7 @@ if ($floor_query->have_posts()) {
 }
 wp_reset_postdata();
 ?><!DOCTYPE html>
-<html <?php language_attributes(); ?> class="elevator-template-active elevator-fullscreen">
+<html <?php language_attributes(); ?> class="stairs-template-active stairs-fullscreen">
 
 <head>
     <meta charset="<?php bloginfo('charset'); ?>">
@@ -47,19 +47,19 @@ wp_reset_postdata();
     <?php wp_enqueue_style('spiral-tower-elevator'); ?>
 </head>
 
-<body <?php body_class('elevator-template-active elevator-fullscreen'); ?>>
+<body <?php body_class('stairs-template-active stairs-fullscreen'); ?>>
 
     <div class="fixed-background left-half"></div>
     <div class="fixed-background right-half"></div>
 
-    <div class="elevator-container">
-        <div class="elevator-left"></div>
-        <div class="elevator-center">
-            <div class="elevator-top"></div>
-            <div class="elevator-middle">
+    <div class="stairs-container">
+        <div class="stairs-left"></div>
+        <div class="stairs-center">
+            <div class="stairs-top"></div>
+            <div class="stairs-middle">
                 <?php if (!empty($floors)): ?>
-                    <div class="elevator-floor-list">
-                        <div class="elevator-panel">
+                    <div class="stairs-floor-list">
+                        <div class="stairs-panel">
                             <ul class="floor-buttons">
                                 <?php foreach ($floors as $floor): ?>
                                     <li>
@@ -95,17 +95,17 @@ wp_reset_postdata();
                     </div>
                 <?php endif; ?>
             </div>
-            <div class="elevator-bottom"></div>
+            <div class="stairs-bottom"></div>
         </div>
-        <div class="elevator-right"></div>
+        <div class="stairs-right"></div>
     </div>
 
     <script>
         //Fix elevator tiling by making the middle height a multiple of 386px
         // document.addEventListener('DOMContentLoaded', function () {
         //     // Get the middle section element
-        //     const middleSection = document.querySelector('.elevator-middle');
-        //     const panelSection = document.querySelector('.elevator-panel');
+        //     const middleSection = document.querySelector('.stairs-middle');
+        //     const panelSection = document.querySelector('.stairs-panel');
 
         //     if (panelSection) {
         //         // Get the current height

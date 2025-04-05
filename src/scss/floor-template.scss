@@ -5,7 +5,7 @@
  */
 
  @use 'portal';
- @use 'elevator';
+ @use 'stairs';
 
 :root {
     // Default colors (fallbacks)
@@ -18,7 +18,7 @@
 
     --title-font: 'Metamorphous', serif;
     --body-font: 'Winky Sans', sans-serif;
-} 
+}
 
 // Variables - non-color styles remain the same
 $border-radius: 15px;

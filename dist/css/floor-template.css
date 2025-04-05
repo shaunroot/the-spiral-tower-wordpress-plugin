@@ -89,7 +89,7 @@
   position: relative;
   overflow: hidden;
 }
-.spiral-tower-floor-wrapper .portal-icon {
+.spiral-tower-floor-wrapper .portal-icon-TEMP-DISABLED {
   width: 60px;
   height: 60px;
   margin-right: 15px;
@@ -207,7 +207,7 @@
 }
 /* * Styles for the main body element and nested structure
  */
-body.elevator-fullscreen {
+body.stairs-fullscreen {
   /* Reset and base styles */
   /* Container for the three columns */
   /* Left column */
@@ -216,27 +216,27 @@ body.elevator-fullscreen {
   /* Floor list panel */
   /* --- End of nested rules --- */
 }
-body.elevator-fullscreen .elevator-template-active * {
+body.stairs-fullscreen .stairs-template-active * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
-body.elevator-fullscreen .elevator-template-active body,
-body.elevator-fullscreen .elevator-template-active html {
+body.stairs-fullscreen .stairs-template-active body,
+body.stairs-fullscreen .stairs-template-active html {
   height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
   background-color: #333333; /* Base color */
 }
-body.elevator-fullscreen .elevator-container {
+body.stairs-fullscreen .stairs-container {
   display: flex;
   min-height: 100vh;
   width: 1411px; /* Adjust if needed based on original image widths */
   margin: 0 auto;
   position: relative; /* Children positioned relative to this */
 }
-body.elevator-fullscreen .elevator-left {
+body.stairs-fullscreen .stairs-left {
   width: 302px; /* Should match original_left_width if image filled it */
   background-image: url("/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile left.jpg");
   background-repeat: repeat-y;
@@ -247,14 +247,14 @@ body.elevator-fullscreen .elevator-left {
   position: relative;
   z-index: 1;
 }
-body.elevator-fullscreen .elevator-center {
+body.stairs-fullscreen .stairs-center {
   width: 807px; /* Adjust if needed based on original image widths */
   display: flex;
   flex-direction: column;
   position: relative;
   flex-grow: 1;
 }
-body.elevator-fullscreen .elevator-top {
+body.stairs-fullscreen .stairs-top {
   background-image: url("/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile top.jpg");
   background-repeat: repeat-x;
   /* --- Adjust Size for 2x Image --- */
@@ -263,7 +263,7 @@ body.elevator-fullscreen .elevator-top {
   height: 771px; /* Should match original_top_height */
   flex-shrink: 0;
 }
-body.elevator-fullscreen .elevator-middle {
+body.stairs-fullscreen .stairs-middle {
   background-image: url("/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile center.jpg");
   background-repeat: repeat-y;
   /* --- Adjust Size for 2x Image --- */
@@ -276,7 +276,7 @@ body.elevator-fullscreen .elevator-middle {
   align-items: center;
   justify-content: center;
 }
-body.elevator-fullscreen .elevator-bottom {
+body.stairs-fullscreen .stairs-bottom {
   background-image: url("/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile bottom.jpg");
   background-repeat: repeat-x;
   /* --- Adjust Size for 2x Image --- */
@@ -285,7 +285,7 @@ body.elevator-fullscreen .elevator-bottom {
   height: 638px; /* Should match original_bottom_height */
   flex-shrink: 0;
 }
-body.elevator-fullscreen .elevator-right {
+body.stairs-fullscreen .stairs-right {
   width: 302px; /* Should match original_right_width if image filled it */
   background-image: url("/wp-content/plugins/the-spiral-tower/dist/images/Elevator 02 - tile right.jpg");
   background-repeat: repeat-y;
@@ -296,7 +296,7 @@ body.elevator-fullscreen .elevator-right {
   position: relative;
   z-index: 1;
 }
-body.elevator-fullscreen .elevator-floor-list {
+body.stairs-fullscreen .stairs-floor-list {
   width: 100%;
   padding: 20px 0;
   display: flex;
@@ -304,18 +304,18 @@ body.elevator-fullscreen .elevator-floor-list {
   align-items: center;
   position: relative;
 }
-body.elevator-fullscreen .elevator-panel {
+body.stairs-fullscreen .stairs-panel {
   width: 80%;
   max-width: 600px;
   padding: 50px;
   color: #fff;
   margin-left: -15px;
   position: relative;
-  margin-top: -500px; /* Your value */
+  margin-top: -400px; /* Your value */
   margin-bottom: -500px; /* Your value */
   z-index: 2; /* Ensure panel is above columns */
 }
-body.elevator-fullscreen .elevator-panel h2 {
+body.stairs-fullscreen .stairs-panel h2 {
   text-align: center;
   margin-bottom: 20px;
   font-size: 28px;
@@ -323,13 +323,13 @@ body.elevator-fullscreen .elevator-panel h2 {
   text-transform: uppercase;
   letter-spacing: 2px;
 }
-body.elevator-fullscreen ul.floor-buttons {
+body.stairs-fullscreen ul.floor-buttons {
   list-style: none;
   padding: 0;
   margin: 0;
   display: block;
 }
-body.elevator-fullscreen .floor-button {
+body.stairs-fullscreen .floor-button {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -345,18 +345,18 @@ body.elevator-fullscreen .floor-button {
   height: 100%;
   margin: 20px;
 }
-body.elevator-fullscreen .floor-button:hover {
+body.stairs-fullscreen .floor-button:hover {
   background-color: rgba(10, 10, 10, 0.8);
   border-color: #888;
   transform: scale(1.05);
 }
-body.elevator-fullscreen .floor-number {
+body.stairs-fullscreen .floor-number {
   font-size: 24px;
   font-weight: bold;
   margin-bottom: 5px;
   color: #f0f0f0;
 }
-body.elevator-fullscreen .floor-title {
+body.stairs-fullscreen .floor-title {
   font-size: 14px;
   color: #ccc;
   max-width: 100%;
@@ -365,7 +365,7 @@ body.elevator-fullscreen .floor-title {
   white-space: nowrap;
 }
 
-/* --- End of body.elevator-fullscreen rules --- */
+/* --- End of body.stairs-fullscreen rules --- */
 /* * Styles for the fixed background divs (using the 1x animated tile)
  */
 .fixed-background {

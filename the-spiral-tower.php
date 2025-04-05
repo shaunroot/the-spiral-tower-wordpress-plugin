@@ -23,7 +23,7 @@ define('SPIRAL_TOWER_PLUGIN_URL', plugin_dir_url(__FILE__));
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-floor-manager.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-room-manager.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-portal-manager.php';
-require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/elevator.php';
+require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/stairs.php';
 
 /**
  * Main Plugin Class
