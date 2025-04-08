@@ -319,11 +319,10 @@ class Spiral_Tower_Plugin
              wp_enqueue_script('imagesloaded', 'https://unpkg.com/imagesloaded@5/imagesloaded.pkgd.min.js', array(), null, true);
 
 
-            // Your Custom Transition Script (misc-useful-stuff.js)
-            // Verify this path is correct: plugin_root/assets/js/misc-useful-stuff.js
-            $script_path = SPIRAL_TOWER_PLUGIN_URL . 'assets/js/misc-useful-stuff.js';
+            // JS Module Loader
+            $script_path = SPIRAL_TOWER_PLUGIN_URL . 'assets/js/spiral-tower-loader.js';
             wp_enqueue_script(
-                'spiral-tower-main-script', // *** Use a consistent, unique handle ***
+                'spiral-tower-loader', // *** Use a consistent, unique handle ***
                 $script_path,
                 array('gsap', 'barba-core', 'barba-prefetch', 'imagesloaded'), // *** Add ALL dependencies ***
                 '1.0.1', // Bump version on changes
