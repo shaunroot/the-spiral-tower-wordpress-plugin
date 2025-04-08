@@ -106,20 +106,11 @@ if (empty($content_bg_color))
                     <?php echo $portal_icon; ?>
                 </a>
 
-                <!-- <div class="spiral-tower-portal-card">
-                    <?php echo $portal_icon; ?>
-                    <div class="spiral-tower-portal-info">
-                        <h3 class="spiral-tower-portal-title"><?php echo esc_html($portal->post_title); ?></h3>
-                        <div class="spiral-tower-portal-type"><?php echo esc_html($portal_type_display); ?></div>
-                        <div class="spiral-tower-portal-destination">
-                            <span>Leads to:</span>
-                            <a href="<?php echo esc_url($destination_url); ?>"
-                                class="spiral-tower-portal-link floor-transition-link">
-                                <?php echo esc_html($destination_title); ?>
-                            </a>
-                        </div>
-                    </div>
-                </div> -->
+                <?php echo $portal_icon; ?>
+                <?php // echo esc_html($portal->post_title); ?>
+                <?php // echo esc_html($portal_type_display); ?>
+                <?php // echo esc_url($destination_url); ?>
+                <?php // echo esc_html($destination_title); ?>
 
             <?php endforeach; ?>
         </div>
