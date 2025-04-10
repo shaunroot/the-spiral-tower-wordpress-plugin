@@ -2,10 +2,10 @@
   !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[0].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[0].use[2]!./node_modules/sass-loader/dist/cjs.js!./src/scss/floor-template.scss ***!
   \*************************************************************************************************************************************************************************************************************************/
 /**
- * Styles for the Floor Template
- * All styles are consolidated here for easy editing by users
- * Now with dynamic color support based on background image or custom colors ////
- */
+* Styles for the Floor Template
+* All styles are consolidated here for easy editing by users
+* Now with dynamic color support based on background image or custom colors ////
+*/
 .spiral-tower-floor-wrapper {
   /* Portal styles for the Spiral Tower */
 }
@@ -395,6 +395,7 @@ body.stairs-fullscreen .floor-title {
 }
 
 :root {
+  /* Default colors (fallbacks) */
   --background-color: #000;
   --title-bg-color: rgba(20, 20, 20, 0.85);
   --content-bg-color: rgba(35, 35, 35, 0.85);
@@ -405,6 +406,7 @@ body.stairs-fullscreen .floor-title {
   --body-font: "Winky Sans", sans-serif;
 }
 
+/* Variables - non-color styles remain the same */
 /* --------------------------------------------------------
 * 1. FULL VIEWPORT COVERAGE
 * -------------------------------------------------------- */
@@ -432,9 +434,13 @@ body.floor-fullscreen {
 }
 
 /* --------------------------------------------------------
-   * 2. HIDE WORDPRESS ELEMENTS
-   * -------------------------------------------------------- */
+ * 2. HIDE WORDPRESS ELEMENTS
+ * -------------------------------------------------------- */
 /* Core hiding strategy */
+body * {
+  /* display: none !important; */
+}
+
 /* Only show our specific elements */
 .spiral-tower-floor-wrapper,
 .spiral-tower-floor-wrapper *,
@@ -506,8 +512,8 @@ body .container {
 }
 
 /* --------------------------------------------------------
-   * 3. FULLSCREEN BACKGROUND
-   * -------------------------------------------------------- */
+ * 3. FULLSCREEN BACKGROUND
+ * -------------------------------------------------------- */
 .spiral-tower-floor-wrapper {
   position: fixed !important;
   top: 0 !important;
@@ -522,33 +528,37 @@ body .container {
   background-repeat: no-repeat !important;
   background-attachment: fixed !important;
   background-color: var(--background-color, #000) !important;
-  z-index: 10 !important;
-  overflow: hidden !important;
+  /* Use CSS variable with fallback */
+  z-index: 999999 !important;
+  overflow-y: auto !important;
   box-sizing: border-box !important;
   padding: 0 !important;
   margin: 0 !important;
-  transition: background-position 0.5s ease-in-out;
+  /* Ensure the background image properly renders */
 }
 .spiral-tower-floor-wrapper[style*=background-image] {
   background-image: var(--background-image) !important;
 }
 
 /* --------------------------------------------------------
- * 4. CONTENT CONTAINER
- * -------------------------------------------------------- */
+* 4. CONTENT CONTAINER
+* -------------------------------------------------------- */
 .spiral-tower-floor-container {
   width: 80% !important;
   max-width: 800px !important;
   position: fixed !important;
-  z-index: 100 !important;
   top: 50% !important;
   left: 50% !important;
   transform: translate(-50%, -50%) !important;
+  z-index: 1000000 !important;
   box-sizing: border-box !important;
   transition: opacity 2s ease !important;
   opacity: 0 !important;
+  /* Ensure container doesn't overlap with title */
   margin-top: 60px !important;
+  /* Adjust based on title height */
   max-height: calc(100vh - 100px) !important;
+  /* Adjust to leave space for title */
 }
 
 .spiral-tower-floor-content.is-scrollable::after {
@@ -575,8 +585,8 @@ body .container {
   }
 }
 /* --------------------------------------------------------
- * 5. TITLE STYLING
- * -------------------------------------------------------- */
+* 5. TITLE STYLING
+* -------------------------------------------------------- */
 .spiral-tower-floor-title {
   width: 100% !important;
   margin: 0 !important;
@@ -586,10 +596,12 @@ body .container {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
   box-sizing: border-box !important;
   position: fixed !important;
-  z-index: 101 !important;
+  /* Fixed at the top */
   top: 0 !important;
   left: 0 !important;
+  z-index: 1000001 !important;
   cursor: pointer !important;
+  /* Indicate it's clickable */
 }
 .spiral-tower-floor-title h1 {
   margin: 0 !important;
@@ -610,11 +622,12 @@ body .container {
   color: var(--subtitle-color, #e90303) !important;
   font-family: var(--title-font) !important;
   text-align: center;
+  /* Note: This semicolon is present in the original and left untouched */
 }
 
 /* --------------------------------------------------------
-   * 6. CONTENT STYLING
-   * -------------------------------------------------------- */
+ * 6. CONTENT STYLING
+ * -------------------------------------------------------- */
 .spiral-tower-floor-content {
   background-color: var(--content-bg-color, rgba(0, 0, 0, 0.6)) !important;
   padding: 30px !important;
@@ -690,8 +703,8 @@ body .container {
 }
 
 /* --------------------------------------------------------
- * 7. RESPONSIVE ADJUSTMENTS
- * -------------------------------------------------------- */
+* 7. RESPONSIVE ADJUSTMENTS
+* -------------------------------------------------------- */
 @media (max-width: 768px) {
   .spiral-tower-floor-container {
     width: 90% !important;
@@ -724,8 +737,8 @@ body .container {
   }
 }
 /* --------------------------------------------------------
- * 8. Animation 
- * -------------------------------------------------------- */
+* 8. Animation
+* -------------------------------------------------------- */
 /* When title is hovered, show the container */
 .spiral-tower-floor-title:hover ~ .spiral-tower-floor-container,
 .spiral-tower-floor-container:hover {
@@ -733,21 +746,20 @@ body .container {
 }
 
 /* --------------------------------------------------------
- * 9. YouTube Background 
- * -------------------------------------------------------- */
+* 9. YouTube Background
+* -------------------------------------------------------- */
 #youtube-background {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 0;
+  z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  opacity: 0;
-  animation: youtube-fade-in 6s forwards;
 }
 #youtube-background.audio-only {
+  /* Replace display: none with this: */
   position: absolute !important;
   width: 1px !important;
   height: 1px !important;
@@ -756,9 +768,16 @@ body .container {
   opacity: 0 !important;
   visibility: hidden !important;
   overflow: hidden !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
+  pointer-events: none !important; /* Ensure it doesn't intercept clicks */
+  /* Ensure iframe inside is also hidden if necessary,
+     though the above usually suffices. */
 }
+#youtube-background.audio-only iframe {
+  /* May not be needed if parent is fully hidden */
+  /* opacity: 0; */
+  /* visibility: hidden; */
+}
+
 .youtube-container {
   position: absolute;
   top: 0;
@@ -793,11 +812,7 @@ body .container {
   visibility: hidden;
 }
 
-#youtube-background.audio-only {
-  opacity: 0;
-  visibility: hidden;
-}
-
+/* Start invisible javascript will trigger fade in */
 #youtube-background {
   opacity: 0;
   animation: youtube-fade-in 6s forwards;
@@ -814,61 +829,65 @@ body .container {
     opacity: 1;
   }
 }
+/* ///////////////////// SCROLL BG */
 /* --------------------------------------------------------
- * 3. FULLSCREEN BACKGROUND (Modified for Scrolling)
- * -------------------------------------------------------- */
+* 3. FULLSCREEN BACKGROUND (Modified for Scrolling)
+* -------------------------------------------------------- */
 .spiral-tower-floor-wrapper {
+  /* ... (keep existing styles) ... */
   background-size: cover !important;
-  background-position: center center !important;
+  background-position: center center !important; /* Initial position */
   background-repeat: no-repeat !important;
-  background-attachment: fixed !important;
-  transition: background-position 0.5s ease-in-out;
-  overflow: hidden !important;
+  background-attachment: fixed !important; /* Keep fixed for image background scrolling */
+  transition: background-position 0.5s ease-in-out; /* Smooth transition for image scrolling */
+  overflow: hidden !important; /* Hide wrapper overflow, we scroll its content/bg */
 }
 
 /* --------------------------------------------------------
- * 9. YouTube Background (Modified for Scrolling)
- * -------------------------------------------------------- */
+* 9. YouTube Background (Modified for Scrolling)
+* -------------------------------------------------------- */
 #youtube-background {
-  overflow: hidden;
+  /* ... (keep existing styles like position, z-index etc) ... */
+  overflow: hidden; /* Container hides iframe overflow */
 }
 
 .youtube-container {
+  /* ... (keep existing styles) ... */
   overflow: hidden;
 }
 
 #youtube-player {
-  transition: transform 0.5s ease-in-out;
+  /* ... (keep existing styles like position, aspect ratio calculations) ... */
+  transition: transform 0.5s ease-in-out; /* Smooth transition for video scrolling */
 }
 
 /* --------------------------------------------------------
- * 10. SCROLL ARROWS
- * -------------------------------------------------------- */
+* 10. SCROLL ARROWS
+* -------------------------------------------------------- */
 .scroll-arrows {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 102 !important;
-  pointer-events: none;
-  display: none;
+  z-index: 1000002; /* Above content container, below potential modals maybe */
+  pointer-events: none; /* Container doesn't block clicks */
+  display: none; /* Initially hidden, JS will show container if overflow detected */
 }
 
 .scroll-arrow {
   position: absolute;
+  z-index: 1000003;
   color: rgba(255, 255, 255, 0.8);
   font-size: 24px;
-  line-height: 45px;
+  line-height: 45px; /* Center icon vertically */
   text-align: center;
   cursor: pointer;
-  pointer-events: all;
+  pointer-events: all; /* Arrows ARE clickable */
   opacity: 0.7;
   transition: opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease;
-  display: none;
+  display: none; /* Initially hide individual arrows */
   background-color: transparent;
-  border: none;
-  padding: 0;
 }
 .scroll-arrow:hover {
   color: rgb(255, 255, 255);
@@ -877,57 +896,65 @@ body .container {
 .scroll-arrow:disabled {
   opacity: 0.2;
   cursor: not-allowed;
-  pointer-events: none;
+  pointer-events: none; /* Make sure disabled cannot be clicked */
+  background-color: rgba(50, 50, 50, 0.3);
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .scroll-up {
   top: 100px;
   right: 10px;
+  /* transform: translateX(-50%); */
 }
 
 .scroll-down {
-  bottom: 100px;
+  bottom: 100px; /* Adjust if it conflicts with sound toggle */
   right: 10px;
+  /* transform: translateX(-50%); */
 }
 
 .scroll-left {
   left: 15px;
   bottom: 80px;
+  /*transform: translateY(-50%); */
 }
 
 .scroll-right {
   right: 15px;
   bottom: 80px;
+  /*transform: translateY(-50%); */
 }
 
 /* --------------------------------------------------------
- * 11. TOOLBAR
- * -------------------------------------------------------- */
+* 10. TOOLBAR
+* -------------------------------------------------------- */
 #toolbar {
   display: flex;
   position: fixed;
-  z-index: 103 !important;
   bottom: 0;
   right: 60px;
+  z-index: 9999999;
   background: rgba(0, 0, 0, 0.5);
+  /* Allow sound toggle to display */
 }
 #toolbar div {
   flex: 1;
+  /*width: 30px; */
+  /*height: 30px; */
   padding: 4px;
   display: block;
   border: 1px solid rgba(0, 0, 0, 0.9);
   text-align: center;
   margin-right: -1px;
 }
-#toolbar #button-sound-toggle {
-  padding: 4px;
+#toolbar #button-sound-toggle,
+#toolbar #button-sound-toggle { /* Note: Duplicate selector present in original */
+  visibility: visible;
+  opacity: 1;
+  cursor: pointer;
   display: none;
   visibility: hidden;
   opacity: 0;
-  cursor: pointer;
-  border: 1px solid rgba(0, 0, 0, 0.9);
-  margin-right: -1px;
-  transition: opacity 0.3s, visibility 0.3s;
 }
 
 .tooltip-trigger {
@@ -996,74 +1023,6 @@ body .container {
 .tooltip-trigger:hover::before {
   opacity: 1;
   visibility: visible;
-}
-
-/* --------------------------------------------------------
- * 3.5 BACKGROUND MARKERS CONTAINER (Added previously)
- * -------------------------------------------------------- */
-#background-markers-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  pointer-events: none;
-  overflow: hidden;
-  opacity: 0;
-  transition: opacity 0.4s ease-out, transform 0.5s ease-in-out;
-  transform-origin: center center;
-}
-
-#background-markers-container.markers-visible {
-  opacity: 1;
-}
-
-#background-markers-container > div {
-  position: absolute !important;
-  transform: translate(-50%, -50%) !important;
-  width: auto;
-  height: auto;
-  pointer-events: all;
-  transform-origin: center center !important;
-  /* NO SCALING TRANSFORM HERE - it's handled by the container */
-  /* TOP and LEFT should be set by inline styles or data-* if you adapt */
-}
-#background-markers-container > div img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
-
-#background-markers-container div.elevator-door-holder {
-  position: relative;
-  overflow: hidden;
-  line-height: 0;
-  width: 266px;
-  height: 402px;
-}
-#background-markers-container div.elevator-door-holder img {
-  position: absolute;
-  top: 0;
-  height: auto;
-  width: auto;
-  max-width: none;
-  display: block;
-  transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
-}
-#background-markers-container div.elevator-door-holder img:first-child {
-  right: 50%;
-  transform: translateX(0);
-}
-#background-markers-container div.elevator-door-holder img:last-child {
-  left: 50%;
-  transform: translateX(0);
-}
-#background-markers-container div.elevator-door-holder.is-open img:first-child {
-  transform: translateX(-133px);
-}
-#background-markers-container div.elevator-door-holder.is-open img:last-child {
-  transform: translateX(133px);
 }
 
 /*# sourceMappingURL=floor-template.css.map*/
