@@ -68,7 +68,52 @@ if ($has_youtube && !$youtube_audio_only) {
 	<meta charset="<?php bloginfo('charset'); ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<?php wp_head(); ?>
-	<?php /* No extra <style> needed here if animating background-position */ ?>
+	
+	<style>
+	/* Static marker CSS - add to head section for simplicity */
+	.background-marker {
+		position: absolute;
+		z-index: 10; /* Above background, below content */
+		transition: left 0.5s ease-in-out, top 0.5s ease-in-out, transform 0.5s ease-in-out;
+		transform: translate(-50%, -50%); /* Center marker on its position point */
+		pointer-events: none; /* Don't block clicks by default */
+	}
+	
+	.background-marker.interactive {
+		pointer-events: auto; /* Allow clicks for interactive markers */
+		cursor: pointer;
+	}
+	
+	.marker-text {
+		background: rgba(0, 0, 0, 0.7);
+		color: white;
+		padding: 8px 12px;
+		border-radius: 4px;
+		box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+		font-size: 14px;
+		white-space: nowrap;
+	}
+	
+	.marker-image img {
+		max-width: 100%;
+		height: auto;
+		display: block;
+		border-radius: 50%;
+		border: 3px solid white;
+		box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+	}
+	
+	/* Make markers more visible for testing */
+	#test-marker-1 {
+		font-weight: bold;
+	}
+	
+	#test-marker-2 img {
+		width: 80px;
+		height: 80px;
+		object-fit: cover;
+	}
+	</style>
 </head>
 <body <?php body_class('floor-template-active floor-fullscreen'); ?>
 	data-title-color="<?php echo esc_attr($title_color); ?>"
@@ -110,7 +155,31 @@ if ($has_youtube && !$youtube_audio_only) {
 			</div>
 		<?php endif; ?>
 
-		<?php // ----- START: Your Content Structure ----- ?>
+		<?php // STATIC MARKER EXAMPLES ?>
+		<div id="test-marker-1" class="background-marker marker-text" data-x-pos="30" data-y-pos="40">
+			This is test marker #1
+		</div>
+		
+		<div id="test-marker-2" class="background-marker marker-image" data-x-pos="70" data-y-pos="60">
+			<?php
+			// You can use a placeholder image if you don't have one handy
+			$placeholder_image = plugin_dir_url(__FILE__) . 'assets/images/marker-placeholder.jpg';
+			// If you don't have a placeholder, try using WordPress default
+			if (!file_exists($placeholder_image)) {
+				$placeholder_image = includes_url('images/media/default.png');
+			}
+			?>
+			<img src="<?php echo esc_url($placeholder_image); ?>" alt="Marker Image">
+		</div>
+		
+		<div id="test-marker-3" class="background-marker marker-text interactive" data-x-pos="40" data-y-pos="70">
+			Interactive marker (clickable)
+		</div>
+
+	</div> <?php // end .spiral-tower-floor-wrapper ?>
+
+
+	<?php // ----- START: Your Content Structure ----- ?>
 		<div class="spiral-tower-floor-title">
 			<?php if ($floor_number): ?>
 				<div class="spiral-tower-floor-number">Floor <?php echo esc_html($floor_number); ?></div>
@@ -125,7 +194,6 @@ if ($has_youtube && !$youtube_audio_only) {
 		<?php do_action('spiral_tower_after_floor_content', get_the_ID()); ?>
 		<?php // ----- END: Your Content Structure ----- ?>
 
-	</div> <?php // end .spiral-tower-floor-wrapper ?>
 
 	<?php // ----- START: SCROLL ARROWS ----- ?>
 	<?php // Only show arrows if there's a VISUAL background to scroll
@@ -182,7 +250,116 @@ if ($has_youtube && !$youtube_audio_only) {
 		echo "\n\n";
 	}
 	?>
-	<?php // ----- END: Output Custom Footer Script --- ?>
+	
+	<?php // Background markers script ?>
+	<script>
+	/**
+	 * Background Markers Script
+	 * This script makes elements with class .background-marker move with the background
+	 */
+	document.addEventListener('DOMContentLoaded', function() {
+		// Find all markers
+		const markers = document.querySelectorAll('.background-marker');
+		if (!markers.length) return;
+		
+		console.log('Found markers:', markers.length);
+		
+		// Store original positions for each marker
+		markers.forEach(marker => {
+			// Get position from data attributes, fallback to 50% if not set
+			marker.originalX = parseFloat(marker.dataset.xPos || 50);
+			marker.originalY = parseFloat(marker.dataset.yPos || 50);
+			
+			// Set initial position
+			marker.style.left = marker.originalX + '%';
+			marker.style.top = marker.originalY + '%';
+			
+			console.log(`Marker ${marker.id} original position: ${marker.originalX}%, ${marker.originalY}%`);
+		});
+		
+		// Add click handler for interactive markers
+		document.addEventListener('click', function(e) {
+			const marker = e.target.closest('.background-marker.interactive');
+			if (marker) {
+				alert(`You clicked on marker: ${marker.id || 'unnamed'}`);
+				// You can add custom click behavior here
+			}
+		});
+		
+		// Function to update marker positions based on background scroll
+		function updateMarkerPositions() {
+			const bgType = document.body.dataset.bgType;
+			if (!bgType) return;
+			
+			if (bgType === 'image') {
+				// Use the scroll module if available
+				if (window.SpiralTower && window.SpiralTower.scroll && 
+					typeof window.SpiralTower.scroll.getCurrentPositionData === 'function') {
+					
+					const data = window.SpiralTower.scroll.getCurrentPositionData();
+					const xPercent = data.currentXPercent;
+					const yPercent = data.currentYPercent;
+					
+					// Update markers position based on background position
+					markers.forEach(marker => {
+						// Calculate the offset from center (50%, 50%)
+						const offsetX = 50 - xPercent;
+						const offsetY = 50 - yPercent;
+						
+						// Apply the offset to the marker's original position
+						const markerX = marker.originalX + offsetX;
+						const markerY = marker.originalY + offsetY;
+						
+						marker.style.left = markerX + '%';
+						marker.style.top = markerY + '%';
+					});
+				}
+			} else if (bgType === 'video') {
+				// For video backgrounds
+				if (window.SpiralTower && window.SpiralTower.scroll && 
+					typeof window.SpiralTower.scroll.getCurrentPositionData === 'function') {
+					
+					const data = window.SpiralTower.scroll.getCurrentPositionData();
+					const xOffset = data.currentVideoXOffset;
+					const yOffset = data.currentVideoYOffset;
+					
+					// Update markers position based on video position
+					markers.forEach(marker => {
+						marker.style.left = marker.originalX + '%';
+						marker.style.top = marker.originalY + '%';
+						marker.style.transform = `translate(-50%, -50%) translate(${xOffset}px, ${yOffset}px)`;
+					});
+				}
+			}
+		}
+		
+		// Override the scroll module's applyScrollStyles function
+		if (window.SpiralTower && window.SpiralTower.scroll) {
+			const originalApplyScrollStyles = window.SpiralTower.scroll.applyScrollStyles;
+			
+			window.SpiralTower.scroll.applyScrollStyles = function() {
+				// Call the original function
+				if (typeof originalApplyScrollStyles === 'function') {
+					originalApplyScrollStyles.apply(this, arguments);
+				}
+				
+				// Update markers position
+				updateMarkerPositions();
+			};
+			
+			// Call once to initialize
+			updateMarkerPositions();
+		} else {
+			// Fallback: If scroll module is not available, update periodically
+			setInterval(updateMarkerPositions, 100);
+		}
+		
+		// Also update on window resize
+		window.addEventListener('resize', updateMarkerPositions);
+	});
+	</script>
+	
+	<?php // ----- END: Custom Scripts --- ?>
 
 	<?php wp_footer(); ?>
 

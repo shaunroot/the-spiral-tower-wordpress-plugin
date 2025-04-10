@@ -393,3 +393,176 @@ SpiralTower.scroll = (function() {
         getCurrentPositionData
     };
 })();
+
+
+
+
+
+/**
+ * Improved Background Markers Script
+ * This script will properly move markers with the background
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all markers
+    const markers = document.querySelectorAll('.background-marker');
+    if (!markers.length) return;
+    
+    console.log('Found markers:', markers.length);
+    
+    // Store original positions for each marker
+    markers.forEach(marker => {
+        // Get position from data attributes, fallback to 50% if not set
+        marker.originalX = parseFloat(marker.dataset.xPos || 50);
+        marker.originalY = parseFloat(marker.dataset.yPos || 50);
+        console.log(`Marker ${marker.id} original position: ${marker.originalX}%, ${marker.originalY}%`);
+    });
+    
+    // Initialize marker positions
+    updateMarkerPositions();
+    
+    // Create a custom event listener for background position changes
+    document.addEventListener('backgroundPositionChanged', function(e) {
+        console.log('Background position changed event received', e.detail);
+        updateMarkerPositions(e.detail);
+    });
+    
+    // Function to update marker positions based on background scroll
+    function updateMarkerPositions(positionData) {
+        const bgType = document.body.dataset.bgType;
+        console.log(`Updating marker positions for bg type: ${bgType}`);
+        
+        if (bgType === 'image') {
+            let xPercent, yPercent;
+            
+            if (positionData && 'xPercent' in positionData && 'yPercent' in positionData) {
+                // Use data from event if available
+                xPercent = positionData.xPercent;
+                yPercent = positionData.yPercent;
+            } else {
+                // Get current scroll module data if available
+                if (window.SpiralTower && window.SpiralTower.scroll && 
+                    typeof window.SpiralTower.scroll.getCurrentPositionData === 'function') {
+                    const scrollData = window.SpiralTower.scroll.getCurrentPositionData();
+                    xPercent = scrollData.currentXPercent;
+                    yPercent = scrollData.currentYPercent;
+                } else {
+                    // Fallback: Try to parse style (less reliable)
+                    const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
+                    if (!wrapper) return;
+                    
+                    const style = window.getComputedStyle(wrapper);
+                    const bgPosition = style.backgroundPosition;
+                    xPercent = 50; 
+                    yPercent = 50;
+                    
+                    if (bgPosition) {
+                        const parts = bgPosition.split(' ');
+                        if (parts.length >= 2) {
+                            xPercent = parseFloat(parts[0]);
+                            yPercent = parseFloat(parts[1]);
+                        }
+                    }
+                }
+            }
+            
+            console.log(`Background position: ${xPercent}%, ${yPercent}%`);
+            
+            // Update each marker position for image background
+            markers.forEach(marker => {
+                // Calculate offset needed for marker to appear fixed to background
+                // When background is at 50%, 50%, marker should be at its original position
+                // When background moves, marker needs to move proportionally in the opposite direction
+                
+                // Calculate the offset from center (50%, 50%)
+                const offsetX = 50 - xPercent;
+                const offsetY = 50 - yPercent;
+                
+                // Apply the offset to the marker's original position
+                // The markers move in the opposite direction of the background
+                const markerX = marker.originalX + offsetX;
+                const markerY = marker.originalY + offsetY;
+                
+                marker.style.left = `${markerX}%`;
+                marker.style.top = `${markerY}%`;
+                
+                console.log(`Marker ${marker.id} new position: ${markerX}%, ${markerY}%`);
+            });
+        } else if (bgType === 'video') {
+            let xOffset, yOffset;
+            
+            if (positionData && 'xOffset' in positionData && 'yOffset' in positionData) {
+                // Use data from event if available
+                xOffset = positionData.xOffset;
+                yOffset = positionData.yOffset;
+            } else {
+                // Get current scroll module data if available
+                if (window.SpiralTower && window.SpiralTower.scroll && 
+                    typeof window.SpiralTower.scroll.getCurrentPositionData === 'function') {
+                    const scrollData = window.SpiralTower.scroll.getCurrentPositionData();
+                    xOffset = scrollData.currentVideoXOffset;
+                    yOffset = scrollData.currentVideoYOffset;
+                } else {
+                    // Fallback: Try to parse transform (less reliable)
+                    const videoPlayer = document.getElementById('youtube-player');
+                    if (!videoPlayer) return;
+                    
+                    const transform = videoPlayer.style.transform;
+                    xOffset = 0;
+                    yOffset = 0;
+                    
+                    if (transform) {
+                        const match = transform.match(/translate\([^)]+\)\s*translate\(([^,]+),\s*([^)]+)\)/);
+                        if (match && match.length >= 3) {
+                            xOffset = parseFloat(match[1]);
+                            yOffset = parseFloat(match[2]);
+                        }
+                    }
+                }
+            }
+            
+            console.log(`Video offset: ${xOffset}px, ${yOffset}px`);
+            
+            // Update each marker position for video background
+            markers.forEach(marker => {
+                // For video, marker keeps its original percentage position
+                // but gets the same pixel offset as the video
+                marker.style.left = `${marker.originalX}%`;
+                marker.style.top = `${marker.originalY}%`;
+                marker.style.transform = `translate(-50%, -50%) translate(${xOffset}px, ${yOffset}px)`;
+                
+                console.log(`Marker ${marker.id} video offset: ${xOffset}px, ${yOffset}px`);
+            });
+        }
+    }
+    
+    // Modify the scroll module to dispatch our custom event
+    if (window.SpiralTower && window.SpiralTower.scroll) {
+        console.log('Overriding SpiralTower.scroll.applyScrollStyles');
+        
+        const originalApplyScrollStyles = window.SpiralTower.scroll.applyScrollStyles;
+        
+        window.SpiralTower.scroll.applyScrollStyles = function() {
+            // Call the original function
+            if (typeof originalApplyScrollStyles === 'function') {
+                originalApplyScrollStyles.apply(this, arguments);
+            }
+            
+            // Get the current position data
+            const positionData = window.SpiralTower.scroll.getCurrentPositionData();
+            
+            // Create and dispatch our custom event with the position data
+            const event = new CustomEvent('backgroundPositionChanged', {
+                detail: positionData
+            });
+            document.dispatchEvent(event);
+        };
+    } else {
+        console.warn('SpiralTower.scroll not found - markers may not update correctly');
+        
+        // Alternative approach: Periodically check for changes
+        setInterval(updateMarkerPositions, 100);
+    }
+    
+    // Also update on window resize
+    window.addEventListener('resize', updateMarkerPositions);
+});
