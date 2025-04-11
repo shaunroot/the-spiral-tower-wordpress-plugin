@@ -321,14 +321,25 @@ class Spiral_Tower_Floor_Manager
 
 
     /**
-     * Add Custom Script Meta Box below the editor (NEW METHOD)
+     * Add Custom Script Meta Box below the editor (MODIFIED METHOD)
      */
     public function add_custom_script_meta_box()
     {
+        // Add Inside Scripts Meta Box
         add_meta_box(
-            'floor_custom_footer_script_metabox',
-            __('Custom Scripts/HTML (Outputs before &lt;/body&gt;)', 'spiral-tower'),
-            array($this, 'render_custom_script_meta_box'),
+            'floor_custom_script_inside_metabox',
+            __('Custom Scripts/HTML Inside Floor (Appears within floor content)', 'spiral-tower'),
+            array($this, 'render_custom_script_inside_meta_box'),
+            'floor',
+            'normal', // Below editor
+            'low'     // At the bottom
+        );
+
+        // Add Outside Scripts Meta Box
+        add_meta_box(
+            'floor_custom_script_outside_metabox',
+            __('Custom Scripts/HTML Outside Floor (Appears in floor interface)', 'spiral-tower'),
+            array($this, 'render_custom_script_outside_meta_box'),
             'floor',
             'normal', // Below editor
             'low'     // At the bottom
@@ -336,27 +347,57 @@ class Spiral_Tower_Floor_Manager
     }
 
     /**
-     * Renders the content of the custom script meta box. (NEW METHOD)
+     * Renders the content of the custom script inside meta box.
      */
-    public function render_custom_script_meta_box($post)
+    public function render_custom_script_inside_meta_box($post)
     {
         // Re-use the SAME nonce field from the settings meta box for unified saving
         wp_nonce_field('floor_meta_nonce_action', 'floor_meta_nonce');
 
-        $meta_key = '_floor_custom_footer_script';
-        $value = get_post_meta($post->ID, $meta_key, true);
+        // Get the value using the new meta key (fallback to old meta key for backwards compatibility)
+        $value = get_post_meta($post->ID, '_floor_custom_script_inside', true);
+        if (empty($value)) {
+            // Check if there's an old value to migrate
+            $old_value = get_post_meta($post->ID, '_floor_custom_footer_script', true);
+            if (!empty($old_value)) {
+                $value = $old_value;
+            }
+        }
         ?>
         <div>
-             <label for="floor_custom_footer_script_field" style="display:block; margin-bottom: 5px;">
-                <?php _e('Enter any custom HTML, &lt;style&gt; tags, or &lt;script&gt; tags you want to output just before the closing &lt;/body&gt; tag.', 'spiral-tower'); ?>
+             <label for="floor_custom_script_inside_field" style="display:block; margin-bottom: 5px;">
+                <?php _e('Enter any custom HTML, &lt;style&gt; tags, or &lt;script&gt; tags you want to output inside the floor content.', 'spiral-tower'); ?>
             </label>
             <textarea style="width: 100%; min-height: 250px; font-family: monospace; background-color: #f0f0f1; color: #1e1e1e; border: 1px solid #949494; padding: 10px;"
-                      id="floor_custom_footer_script_field"
-                      name="floor_custom_footer_script_field"
+                      id="floor_custom_script_inside_field"
+                      name="floor_custom_script_inside_field"
                       placeholder="<?php esc_attr_e('<script>...</script> or <style>...</style> etc.', 'spiral-tower'); ?>"><?php
                 echo esc_textarea($value); // Safely display current value inside textarea
             ?></textarea>
-             <p><em><strong style="color: #d63638;"><?php _e('Warning:', 'spiral-tower'); ?></strong> <?php _e('Code entered here will be output directly onto the page without filtering. Ensure it is valid and trust the source.', 'spiral-tower'); ?></em></p>
+             <p><em><strong style="color: #d63638;"><?php _e('Warning:', 'spiral-tower'); ?></strong> <?php _e('Code entered here will be output directly inside the floor content. Ensure it is valid and trust the source.', 'spiral-tower'); ?></em></p>
+        </div>
+        <?php
+    }
+
+    /**
+     * Renders the content of the custom script outside meta box.
+     */
+    public function render_custom_script_outside_meta_box($post)
+    {
+        // Get the value (no need for fallback as this is a new field)
+        $value = get_post_meta($post->ID, '_floor_custom_script_outside', true);
+        ?>
+        <div>
+             <label for="floor_custom_script_outside_field" style="display:block; margin-bottom: 5px;">
+                <?php _e('Enter any custom HTML, &lt;style&gt; tags, or &lt;script&gt; tags you want to output in the floor interface (outside the floor content).', 'spiral-tower'); ?>
+            </label>
+            <textarea style="width: 100%; min-height: 250px; font-family: monospace; background-color: #f0f0f1; color: #1e1e1e; border: 1px solid #949494; padding: 10px;"
+                      id="floor_custom_script_outside_field"
+                      name="floor_custom_script_outside_field"
+                      placeholder="<?php esc_attr_e('<script>...</script> or <style>...</style> etc.', 'spiral-tower'); ?>"><?php
+                echo esc_textarea($value); // Safely display current value inside textarea
+            ?></textarea>
+             <p><em><strong style="color: #d63638;"><?php _e('Warning:', 'spiral-tower'); ?></strong> <?php _e('Code entered here will be output directly in the floor interface. Ensure it is valid and trust the source.', 'spiral-tower'); ?></em></p>
         </div>
         <?php
     }
@@ -397,16 +438,31 @@ class Spiral_Tower_Floor_Manager
         $audio_only = isset($_POST['youtube_audio_only']) ? '1' : '0';
         update_post_meta($post_id, '_youtube_audio_only', $audio_only);
 
-        // --- SAVE CUSTOM FOOTER SCRIPT --- ADDED SECTION ---
-        $script_meta_key = '_floor_custom_footer_script';
-        $script_field_name = 'floor_custom_footer_script_field';
-
-        if (isset($_POST[$script_field_name])) {
-            $new_script_value = trim($_POST[$script_field_name]);
-            if (!empty($new_script_value)) {
-                update_post_meta($post_id, $script_meta_key, $new_script_value); // Save RAW value
+        // --- SAVE CUSTOM INSIDE SCRIPT --- MODIFIED SECTION ---
+        $inside_script_field_name = 'floor_custom_script_inside_field';
+        if (isset($_POST[$inside_script_field_name])) {
+            $new_inside_script = trim($_POST[$inside_script_field_name]);
+            if (!empty($new_inside_script)) {
+                update_post_meta($post_id, '_floor_custom_script_inside', $new_inside_script); // Save RAW value
+                
+                // Legacy support: also update the old key if it exists
+                if (get_post_meta($post_id, '_floor_custom_footer_script', true) !== '') {
+                    update_post_meta($post_id, '_floor_custom_footer_script', $new_inside_script);
+                }
             } else {
-                delete_post_meta($post_id, $script_meta_key); // Delete if empty
+                delete_post_meta($post_id, '_floor_custom_script_inside');
+                delete_post_meta($post_id, '_floor_custom_footer_script'); // Also delete old key
+            }
+        }
+
+        // --- SAVE CUSTOM OUTSIDE SCRIPT --- NEW SECTION ---
+        $outside_script_field_name = 'floor_custom_script_outside_field';
+        if (isset($_POST[$outside_script_field_name])) {
+            $new_outside_script = trim($_POST[$outside_script_field_name]);
+            if (!empty($new_outside_script)) {
+                update_post_meta($post_id, '_floor_custom_script_outside', $new_outside_script); // Save RAW value
+            } else {
+                delete_post_meta($post_id, '_floor_custom_script_outside');
             }
         }
     }

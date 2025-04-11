@@ -82,8 +82,6 @@ if ($has_youtube && !$youtube_audio_only) {
 	<?php elseif ($visual_bg_type === 'video'): ?> data-bg-type="video" <?php endif; // If visual_bg_type is null, no data-bg-type is set ?>>
 
 
-	// --- Inside your single-floor.php ---
-
 	<div class="spiral-tower-floor-wrapper" data-barba="container"
 		data-barba-namespace="floor-<?php echo get_the_ID(); ?>">
 
@@ -109,32 +107,24 @@ if ($has_youtube && !$youtube_audio_only) {
 		<div class="wrapper-floor-gizmos">
 
 			<?php // --- Individual Gizmos - DEFINE POSITION HERE --- ?>
-			<div id="sample-gizmo-1" class="floor-gizmo" style="left: 25%; top: 30%;">
-				<?php // Content for Gizmo 1 ?>
-				X
-			</div>
+			<!-- <div id="sample-gizmo-1" class="floor-gizmo" style="left: 50%; top: 50%;">
+				X-0-X
+			</div> -->
 
-			<div id="wrapper-elevator" class="floor-gizmo" style="left: 50.25%; top: 58%;">
-				<img style="margin-left: -30px;"
-					src="https://www.thespiraltower.net/wp-content/plugins/the-spiral-tower/dist/images/floor-000001/Hotel%20elevator%20door%20-%20left.jpg"
-					alt="Marker Image">
-				<img src="https://www.thespiraltower.net/wp-content/plugins/the-spiral-tower/dist/images/floor-000001/Hotel%20elevator%20door%20-%20left.jpg"
-					alt="Marker Image">
-			</div>
+			<?php // ----- START: Portals --- ?>
+			<?php do_action('spiral_tower_after_floor_content', get_the_ID()); ?>
+			<?php // ----- END: Portals --- ?>
 
-			<style>
-				#wrapper-elevator {
-					display: flex;
-					overflow: hidden;
-				}
-
-				#wrapper-elevator img {
-					flex: 1;
-					width: 133px;
-				}
-			</style>
-
-			<?php // Add more gizmos with their specific inline left/top percentages ?>
+			<?php // ----- START: Output Custom Interface Script --- ?>
+			<?php
+			$custom_script_inside = get_post_meta(get_the_ID(), '_floor_custom_script_inside', true);
+			if (!empty($custom_script_inside)) {
+				echo "\n\n";
+				echo $custom_script_inside; // Output the raw HTML/Script
+				echo "\n\n";
+			}
+			?>
+			<?php // ----- END: Custom Interface Script --- ?>
 
 		</div> <?php // end .wrapper-floor-gizmos ?>
 
@@ -154,8 +144,7 @@ if ($has_youtube && !$youtube_audio_only) {
 		<div class="spiral-tower-floor-content">
 			<?php the_content(); ?>
 		</div>
-	</div>
-	<?php do_action('spiral_tower_after_floor_content', get_the_ID()); ?>
+	</div>	
 	<?php // ----- END: Your Content Structure ----- ?>
 
 
@@ -190,18 +179,16 @@ if ($has_youtube && !$youtube_audio_only) {
 
 	</div> <?php // ----- END: Toolbar----- ?>
 
-	<?php // ----- START: Output Custom Footer Script --- ?>
+	<?php // ----- START: Output Custom Interface Script --- ?>
 	<?php
-	$custom_script = get_post_meta(get_the_ID(), '_floor_custom_footer_script', true);
-	if (!empty($custom_script)) {
-		// WARNING: Echoing raw meta data. Ensure content saved by admins is trusted.
+	$custom_script_outside = get_post_meta(get_the_ID(), '_floor_custom_script_outside', true);
+	if (!empty($custom_script_outside)) {
 		echo "\n\n";
-		echo $custom_script; // Output the raw HTML/Script
+		echo $custom_script_outside; // Output the raw HTML/Script
 		echo "\n\n";
 	}
 	?>
-
-	<?php // ----- END: Custom Scripts --- ?>
+	<?php // ----- END: Custom Interface Script --- ?>
 
 	<?php wp_footer(); ?>
 

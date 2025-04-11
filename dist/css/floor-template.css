@@ -584,7 +584,6 @@ body .container {
   z-index: 11 !important; /* Above gizmo container */
   cursor: pointer !important;
   /* --- Base Visual Style (Customize as needed) --- */
-  background: rgba(233, 3, 3, 0.8); /* Example color (use --subtitle-color?) */
   transition: transform 0.2s ease; /* Smooth hover effect */
   /* Example for tooltip inside gizmo - adjust as needed */
 }
