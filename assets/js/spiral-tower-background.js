@@ -1,173 +1,202 @@
 /**
- * Spiral Tower - Resize-Aware Background Module
- * Ensures backgrounds completely fill the viewport even during resize events
+ * Spiral Tower - Background Scaling Module v6.1 (Integration Ready)
+ * Correctly sizes/scales the wrapper via transform. Relies on an external
+ * system (e.g., spiral-tower-core.js) to call the exposed init() function.
+ * IGNORES GIZMOS for now.
  */
 
+// Ensure the global SpiralTower object exists
 window.SpiralTower = window.SpiralTower || {};
 
-// Initialize background module
 SpiralTower.background = (function() {
-    // Module state
+    // --- State ---
     let state = {
-        initialized: false,
+        initialized: false, // Flag to prevent multiple initializations
+        wrapper: null,
+        contentWidth: 0,
+        contentHeight: 0,
+        contentType: null,
         resizeTimer: null,
-        lastWidth: window.innerWidth,
-        lastHeight: window.innerHeight,
-        initialRun: true,
+        lastWidth: 0,
+        lastHeight: 0,
         config: {
-            resizeDelay: 100,    // Debounce delay (ms)
-            forceInterval: 500,  // Interval for forced checks (ms)
-            maxForceChecks: 10,  // Maximum number of force checks
-            debug: true          // Log debug info
+            resizeDelay: 50,
+            debug: true // Force debug logging ON
         }
     };
 
-    /**
-     * Initialize the module
-     */
-    function init() {
-        log("Background module initializing...");
-        
-        // Apply fullscreen treatment immediately
-        ensureFullViewport();
-        
-        // Set up resize listener with proper debouncing
-        window.addEventListener('resize', handleResize);
-        
-        // Use load event for final application
-        window.addEventListener('load', function() {
-            ensureFullViewport();
-            
-            // Set up periodic force checks for the first few seconds
-            let forceChecks = 0;
-            const forceInterval = setInterval(function() {
-                forceChecks++;
-                if (forceChecks >= state.config.maxForceChecks) {
-                    clearInterval(forceInterval);
-                    return;
-                }
-                ensureFullViewport();
-            }, state.config.forceInterval);
-        });
-        
-        // Set initialized flag
-        state.initialized = true;
-        log("Background module initialized");
-        
-        return Promise.resolve();
-    }
-
-    /**
-     * Ensure the viewport is completely filled
-     */
-    function ensureFullViewport() {
-        log(`Ensuring full viewport: ${window.innerWidth}x${window.innerHeight}`);
-        
-        // Update state tracking
-        state.lastWidth = window.innerWidth;
-        state.lastHeight = window.innerHeight;
-        
-        // Fix the wrapper
-        const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
-        if (wrapper) {
-            applyFullViewportStyles(wrapper, 'fixed');
-        }
-        
-        // Fix background containers
-        const bgContainers = document.querySelectorAll('.background-container');
-        bgContainers.forEach(container => {
-            applyFullViewportStyles(container, 'absolute');
-        });
-        
-        // Fix background image
-        const bgImage = document.getElementById('background-image');
-        if (bgImage) {
-            applyFullViewportStyles(bgImage, 'absolute');
-            bgImage.style.objectFit = 'cover';
-            bgImage.style.objectPosition = 'center';
-        }
-        
-        // Fix YouTube player
-        const ytPlayer = document.getElementById('youtube-player');
-        if (ytPlayer) {
-            applyFullViewportStyles(ytPlayer, 'absolute');
-            ytPlayer.style.objectFit = 'cover';
-        }
-        
-        // No longer the initial run
-        state.initialRun = false;
-    }
-    
-    /**
-     * Apply consistent full viewport styles to an element
-     */
-    function applyFullViewportStyles(element, position = 'absolute') {
-        element.style.position = position;
-        element.style.top = '0';
-        element.style.left = '0';
-        element.style.width = '100%';
-        element.style.height = '100%';
-        element.style.margin = '0';
-        element.style.padding = '0';
-        element.style.transform = 'none'; // Ensure no transforms
-        element.style.boxSizing = 'border-box';
-        
-        // Only apply overflow hidden to container elements
-        if (element.classList.contains('spiral-tower-floor-wrapper') || 
-            element.classList.contains('background-container')) {
-            element.style.overflow = 'hidden';
+    // --- Logging ---
+    function log(level, message, ...optionalParams) {
+        const prefix = `[SpiralTower.background v6.1 - ${level.toUpperCase()}]`;
+        if (level === 'error') {
+            console.error(prefix, message, ...optionalParams);
+        } else if (level === 'warn') {
+            console.warn(prefix, message, ...optionalParams);
+        } else if (state.config.debug) {
+            console.log(prefix, message, ...optionalParams);
         }
     }
 
+    // --- Core Function ---
     /**
-     * Handle window resize with debouncing
+     * Calculates scale and applies styles TO THE WRAPPER element.
+     * Sets visibility to 'visible' ONLY on successful application.
+     * Returns true on success, false on failure.
      */
+    function scaleAndPositionWrapper() {
+        log('info', "--- Running scaleAndPositionWrapper ---");
+        // ... (Keep the EXACT SAME logic as v6's scaleAndPositionWrapper function) ...
+        // ... (Includes finding wrapper in state, getting viewport, getting content dims from state) ...
+        // ... (Calculating scale, validating scale) ...
+        // ... (Applying styles: width, height, top, left, transform to state.wrapper) ...
+        // ... (Setting visibility: visible on success) ...
+        // ... (Error handling with try/catch, logging, returning true/false) ...
+        // ... (Updating state.lastWidth/Height) ...
+
+        // --- [Paste the full function body from the previous response here] ---
+        if (!state.wrapper) {
+            log('error', "Cannot execute: Wrapper element not found in state.");
+            return false; // Indicate failure
+        }
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        log('info', `Viewport: ${viewportWidth}x${viewportHeight}`);
+        if (viewportWidth <= 0 || viewportHeight <= 0) {
+            log('error', "Invalid Viewport dimensions.", `W: ${viewportWidth}, H: ${viewportHeight}`);
+            state.wrapper.style.visibility = 'hidden'; return false;
+        }
+        if (!state.contentWidth || state.contentWidth <= 0 || !state.contentHeight || state.contentHeight <= 0) {
+             log('error', "Invalid Content dimensions in state.", `W: ${state.contentWidth}, H: ${state.contentHeight}`);
+             state.wrapper.style.visibility = 'hidden'; return false;
+        }
+         log('info', `Using Content Dimensions: ${state.contentWidth}x${state.contentHeight}`);
+        const scaleX = viewportWidth / state.contentWidth;
+        const scaleY = viewportHeight / state.contentHeight;
+        const scale = Math.max(scaleX, scaleY);
+        log('info', `Calculated Scale: ${scale.toFixed(4)} (scaleX: ${scaleX.toFixed(4)}, scaleY: ${scaleY.toFixed(4)})`);
+        if (isNaN(scale) || !isFinite(scale) || scale <= 0) {
+             log('error', `Invalid scale calculated (${scale}). Aborting.`);
+             state.wrapper.style.visibility = 'hidden'; return false;
+        }
+        try {
+            state.wrapper.style.width = `${state.contentWidth}px`;
+            state.wrapper.style.height = `${state.contentHeight}px`;
+            state.wrapper.style.top = '50%';
+            state.wrapper.style.left = '50%';
+            const transformValue = `translate(-50%, -50%) scale(${scale})`;
+            state.wrapper.style.transform = transformValue;
+            state.wrapper.style.visibility = 'visible'; // SUCCESS! Make visible.
+            log('info', `Applied Styles: W=${state.wrapper.style.width}, H=${state.wrapper.style.height}, Transform=${transformValue}, Visibility=visible`);
+            setTimeout(() => { // Async verification log
+                if(state.wrapper) { const cs = window.getComputedStyle(state.wrapper); log('info', `VERIFY COMPUTED Style (async): W=${cs.width}, H=${cs.height}, Transform=${cs.transform}, Visibility=${cs.visibility}`); }
+             }, 0);
+        } catch (error) {
+            log('error', "Error applying styles to wrapper:", error);
+            try { state.wrapper.style.visibility = 'hidden'; } catch (_) {}
+            return false; // Indicate failure
+        }
+        state.lastWidth = viewportWidth; state.lastHeight = viewportHeight;
+        log('info', "--- Finished scaleAndPositionWrapper successfully ---");
+        return true; // Indicate success
+        // --- [End of pasted function body] ---
+    }
+
+    // --- Event Handlers ---
     function handleResize() {
-        // Clear previous timer
-        if (state.resizeTimer) {
-            clearTimeout(state.resizeTimer);
-        }
-        
-        // Only process if dimensions actually changed
-        if (state.lastWidth !== window.innerWidth || state.lastHeight !== window.innerHeight) {
-            log(`Window resized: ${state.lastWidth}x${state.lastHeight} → ${window.innerWidth}x${window.innerHeight}`);
-            
-            // Set new timer
-            state.resizeTimer = setTimeout(() => {
-                ensureFullViewport();
-            }, state.config.resizeDelay);
-        }
-    }
-    
-    /**
-     * Conditionally log debug messages
-     */
-    function log(message) {
-        if (state.config.debug) {
-            console.log(`[SpiralTower.background] ${message}`);
+        // Debounced resize handler - Keep this as is from v6
+        if (state.resizeTimer) clearTimeout(state.resizeTimer);
+        if (window.innerWidth !== state.lastWidth || window.innerHeight !== state.lastHeight) {
+             log('info', `Resize detected: ${window.innerWidth}x${window.innerHeight}`);
+             state.resizeTimer = setTimeout(() => {
+                 log('info', "Running from resize timeout...");
+                 scaleAndPositionWrapper();
+             }, state.config.resizeDelay);
         }
     }
 
-    // Public API
+     function handleLoad() {
+         // Fallback load handler - Keep this as is from v6
+         log('info', "Window 'load' event fired. Re-running scale/position...");
+         scaleAndPositionWrapper();
+         setTimeout(() => {
+             log('info', "Running delayed post-load check...");
+             scaleAndPositionWrapper();
+         }, 200);
+     }
+
+    // --- Initialization Function (to be called externally) ---
+    function init() {
+        // Prevent multiple initializations
+        if (state.initialized) {
+            log('warn', "Initialization attempted again, but already initialized.");
+            return Promise.resolve(); // Indicate immediate success (or already done)
+        }
+        log('info', "Initializing Background module v6.1...");
+
+        // 1. Find Wrapper Element
+        state.wrapper = document.querySelector('.spiral-tower-floor-wrapper');
+        if (!state.wrapper) {
+            log('error', "Initialization failed: '.spiral-tower-floor-wrapper' element not found in DOM.");
+            return Promise.reject("Wrapper element not found"); // Signal failure
+        }
+        log('info', "Wrapper element found:", state.wrapper);
+         // Ensure basic fixed positioning is set early
+         state.wrapper.style.position = 'fixed';
+         state.wrapper.style.visibility = 'hidden'; // Start hidden
+
+        // 2. Read Content Dimensions
+        const body = document.body;
+        state.contentType = body.getAttribute('data-bg-type');
+        log('info', `Body data-bg-type: ${state.contentType}`);
+        // ... [Keep the logic for reading/validating contentWidth/Height from v6's init] ...
+        if (state.contentType === 'image') {
+            state.contentWidth = parseInt(body.getAttribute('data-img-width'), 10); state.contentHeight = parseInt(body.getAttribute('data-img-height'), 10);
+        } else if (state.contentType === 'video') {
+            log('info', "Video type detected, using default 16:9 dimensions (1920x1080).");
+            state.contentWidth = 1920; state.contentHeight = 1080;
+            if (!state.wrapper.querySelector('#youtube-player')) log('warn', "Video type, but #youtube-player not found.");
+        } else {
+            log('warn', "No valid data-bg-type found. Using fallback."); state.contentWidth = 100; state.contentHeight = 100;
+        }
+        log('info', `Read raw dimensions: W=${state.contentWidth}, H=${state.contentHeight}`);
+        if (!state.contentWidth || state.contentWidth <= 0 || isNaN(state.contentWidth)) { log('warn', `Invalid width (${state.contentWidth}). Forcing fallback: 100.`); state.contentWidth = 100; }
+        if (!state.contentHeight || state.contentHeight <= 0 || isNaN(state.contentHeight)) { log('warn', `Invalid height (${state.contentHeight}). Forcing fallback: 100.`); state.contentHeight = 100; }
+        log('info', `Using dimensions for scaling: W=${state.contentWidth}, H=${state.contentHeight}`);
+        // --- [End of dimension reading logic] ---
+
+        // 3. Initial Scaling Attempt
+        log('info', "Performing initial scale and position...");
+        const initialSuccess = scaleAndPositionWrapper(); // Call the core logic
+        if (!initialSuccess) {
+             log('error', "Initial scaling failed during init. Wrapper may be hidden/incorrect.");
+             // Still continue to set up listeners
+        }
+
+        // 4. Setup Listeners (only once)
+        window.removeEventListener('resize', handleResize); // Cleanup just in case
+        window.addEventListener('resize', handleResize);
+        window.removeEventListener('load', handleLoad); // Cleanup just in case
+        window.addEventListener('load', handleLoad);
+        log('info', "Event listeners added.");
+
+        state.initialized = true;
+        log('info', "Initialization sequence complete.");
+        return Promise.resolve(); // Signal success
+    }
+
+
+    // --- Public API ---
+    // Expose the init function so the core/loader script can call it
     return {
         init: init,
-        ensureFullViewport: ensureFullViewport
+        isInitialized: () => state.initialized,
+        // Expose forceUpdate for debugging if needed
+        forceUpdate: scaleAndPositionWrapper
     };
 })();
 
-// Register for initialization when modules are loaded
-document.addEventListener('spiralTowerModulesLoaded', function() {
-    SpiralTower.background.init();
-});
+// --- REMOVED Initialization Trigger ---
+// NO document.addEventListener('DOMContentLoaded', ...) here anymore!
+// Rely on the external loader/core script to call SpiralTower.background.init()
 
-// Also initialize on DOMContentLoaded to ensure it runs even if the module system fails
-document.addEventListener('DOMContentLoaded', function() {
-    // Use a short timeout to ensure the DOM is fully ready
-    setTimeout(function() {
-        if (!SpiralTower.background || !SpiralTower.background.initialized) {
-            if (window.SpiralTower.background) {
-                window.SpiralTower.background.init();
-            }
-        }
-    }, 10);
-});
+console.log("[SpiralTower.background v6.1] Script loaded."); // Log script load immediately

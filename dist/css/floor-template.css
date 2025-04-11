@@ -2,10 +2,10 @@
   !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[0].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[0].use[2]!./node_modules/sass-loader/dist/cjs.js!./src/scss/floor-template.scss ***!
   \*************************************************************************************************************************************************************************************************************************/
 /**
-* Styles for the Floor Template
-* All styles are consolidated here for easy editing by users
-* Now with dynamic color support based on background image or custom colors ////
-*/
+ * Styles for the Floor Template - v5 (Back to Basics - Scaled Wrapper)
+ * Merged from original and updated for the scaling wrapper approach.
+ * Positioning for .floor-gizmo relies on inline styles (left%, top%) in HTML.
+ */
 .spiral-tower-floor-wrapper {
   /* Portal styles for the Spiral Tower */
 }
@@ -395,7 +395,7 @@ body.stairs-fullscreen .floor-title {
 }
 
 :root {
-  /* Default colors (fallbacks) */
+  /* Default colors (fallbacks) - Keep these */
   --background-color: #000;
   --title-bg-color: rgba(20, 20, 20, 0.85);
   --content-bg-color: rgba(35, 35, 35, 0.85);
@@ -408,7 +408,8 @@ body.stairs-fullscreen .floor-title {
 
 /* Variables - non-color styles remain the same */
 /* --------------------------------------------------------
-* 1. FULL VIEWPORT COVERAGE
+* 1. FULL VIEWPORT & RESET
+* Ensures html/body fill viewport without scrollbars.
 * -------------------------------------------------------- */
 html,
 html.floor-template-active,
@@ -417,6 +418,8 @@ html.floor-fullscreen {
   min-height: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
+  overflow: hidden !important; /* Prevent scrollbars */
+  box-sizing: border-box !important;
 }
 
 body,
@@ -427,73 +430,38 @@ body.floor-fullscreen {
   width: 100% !important;
   height: 100% !important;
   min-height: 100vh !important;
-  overflow-x: hidden !important;
-  background: transparent !important;
+  overflow: hidden !important; /* Prevent scrollbars */
+  background: var(--background-color) !important;
   max-width: 100% !important;
   font-family: var(--body-font) !important;
+  box-sizing: border-box !important;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
 }
 
 /* --------------------------------------------------------
- * 2. HIDE WORDPRESS ELEMENTS
- * -------------------------------------------------------- */
-/* Core hiding strategy */
-body * {
-  /* display: none !important; */
-}
-
-/* Only show our specific elements */
-.spiral-tower-floor-wrapper,
-.spiral-tower-floor-wrapper *,
-.spiral-tower-floor-container,
-.spiral-tower-floor-container *,
-.spiral-tower-floor-header,
-.spiral-tower-floor-title,
-.spiral-tower-floor-title *,
-.spiral-tower-floor-content,
-.spiral-tower-floor-content * {
-  display: block;
-}
-
-.spiral-tower-floor-content.has-long-content p,
-.spiral-tower-floor-content.has-long-content ul,
-.spiral-tower-floor-content.has-long-content ol,
-.spiral-tower-floor-content.has-long-content li,
-.spiral-tower-floor-content.has-long-content blockquote {
-  font-size: 1.8rem !important;
-}
-
-/* Specifically hide WordPress elements */
+* 2. HIDE WORDPRESS ELEMENTS (Keep from Original)
+* -------------------------------------------------------- */
 #wpadminbar,
 .admin-bar #wpadminbar,
-nav,
-#site-navigation,
-.main-navigation,
-.menu,
-.menu-toggle,
-.site-header,
-.site-header-menu,
-.site-branding,
-#masthead,
-.nav-menu,
-.top-bar,
-.navigation-top,
-.primary-navigation,
-.navigation,
-.main-header,
-.header,
-#header,
-.site-footer,
-#colophon,
-.footer,
-footer {
+nav, #site-navigation, .main-navigation, .menu, .menu-toggle,
+.site-header, .site-header-menu, .site-branding, #masthead, .nav-menu,
+.top-bar, .navigation-top, .primary-navigation, .navigation,
+.main-header, .header, #header,
+.site-footer, #colophon, .footer, footer {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   height: 0 !important;
   width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
 }
 
-/* Hide common theme containers */
+/* Hide common theme containers (Keep from Original) */
 body #page,
 body #content,
 body .site,
@@ -508,71 +476,164 @@ body .container {
   margin: 0 !important;
   max-width: 100% !important;
   width: 100% !important;
-  display: none !important;
+  display: block !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 /* --------------------------------------------------------
-* 4. CONTENT CONTAINER
+* 3. WRAPPER (SCALED VIA JS)
+* Positioned fixed, centered, scaled by JS transform.
 * -------------------------------------------------------- */
-.spiral-tower-floor-container {
-  width: 80% !important;
-  max-width: 800px !important;
+.spiral-tower-floor-wrapper {
   position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  z-index: 1000000 !important;
-  box-sizing: border-box !important;
-  transition: opacity 2s ease !important;
-  opacity: 0 !important;
-  /* Ensure container doesn't overlap with title */
-  margin-top: 60px !important;
-  /* Adjust based on title height */
-  max-height: calc(100vh - 100px) !important;
-  /* Adjust to leave space for title */
+  /* top: 50%, left: 50% are set dynamically by JS */
+  /* width, height are set dynamically by JS to content's natural size */
+  /* transform: translate(-50%, -50%) scale(N) is set dynamically by JS */
+  transform-origin: center center !important; /* ESSENTIAL for scaling */
+  overflow: hidden !important; /* ESSENTIAL */
+  z-index: 1 !important;
+  visibility: hidden; /* Hide until JS positions and shows it */
+  margin: 0 !important;
+  padding: 0 !important;
+  /* outline: 3px solid cyan !important; */ /* DEBUG */
 }
 
-.spiral-tower-floor-content.is-scrollable::after {
-  opacity: 0.7;
-}
-
-/* Content scroll bars */
-@media (max-width: 768px) {
-  .spiral-tower-floor-container {
-    width: 90% !important;
-    margin-top: 50px !important;
-  }
-  .spiral-tower-floor-content {
-    max-height: calc(80vh - 100px) !important;
-  }
-}
-@media (max-width: 480px) {
-  .spiral-tower-floor-container {
-    width: 95% !important;
-    margin-top: 45px !important;
-  }
-  .spiral-tower-floor-content {
-    max-height: calc(75vh - 90px) !important;
-  }
-}
 /* --------------------------------------------------------
-* 5. TITLE STYLING
+* 4. BACKGROUND CONTENT (Image/Video)
+* Fills the wrapper using absolute positioning.
+* -------------------------------------------------------- */
+.background-container { /* General container for bg elements */
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important; /* Fill parent wrapper */
+  height: 100% !important; /* Fill parent wrapper */
+  overflow: hidden !important;
+  z-index: 1 !important; /* Below gizmo container */
+}
+
+#background-image { /* The actual <img> element */
+  display: block !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important; /* Fill background-container */
+  height: 100% !important; /* Fill background-container */
+  -o-object-fit: initial !important;
+     object-fit: initial !important; /* Do not use object-fit, parent scaling handles it */
+  -o-object-position: initial !important;
+     object-position: initial !important;
+  transform: none !important;
+}
+
+#youtube-background { /* Container specific to YouTube */ }
+#youtube-background.audio-only {
+  /* Keep original audio-only hiding styles */
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+.youtube-container { /* Inner container if needed for aspect ratio */
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important; /* Fill parent #youtube-background */
+  height: 100% !important; /* Fill parent #youtube-background */
+  overflow: hidden !important;
+}
+
+#youtube-player { /* The actual <iframe> */
+  display: block !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important; /* Fill youtube-container */
+  height: 100% !important; /* Fill youtube-container */
+  border: none !important;
+  transform: none !important;
+}
+
+/* --------------------------------------------------------
+* 5. GIZMOS CONTAINER & GIZMOS (v5 - CSS Positioning)
+* -------------------------------------------------------- */
+.wrapper-floor-gizmos { /* Container INSIDE the scaled wrapper */
+  position: absolute !important; /* CRUCIAL: Relative to scaled wrapper */
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important; /* CRUCIAL: Spans the wrapper's current size */
+  height: 100% !important; /* CRUCIAL: Spans the wrapper's current size */
+  pointer-events: none !important; /* Allow clicks through to background */
+  z-index: 10 !important; /* Above background, below UI */
+  /* outline: 2px dashed yellow !important; */ /* DEBUG */
+}
+
+.floor-gizmo { /* Individual Gizmo */
+  position: absolute !important; /* CRUCIAL: Relative to wrapper-floor-gizmos */
+  /* top: % and left: % MUST be set via inline style in HTML template */
+  transform: translate(-50%, -50%); /* Centers the gizmo element on its coordinate point */
+  transform-origin: center center;
+  pointer-events: auto !important; /* Make gizmo clickable */
+  z-index: 11 !important; /* Above gizmo container */
+  cursor: pointer !important;
+  /* --- Base Visual Style (Customize as needed) --- */
+  background: rgba(233, 3, 3, 0.8); /* Example color (use --subtitle-color?) */
+  transition: transform 0.2s ease; /* Smooth hover effect */
+  /* Example for tooltip inside gizmo - adjust as needed */
+}
+.floor-gizmo .gizmo-tooltip {
+  position: absolute !important;
+  bottom: 120%; /* Position above */
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  color: white !important;
+  padding: 5px 10px !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+  font-size: 14px !important;
+  opacity: 0 !important;
+  transition: opacity 0.2s ease !important;
+  pointer-events: none !important;
+}
+.floor-gizmo:hover .floor-gizmo .gizmo-tooltip {
+  opacity: 1 !important;
+}
+.floor-gizmo .gizmo-tooltip::after { /* Creates the arrow */
+  content: "" !important;
+  position: absolute !important;
+  top: 100% !important;
+  left: 50% !important;
+  margin-left: -5px !important;
+  border-width: 5px !important;
+  border-style: solid !important;
+  border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent !important;
+}
+
+/* --------------------------------------------------------
+* 6. FIXED UI ELEMENTS (Title, Content, Toolbar)
+* These stay fixed relative to the viewport.
 * -------------------------------------------------------- */
 .spiral-tower-floor-title {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
   width: 100% !important;
+  z-index: 1001 !important;
   margin: 0 !important;
   border-radius: 0 !important;
   background-color: var(--title-bg-color, rgba(20, 20, 20, 0.85)) !important;
   padding: 20px !important;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
   box-sizing: border-box !important;
-  position: fixed !important;
-  /* Fixed at the top */
-  top: 0 !important;
-  left: 0 !important;
-  z-index: 1000001 !important;
-  cursor: pointer !important;
-  /* Indicate it's clickable */
+  cursor: pointer !important; /* Indicate it's clickable */
 }
 .spiral-tower-floor-title h1 {
   margin: 0 !important;
@@ -593,60 +654,53 @@ body .container {
   color: var(--subtitle-color, #e90303) !important;
   font-family: var(--title-font) !important;
   text-align: center;
-  /* Note: This semicolon is present in the original and left untouched */
 }
 
-/* --------------------------------------------------------
- * 6. CONTENT STYLING
- * -------------------------------------------------------- */
+.spiral-tower-floor-container {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 80% !important;
+  max-width: 800px !important;
+  z-index: 1000 !important;
+  box-sizing: border-box !important;
+  transition: opacity 0.5s ease !important;
+  opacity: 0 !important; /* Start hidden, shown on title hover */
+  margin-top: 60px !important; /* Offset below title - Adjust as needed */
+  max-height: calc(80vh - 100px) !important; /* Limit height */
+}
+
+.spiral-tower-floor-title:hover ~ .spiral-tower-floor-container,
+.spiral-tower-floor-container:hover {
+  opacity: 1 !important;
+}
+
 .spiral-tower-floor-content {
-  background-color: var(--content-bg-color, rgba(0, 0, 0, 0.6)) !important;
+  background-color: var(--content-bg-color, rgba(35, 35, 35, 0.85)) !important;
   padding: 30px !important;
   border-radius: 15px !important;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
   box-sizing: border-box !important;
   color: var(--content-text-color, #e6e6e6) !important;
   position: relative !important;
-  max-height: calc(80vh - 120px) !important;
-  /* Adjust based on title height + spacing */
-  overflow-y: auto !important;
-  /* Style content elements */
-  /* Apply title font to headings */
-  /* Allow inline elements to display properly */
-  /* Style links with accent color */
+  max-height: 100% !important; /* Fill the container's max-height */
+  overflow-y: auto !important; /* Enable scrolling if content exceeds max-height */
+  font-family: var(--body-font) !important;
 }
-.spiral-tower-floor-content p,
-.spiral-tower-floor-content ul,
-.spiral-tower-floor-content ol,
-.spiral-tower-floor-content li,
-.spiral-tower-floor-content blockquote {
+.spiral-tower-floor-content p, .spiral-tower-floor-content ul, .spiral-tower-floor-content ol, .spiral-tower-floor-content li, .spiral-tower-floor-content blockquote {
   color: var(--content-text-color, #e6e6e6) !important;
   max-width: 100% !important;
   display: block !important;
   box-sizing: border-box !important;
-  font-family: var(--body-font) !important;
   letter-spacing: -0.5px;
-  font-size: 2rem;
+  font-size: 1.2rem;
+  line-height: 1.6;
 }
-.spiral-tower-floor-content h1,
-.spiral-tower-floor-content h2,
-.spiral-tower-floor-content h3,
-.spiral-tower-floor-content h4,
-.spiral-tower-floor-content h5,
-.spiral-tower-floor-content h6 {
+.spiral-tower-floor-content h1, .spiral-tower-floor-content h2, .spiral-tower-floor-content h3, .spiral-tower-floor-content h4, .spiral-tower-floor-content h5, .spiral-tower-floor-content h6 {
   color: var(--title-text-color, #fff) !important;
-  max-width: 100% !important;
-  display: block !important;
-  box-sizing: border-box !important;
   font-family: var(--title-font) !important;
-}
-.spiral-tower-floor-content a,
-.spiral-tower-floor-content strong,
-.spiral-tower-floor-content em,
-.spiral-tower-floor-content span,
-.spiral-tower-floor-content b,
-.spiral-tower-floor-content i {
-  display: inline !important;
+  margin: 1.5em 0 0.5em;
 }
 .spiral-tower-floor-content a {
   color: var(--subtitle-color, #e90303) !important;
@@ -655,10 +709,15 @@ body .container {
 .spiral-tower-floor-content a:hover {
   text-decoration: underline !important;
 }
+.spiral-tower-floor-content strong, .spiral-tower-floor-content b {
+  font-weight: bold;
+}
+.spiral-tower-floor-content em, .spiral-tower-floor-content i {
+  font-style: italic;
+}
 
-/* Custom scrollbar styling */
 .spiral-tower-floor-content::-webkit-scrollbar {
-  width: 12px !important;
+  width: 10px !important;
 }
 
 .spiral-tower-floor-content::-webkit-scrollbar-track {
@@ -667,6 +726,7 @@ body .container {
 
 .spiral-tower-floor-content::-webkit-scrollbar-thumb {
   background-color: var(--subtitle-color, #e90303) !important;
+  border-radius: 5px;
 }
 
 .spiral-tower-floor-content::-webkit-scrollbar-thumb:hover {
@@ -674,491 +734,176 @@ body .container {
 }
 
 /* --------------------------------------------------------
-* 7. RESPONSIVE ADJUSTMENTS
-* -------------------------------------------------------- */
-@media (max-width: 768px) {
-  .spiral-tower-floor-container {
-    width: 90% !important;
-    margin: 0 auto !important;
-  }
-  .spiral-tower-floor-title {
-    padding: 15px !important;
-  }
-  .spiral-tower-floor-title h1 {
-    font-size: 2em !important;
-  }
-  .spiral-tower-floor-content {
-    padding: 20px !important;
-    margin-bottom: 40px !important;
-  }
-}
-@media (max-width: 480px) {
-  .spiral-tower-floor-container {
-    width: 95% !important;
-    margin: 0 auto !important;
-  }
-  .spiral-tower-floor-title {
-    padding: 12px !important;
-  }
-  .spiral-tower-floor-title h1 {
-    font-size: 1.8em !important;
-  }
-  .spiral-tower-floor-number {
-    font-size: 1em !important;
-  }
-}
-/* --------------------------------------------------------
-* 8. Animation
-* -------------------------------------------------------- */
-/* When title is hovered, show the container */
-.spiral-tower-floor-title:hover ~ .spiral-tower-floor-container,
-.spiral-tower-floor-container:hover {
-  opacity: 1 !important;
-}
-
-/* --------------------------------------------------------
-* 9. YouTube Background
-* -------------------------------------------------------- */
-#youtube-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-}
-#youtube-background.audio-only {
-  /* Replace display: none with this: */
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  top: -9999px !important;
-  left: -9999px !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  overflow: hidden !important;
-  pointer-events: none !important; /* Ensure it doesn't intercept clicks */
-  /* Ensure iframe inside is also hidden if necessary,
-     though the above usually suffices. */
-}
-#youtube-background.audio-only iframe {
-  /* May not be needed if parent is fully hidden */
-  /* opacity: 0; */
-  /* visibility: hidden; */
-}
-
-.youtube-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-#youtube-player {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100vw;
-  height: 56.25vw;
-  /* 16:9 aspect ratio (9/16*100) */
-  min-height: 100vh;
-  min-width: 177.78vh;
-  /* 16:9 aspect ratio (16/9*100) */
-  transform: translate(-50%, -50%);
-  border: none;
-}
-
-#youtube-background.audio-only {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-#youtube-background.audio-only iframe {
-  visibility: hidden;
-}
-
-/* Start invisible javascript will trigger fade in */
-#youtube-background {
-  opacity: 0;
-  animation: youtube-fade-in 6s forwards;
-}
-
-@keyframes youtube-fade-in {
-  0%, 50% {
-    opacity: 0;
-  }
-  51% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-/* --------------------------------------------------------
-* 9. YouTube Background 
-* -------------------------------------------------------- */
-#youtube-background {
-  /* ... (keep existing styles like position, z-index etc) ... */
-  overflow: hidden; /* Container hides iframe overflow */
-}
-
-.youtube-container {
-  /* ... (keep existing styles) ... */
-  overflow: hidden;
-}
-
-#youtube-player {
-  /* ... (keep existing styles like position, aspect ratio calculations) ... */
-  transition: transform 0.5s ease-in-out; /* Smooth transition for video scrolling */
-}
-
-/* --------------------------------------------------------
-* 10. TOOLBAR
+* 7. TOOLBAR & TOOLTIPS (Keep from Original)
 * -------------------------------------------------------- */
 #toolbar {
   display: flex;
   position: fixed;
-  bottom: 0;
-  right: 60px;
-  z-index: 9999999;
-  background: rgba(0, 0, 0, 0.5);
-  /* Allow sound toggle to display */
+  bottom: 15px;
+  right: 15px;
+  z-index: 9999 !important;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 5px;
+  overflow: hidden;
 }
-#toolbar div {
-  flex: 1;
-  width: 30px;
-  height: 30px;
-  padding: 4px;
-  display: block;
-  border: 1px solid rgba(0, 0, 0, 0.9);
-  text-align: center;
-  margin-right: -1px;
-}
-#toolbar #button-sound-toggle,
-#toolbar #button-sound-toggle { /* Note: Duplicate selector present in original */
-  visibility: visible;
-  opacity: 1;
+#toolbar > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 5px;
   cursor: pointer;
-  display: none;
-  visibility: hidden;
-  opacity: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  transition: background-color 0.2s ease;
 }
+#toolbar > div:first-child {
+  border-left: none;
+}
+#toolbar > div:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+#toolbar > div img, #toolbar > div svg {
+  max-width: 70%;
+  max-height: 70%;
+  display: block;
+  fill: white;
+}
+#toolbar #button-sound-toggle {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+}
+#toolbar #button-sound-toggle #volume-off-icon, #toolbar #button-sound-toggle #volume-on-icon { /* ... svg styles ... */ }
 
 .tooltip-trigger {
   position: relative;
-  /* Needed for absolute positioning of the tooltip */
   cursor: help;
-  /* Optional: Change cursor */
-  border-bottom: 1px dotted black;
-  /* Optional: Indicate it has a tooltip */
 }
 
 .tooltip-trigger::after {
   content: attr(data-tooltip);
-  /* Get text from data-tooltip attribute */
   position: absolute;
-  bottom: 100%;
-  /* Position above the element */
+  bottom: 110%;
   left: 50%;
   transform: translateX(-50%);
-  /* Center the tooltip */
   margin-bottom: 5px;
-  /* Space between element and tooltip */
-  /* Styling */
   background-color: #333;
   color: #fff;
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 0.9em;
+  font-family: var(--body-font);
   white-space: nowrap;
-  /* Prevent line breaks */
-  /* Hide by default */
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
-  z-index: 10;
-  /* Ensure it's above other elements */
+  z-index: 10000;
 }
 
-/* Show on hover */
-.tooltip-trigger:hover::after {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Optional: Add a small arrow */
 .tooltip-trigger::before {
   content: "";
   position: absolute;
-  bottom: 100%;
+  bottom: 110%;
   left: 50%;
   transform: translateX(-50%);
   margin-bottom: 0px;
-  /* Position just below the main tooltip box */
   border-width: 5px;
   border-style: solid;
   border-color: #333 transparent transparent transparent;
-  /* Arrow pointing down */
-  /* Hide by default */
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
-  z-index: 11;
-  /* Above the tooltip box */
+  z-index: 10001;
 }
 
+.tooltip-trigger:hover::after,
 .tooltip-trigger:hover::before {
   opacity: 1;
   visibility: visible;
 }
 
-/* Add these styles to your existing SCSS file */
 /* --------------------------------------------------------
-* WRAPPER AND GIZMO POSITIONING
+* 8. RESPONSIVE ADJUSTMENTS (Keep/Adjust from Original)
+* Adjust padding, font sizes, container widths for smaller screens.
 * -------------------------------------------------------- */
-/* Reset core elements */
-html, body {
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  width: 100% !important;
-  height: 100% !important;
+@media (max-width: 768px) {
+  .spiral-tower-floor-container {
+    width: 90% !important;
+    margin-top: 50px !important;
+    max-height: calc(85vh - 80px) !important;
+  }
+  .spiral-tower-floor-title {
+    padding: 15px !important;
+  }
+  .spiral-tower-floor-title h1 {
+    font-size: 1.3em !important;
+  }
+  .spiral-tower-floor-content {
+    padding: 20px !important;
+    font-size: 1.1rem;
+  }
 }
-
-/* 
- * The wrapper starts at its natural size (image or video dimensions)
- * and is then scaled to fit the viewport
- */
+@media (max-width: 480px) {
+  .spiral-tower-floor-container {
+    width: 95% !important;
+    margin-top: 45px !important;
+    max-height: calc(80vh - 70px) !important;
+  }
+  .spiral-tower-floor-title {
+    padding: 12px !important;
+  }
+  .spiral-tower-floor-title h1 {
+    font-size: 1.2em !important;
+  }
+  .spiral-tower-floor-content {
+    font-size: 1rem;
+    padding: 15px !important;
+  }
+  #toolbar {
+    bottom: 10px;
+    right: 10px;
+  }
+  #toolbar > div {
+    width: 35px;
+    height: 35px;
+  }
+}
+/* Ensure these are active */
 .spiral-tower-floor-wrapper {
-  /* Position in the center of the viewport */
   position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important; /* Center positioning */
   transform-origin: center center !important;
-  /* Don't set width/height here - JavaScript will set based on content */
-  /* The width and height will be set to match the background content's natural size */
   overflow: hidden !important;
   z-index: 1 !important;
-  /* Debug outline - uncomment to see the wrapper borders */
-  /* outline: 2px solid red !important; */
+  /* Start hidden - JS MUST set visibility: visible */
+  visibility: hidden;
+  /* JS sets width, height, top, left, transform */
+  margin: 0 !important; /* Ensure no margin interferes */
+  padding: 0 !important; /* Ensure no padding interferes */
 }
 
-/* Background containers that fill the wrapper */
-.background-container {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}
-
-/* Image background fills the container */
-#image-background img#background-image {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  -o-object-fit: cover !important;
-     object-fit: cover !important;
-  -o-object-position: center !important;
-     object-position: center !important;
-}
-
-/* YouTube background styling */
+.background-container,
+#image-background,
 #youtube-background {
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
+  width: 100% !important; /* Fill wrapper */
+  height: 100% !important; /* Fill wrapper */
   overflow: hidden !important;
 }
 
-.youtube-container {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  overflow: hidden !important;
-}
-
+#background-image,
 #youtube-player {
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  -o-object-fit: cover !important;
-     object-fit: cover !important;
-}
-
-/* Gizmo container for positioning elements on the background */
-.wrapper-floor-gizmos {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  pointer-events: none !important; /* Allow clicking through to background by default */
-  /* Debug outline - uncomment to see the gizmo container boundaries */
-  /* outline: 2px dashed blue !important; */
-}
-
-/* Individual gizmos can be positioned precisely */
-.floor-gizmo {
-  position: absolute !important;
-  /* Don't set dimensions here - each gizmo should define its own size */
-  pointer-events: auto !important; /* Make individual gizmos clickable */
-  /* Debug styling - uncomment to see gizmo boundaries */
-  /* background-color: rgba(255, 0, 0, 0.3) !important; */
-  /* outline: 1px solid yellow !important; */
-}
-
-/* Overlay elements that stay fixed regardless of wrapper scaling */
-.spiral-tower-floor-title,
-.spiral-tower-floor-container,
-#toolbar {
-  z-index: 1000 !important;
-  position: fixed !important;
-}
-
-/* --------------------------------------------------------
-* FULLSCREEN VIEWPORT - RESIZE AWARE
-* -------------------------------------------------------- */
-/* Reset essential viewport elements */
-html, body {
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: 100vw !important; /* Use viewport units */
-  max-height: 100vh !important; /* Use viewport units */
-  box-sizing: border-box !important;
-}
-
-/* Core wrapper styling - fixed to ensure it covers the viewport */
-.spiral-tower-floor-wrapper {
-  position: fixed !important; /* Fixed rather than absolute to ensure it stays put */
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important; /* Using right and bottom as well as top and left */
-  bottom: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  z-index: 1 !important;
-  /* Ensure no transforms are applied */
-  transform: none !important;
-  /* Ensure proper sizing calculation */
-  box-sizing: border-box !important;
-}
-
-/* Background containers */
-.background-container {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  /* Ensure proper sizing calculation */
-  box-sizing: border-box !important;
-}
-
-/* Image background - use object-fit for proper resize handling */
-#image-background img#background-image {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  /* These properties ensure proper resize handling */
-  -o-object-fit: cover !important;
-     object-fit: cover !important;
-  -o-object-position: center !important;
-     object-position: center !important;
-  /* Ensure no transforms are applied */
-  transform: none !important;
-}
-
-/* YouTube background */
-#youtube-background {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}
-#youtube-background.audio-only {
-  /* Properly hide audio-only players */
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  top: -9999px !important;
-  left: -9999px !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-}
-
-.youtube-container {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  overflow: hidden !important;
-}
-
-#youtube-player {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  /* These properties ensure proper resize handling */
-  -o-object-fit: cover !important;
-     object-fit: cover !important;
+  width: 100% !important; /* Fill container */
+  height: 100% !important; /* Fill container */
+  display: block !important;
   border: none !important;
-  /* Ensure no transforms are applied */
   transform: none !important;
-}
-
-/* Ensure wrapper content is properly positioned */
-.wrapper-content {
-  position: absolute !important;
-  /* Additional positioning as needed */
-}
-
-/* Ensure UI elements remain above the wrapper */
-.spiral-tower-floor-title,
-.spiral-tower-floor-container,
-#toolbar {
-  z-index: 1000 !important;
-  position: fixed !important;
 }
 
 /*# sourceMappingURL=floor-template.css.map*/

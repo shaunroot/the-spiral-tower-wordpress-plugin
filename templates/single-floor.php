@@ -81,23 +81,22 @@ if ($has_youtube && !$youtube_audio_only) {
 		data-img-width="<?php echo esc_attr($image_width); ?>" data-img-height="<?php echo esc_attr($image_height); ?>"
 	<?php elseif ($visual_bg_type === 'video'): ?> data-bg-type="video" <?php endif; // If visual_bg_type is null, no data-bg-type is set ?>>
 
+
+	// --- Inside your single-floor.php ---
+
 	<div class="spiral-tower-floor-wrapper" data-barba="container"
 		data-barba-namespace="floor-<?php echo get_the_ID(); ?>">
-		<?php // --- Background Image - NEW Implementation --- 
 
-
-		if ($visual_bg_type === 'image' && $has_feat_image): ?>
+		<?php // --- Background Image or Video --- ?>
+		<?php if ($visual_bg_type === 'image' && $has_feat_image): ?>
 			<div id="image-background" class="background-container">
-				<img id="background-image" src="<?php echo esc_url($featured_image); ?>"
-					alt="<?php echo esc_attr(get_the_title()); ?> background" width="<?php echo esc_attr($image_width); ?>"
-					height="<?php echo esc_attr($image_height); ?>">
+				<img id="background-image" src="<?php echo esc_url($featured_image); ?>" alt="...">
 			</div>
-		<?php endif; ?>
-
-		<?php // --- YouTube Output --- 
-		if ($has_youtube): ?>
-			<div id="youtube-background" <?php echo $youtube_audio_only ? 'class="audio-only"' : 'class="background-container"'; ?>>
-				<div class="youtube-container">
+		<?php elseif ($visual_bg_type === 'video' && $has_youtube): ?>
+			<div id="youtube-background"
+				class="background-container <?php echo $youtube_audio_only ? 'audio-only' : ''; ?>">
+				<?php // If using youtube-container div, ensure it's also 100% w/h ?>
+				<div class="youtube-container" style="position: absolute; top:0; left:0; width:100%; height: 100%;">
 					<iframe id="youtube-player"
 						src="https://www.youtube.com/embed/<?php echo esc_attr($youtube_id); ?>?autoplay=1&mute=1&controls=0&loop=1&playlist=<?php echo esc_attr($youtube_id); ?>&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&hd=1&enablejsapi=1"
 						frameborder="0" allowfullscreen allow="autoplay"></iframe>
@@ -105,7 +104,43 @@ if ($has_youtube && !$youtube_audio_only) {
 			</div>
 		<?php endif; ?>
 
+
+		<?php // --- Gizmo Container --- ?>
+		<div class="wrapper-floor-gizmos">
+
+			<?php // --- Individual Gizmos - DEFINE POSITION HERE --- ?>
+			<div id="sample-gizmo-1" class="floor-gizmo" style="left: 25%; top: 30%;">
+				<?php // Content for Gizmo 1 ?>
+				X
+			</div>
+
+			<div id="wrapper-elevator" class="floor-gizmo" style="left: 50.25%; top: 58%;">
+				<img style="margin-left: -30px;"
+					src="https://www.thespiraltower.net/wp-content/plugins/the-spiral-tower/dist/images/floor-000001/Hotel%20elevator%20door%20-%20left.jpg"
+					alt="Marker Image">
+				<img src="https://www.thespiraltower.net/wp-content/plugins/the-spiral-tower/dist/images/floor-000001/Hotel%20elevator%20door%20-%20left.jpg"
+					alt="Marker Image">
+			</div>
+
+			<style>
+				#wrapper-elevator {
+					display: flex;
+					overflow: hidden;
+				}
+
+				#wrapper-elevator img {
+					flex: 1;
+					width: 133px;
+				}
+			</style>
+
+			<?php // Add more gizmos with their specific inline left/top percentages ?>
+
+		</div> <?php // end .wrapper-floor-gizmos ?>
+
 	</div> <?php // end .spiral-tower-floor-wrapper ?>
+
+	<?php // --- Rest of your template (Title, Content Container, Toolbar, etc.) --- ?>
 
 
 	<?php // ----- START: Your Content Structure ----- ?>
@@ -170,153 +205,7 @@ if ($has_youtube && !$youtube_audio_only) {
 
 	<?php wp_footer(); ?>
 
-	<script>
-// Resize-aware fix for full viewport coverage
-(function() {
-    // Configuration
-    const config = {
-        resizeDelay: 100,        // Debounce delay for resize events (ms)
-        applyOnLoad: true,       // Apply on initial page load
-        applyOnResize: true,     // Apply on window resize
-        logEvents: true          // Log debug info to console
-    };
-    
-    // State variables
-    let resizeTimer = null;
-    let lastWidth = window.innerWidth;
-    let lastHeight = window.innerHeight;
-    
-    /**
-     * Main function to ensure full viewport coverage
-     */
-    function ensureFullViewport() {
-        if (config.logEvents) {
-            console.log(`Ensuring full viewport: ${window.innerWidth}x${window.innerHeight}`);
-        }
-        
-        // Reset body and html
-        document.body.style.margin = '0';
-        document.body.style.padding = '0';
-        document.body.style.overflow = 'hidden';
-        document.body.style.width = '100%';
-        document.body.style.height = '100%';
-        
-        document.documentElement.style.margin = '0';
-        document.documentElement.style.padding = '0';
-        document.documentElement.style.overflow = 'hidden';
-        document.documentElement.style.width = '100%';
-        document.documentElement.style.height = '100%';
-        
-        // Fix wrapper
-        const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
-        if (wrapper) {
-            wrapper.style.position = 'fixed';
-            wrapper.style.top = '0';
-            wrapper.style.left = '0';
-            wrapper.style.width = '100%';
-            wrapper.style.height = '100%';
-            wrapper.style.margin = '0';
-            wrapper.style.padding = '0';
-            wrapper.style.overflow = 'hidden';
-        }
-        
-        // Fix background containers
-        const bgContainers = document.querySelectorAll('.background-container');
-        bgContainers.forEach(container => {
-            container.style.position = 'absolute';
-            container.style.top = '0';
-            container.style.left = '0';
-            container.style.width = '100%';
-            container.style.height = '100%';
-            container.style.margin = '0';
-            container.style.padding = '0';
-            container.style.overflow = 'hidden';
-        });
-        
-        // Fix background image
-        const bgImage = document.getElementById('background-image');
-        if (bgImage) {
-            bgImage.style.position = 'absolute';
-            bgImage.style.top = '0';
-            bgImage.style.left = '0';
-            bgImage.style.width = '100%';
-            bgImage.style.height = '100%';
-            bgImage.style.objectFit = 'cover';
-            bgImage.style.objectPosition = 'center';
-            // Remove any transform
-            bgImage.style.transform = 'none';
-        }
-        
-        // Fix YouTube player
-        const ytPlayer = document.getElementById('youtube-player');
-        if (ytPlayer) {
-            ytPlayer.style.position = 'absolute';
-            ytPlayer.style.top = '0';
-            ytPlayer.style.left = '0';
-            ytPlayer.style.width = '100%';
-            ytPlayer.style.height = '100%';
-            ytPlayer.style.objectFit = 'cover';
-            // Remove any transform
-            ytPlayer.style.transform = 'none';
-        }
-        
-        // Store current dimensions
-        lastWidth = window.innerWidth;
-        lastHeight = window.innerHeight;
-    }
-    
-    /**
-     * Properly debounced resize handler
-     */
-    function handleResize() {
-        // Clear previous timer
-        if (resizeTimer) {
-            clearTimeout(resizeTimer);
-        }
-        
-        // Only process if dimensions actually changed
-        if (lastWidth !== window.innerWidth || lastHeight !== window.innerHeight) {
-            if (config.logEvents) {
-                console.log(`Window resized: ${lastWidth}x${lastHeight} → ${window.innerWidth}x${window.innerHeight}`);
-            }
-            
-            // Set a new timer
-            resizeTimer = setTimeout(() => {
-                ensureFullViewport();
-            }, config.resizeDelay);
-        }
-    }
-    
-    /**
-     * Initialize the fullscreen handling
-     */
-    function init() {
-        if (config.logEvents) {
-            console.log("Initializing fullscreen viewport handling");
-        }
-        
-        // Apply immediately
-        ensureFullViewport();
-        
-        // Set up event listeners
-        if (config.applyOnResize) {
-            window.addEventListener('resize', handleResize);
-        }
-        
-        if (config.applyOnLoad) {
-            window.addEventListener('load', ensureFullViewport);
-        }
-        
-        // Apply additional times after delays to catch edge cases
-        setTimeout(ensureFullViewport, 100);
-        setTimeout(ensureFullViewport, 500);
-        setTimeout(ensureFullViewport, 1000);
-    }
-    
-    // Start it up
-    init();
-})();
-</script>
+
 
 </body>
 
