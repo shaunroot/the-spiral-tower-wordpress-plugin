@@ -20,7 +20,8 @@ window.SpiralTower.config = {
     // List of module scripts to load in order
     const scripts = [
         'spiral-tower-utils.js',
-        'spiral-tower-scroll.js',
+        'spiral-tower-background.js', // Add the new background module before scroll
+        // 'spiral-tower-scroll.js',
         'spiral-tower-youtube.js',
         'spiral-tower-transitions.js',
         'spiral-tower-core.js'

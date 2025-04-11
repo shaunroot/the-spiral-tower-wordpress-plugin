@@ -512,35 +512,6 @@ body .container {
 }
 
 /* --------------------------------------------------------
- * 3. FULLSCREEN BACKGROUND
- * -------------------------------------------------------- */
-.spiral-tower-floor-wrapper {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 100vh !important;
-  background-size: cover !important;
-  background-position: center center !important;
-  background-repeat: no-repeat !important;
-  background-attachment: fixed !important;
-  background-color: var(--background-color, #000) !important;
-  /* Use CSS variable with fallback */
-  z-index: 999999 !important;
-  overflow-y: auto !important;
-  box-sizing: border-box !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  /* Ensure the background image properly renders */
-}
-.spiral-tower-floor-wrapper[style*=background-image] {
-  background-image: var(--background-image) !important;
-}
-
-/* --------------------------------------------------------
 * 4. CONTENT CONTAINER
 * -------------------------------------------------------- */
 .spiral-tower-floor-container {
@@ -829,22 +800,8 @@ body .container {
     opacity: 1;
   }
 }
-/* ///////////////////// SCROLL BG */
 /* --------------------------------------------------------
-* 3. FULLSCREEN BACKGROUND (Modified for Scrolling)
-* -------------------------------------------------------- */
-.spiral-tower-floor-wrapper {
-  /* ... (keep existing styles) ... */
-  background-size: cover !important;
-  background-position: center center !important; /* Initial position */
-  background-repeat: no-repeat !important;
-  background-attachment: fixed !important; /* Keep fixed for image background scrolling */
-  transition: background-position 0.5s ease-in-out; /* Smooth transition for image scrolling */
-  overflow: hidden !important; /* Hide wrapper overflow, we scroll its content/bg */
-}
-
-/* --------------------------------------------------------
-* 9. YouTube Background (Modified for Scrolling)
+* 9. YouTube Background 
 * -------------------------------------------------------- */
 #youtube-background {
   /* ... (keep existing styles like position, z-index etc) ... */
@@ -859,70 +816,6 @@ body .container {
 #youtube-player {
   /* ... (keep existing styles like position, aspect ratio calculations) ... */
   transition: transform 0.5s ease-in-out; /* Smooth transition for video scrolling */
-}
-
-/* --------------------------------------------------------
-* 10. SCROLL ARROWS
-* -------------------------------------------------------- */
-.scroll-arrows {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1000002; /* Above content container, below potential modals maybe */
-  pointer-events: none; /* Container doesn't block clicks */
-  display: none; /* Initially hidden, JS will show container if overflow detected */
-}
-
-.scroll-arrow {
-  position: absolute;
-  z-index: 1000003;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 24px;
-  line-height: 45px; /* Center icon vertically */
-  text-align: center;
-  cursor: pointer;
-  pointer-events: all; /* Arrows ARE clickable */
-  opacity: 0.7;
-  transition: opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease;
-  display: none; /* Initially hide individual arrows */
-  background-color: transparent;
-}
-.scroll-arrow:hover {
-  color: rgb(255, 255, 255);
-  opacity: 1;
-}
-.scroll-arrow:disabled {
-  opacity: 0.2;
-  cursor: not-allowed;
-  pointer-events: none; /* Make sure disabled cannot be clicked */
-  background-color: rgba(50, 50, 50, 0.3);
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.scroll-up {
-  top: 100px;
-  right: 10px;
-  /* transform: translateX(-50%); */
-}
-
-.scroll-down {
-  bottom: 100px; /* Adjust if it conflicts with sound toggle */
-  right: 10px;
-  /* transform: translateX(-50%); */
-}
-
-.scroll-left {
-  left: 15px;
-  bottom: 80px;
-  /*transform: translateY(-50%); */
-}
-
-.scroll-right {
-  right: 15px;
-  bottom: 80px;
-  /*transform: translateY(-50%); */
 }
 
 /* --------------------------------------------------------
@@ -1023,6 +916,249 @@ body .container {
 .tooltip-trigger:hover::before {
   opacity: 1;
   visibility: visible;
+}
+
+/* Add these styles to your existing SCSS file */
+/* --------------------------------------------------------
+* WRAPPER AND GIZMO POSITIONING
+* -------------------------------------------------------- */
+/* Reset core elements */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 
+ * The wrapper starts at its natural size (image or video dimensions)
+ * and is then scaled to fit the viewport
+ */
+.spiral-tower-floor-wrapper {
+  /* Position in the center of the viewport */
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important; /* Center positioning */
+  transform-origin: center center !important;
+  /* Don't set width/height here - JavaScript will set based on content */
+  /* The width and height will be set to match the background content's natural size */
+  overflow: hidden !important;
+  z-index: 1 !important;
+  /* Debug outline - uncomment to see the wrapper borders */
+  /* outline: 2px solid red !important; */
+}
+
+/* Background containers that fill the wrapper */
+.background-container {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Image background fills the container */
+#image-background img#background-image {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  -o-object-fit: cover !important;
+     object-fit: cover !important;
+  -o-object-position: center !important;
+     object-position: center !important;
+}
+
+/* YouTube background styling */
+#youtube-background {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.youtube-container {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+#youtube-player {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  -o-object-fit: cover !important;
+     object-fit: cover !important;
+}
+
+/* Gizmo container for positioning elements on the background */
+.wrapper-floor-gizmos {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important; /* Allow clicking through to background by default */
+  /* Debug outline - uncomment to see the gizmo container boundaries */
+  /* outline: 2px dashed blue !important; */
+}
+
+/* Individual gizmos can be positioned precisely */
+.floor-gizmo {
+  position: absolute !important;
+  /* Don't set dimensions here - each gizmo should define its own size */
+  pointer-events: auto !important; /* Make individual gizmos clickable */
+  /* Debug styling - uncomment to see gizmo boundaries */
+  /* background-color: rgba(255, 0, 0, 0.3) !important; */
+  /* outline: 1px solid yellow !important; */
+}
+
+/* Overlay elements that stay fixed regardless of wrapper scaling */
+.spiral-tower-floor-title,
+.spiral-tower-floor-container,
+#toolbar {
+  z-index: 1000 !important;
+  position: fixed !important;
+}
+
+/* --------------------------------------------------------
+* FULLSCREEN VIEWPORT - RESIZE AWARE
+* -------------------------------------------------------- */
+/* Reset essential viewport elements */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100vw !important; /* Use viewport units */
+  max-height: 100vh !important; /* Use viewport units */
+  box-sizing: border-box !important;
+}
+
+/* Core wrapper styling - fixed to ensure it covers the viewport */
+.spiral-tower-floor-wrapper {
+  position: fixed !important; /* Fixed rather than absolute to ensure it stays put */
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important; /* Using right and bottom as well as top and left */
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  z-index: 1 !important;
+  /* Ensure no transforms are applied */
+  transform: none !important;
+  /* Ensure proper sizing calculation */
+  box-sizing: border-box !important;
+}
+
+/* Background containers */
+.background-container {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  /* Ensure proper sizing calculation */
+  box-sizing: border-box !important;
+}
+
+/* Image background - use object-fit for proper resize handling */
+#image-background img#background-image {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  /* These properties ensure proper resize handling */
+  -o-object-fit: cover !important;
+     object-fit: cover !important;
+  -o-object-position: center !important;
+     object-position: center !important;
+  /* Ensure no transforms are applied */
+  transform: none !important;
+}
+
+/* YouTube background */
+#youtube-background {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+#youtube-background.audio-only {
+  /* Properly hide audio-only players */
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.youtube-container {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+#youtube-player {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  /* These properties ensure proper resize handling */
+  -o-object-fit: cover !important;
+     object-fit: cover !important;
+  border: none !important;
+  /* Ensure no transforms are applied */
+  transform: none !important;
+}
+
+/* Ensure wrapper content is properly positioned */
+.wrapper-content {
+  position: absolute !important;
+  /* Additional positioning as needed */
+}
+
+/* Ensure UI elements remain above the wrapper */
+.spiral-tower-floor-title,
+.spiral-tower-floor-container,
+#toolbar {
+  z-index: 1000 !important;
+  position: fixed !important;
 }
 
 /*# sourceMappingURL=floor-template.css.map*/

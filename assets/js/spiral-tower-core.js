@@ -245,7 +245,7 @@ SpiralTower.core = (function() {
 
     // Check if all required modules are loaded
     function checkModulesLoaded() {
-        const requiredModules = ['utils', 'scroll', 'youtube', 'transitions'];
+        const requiredModules = ['utils', 'background', 'youtube', 'transitions'];
         let allLoaded = true;
         
         requiredModules.forEach(module => {
