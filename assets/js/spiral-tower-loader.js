@@ -8,7 +8,7 @@ window.SpiralTower = window.SpiralTower || {};
 
 // Configuration that needs to be accessible before modules load
 window.SpiralTower.config = {
-    TRANSITION_DURATION: 0.9,
+    TRANSITION_DURATION: 5.0,
     IMAGE_LOAD_TIMEOUT: 5000,
     SCROLL_SPEED: 1.8,
     IMAGE_SCROLL_SPEED_PERCENT: 0.18,

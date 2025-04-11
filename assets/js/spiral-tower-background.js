@@ -8,7 +8,7 @@
 // Ensure the global SpiralTower object exists
 window.SpiralTower = window.SpiralTower || {};
 
-SpiralTower.background = (function() {
+SpiralTower.background = (function () {
     // --- State ---
     let state = {
         initialized: false, // Flag to prevent multiple initializations
@@ -45,15 +45,6 @@ SpiralTower.background = (function() {
      */
     function scaleAndPositionWrapper() {
         log('info', "--- Running scaleAndPositionWrapper ---");
-        // ... (Keep the EXACT SAME logic as v6's scaleAndPositionWrapper function) ...
-        // ... (Includes finding wrapper in state, getting viewport, getting content dims from state) ...
-        // ... (Calculating scale, validating scale) ...
-        // ... (Applying styles: width, height, top, left, transform to state.wrapper) ...
-        // ... (Setting visibility: visible on success) ...
-        // ... (Error handling with try/catch, logging, returning true/false) ...
-        // ... (Updating state.lastWidth/Height) ...
-
-        // --- [Paste the full function body from the previous response here] ---
         if (!state.wrapper) {
             log('error', "Cannot execute: Wrapper element not found in state.");
             return false; // Indicate failure
@@ -79,6 +70,7 @@ SpiralTower.background = (function() {
              state.wrapper.style.visibility = 'hidden'; return false;
         }
         try {
+            state.wrapper.style.position = 'fixed'; // Ensure fixed positioning is set
             state.wrapper.style.width = `${state.contentWidth}px`;
             state.wrapper.style.height = `${state.contentHeight}px`;
             state.wrapper.style.top = '50%';
@@ -98,7 +90,6 @@ SpiralTower.background = (function() {
         state.lastWidth = viewportWidth; state.lastHeight = viewportHeight;
         log('info', "--- Finished scaleAndPositionWrapper successfully ---");
         return true; // Indicate success
-        // --- [End of pasted function body] ---
     }
 
     // --- Event Handlers ---
@@ -124,8 +115,54 @@ SpiralTower.background = (function() {
          }, 200);
      }
 
+    /**
+     * Reads content type and dimensions from document body attributes
+     * Updates state with these values
+     * Returns true if successful, false otherwise
+     */
+    function readContentDimensions() {
+        const body = document.body;
+        
+        // Read content type
+        state.contentType = body.getAttribute('data-bg-type');
+        log('info', `Body data-bg-type: ${state.contentType}`);
+        
+        // Read dimensions based on content type
+        if (state.contentType === 'image') {
+            state.contentWidth = parseInt(body.getAttribute('data-img-width'), 10); 
+            state.contentHeight = parseInt(body.getAttribute('data-img-height'), 10);
+        } else if (state.contentType === 'video') {
+            log('info', "Video type detected, using default 16:9 dimensions (1920x1080).");
+            state.contentWidth = 1920; 
+            state.contentHeight = 1080;
+            if (state.wrapper && !state.wrapper.querySelector('#youtube-player')) {
+                log('warn', "Video type, but #youtube-player not found.");
+            }
+        } else {
+            log('warn', "No valid data-bg-type found. Using fallback."); 
+            state.contentWidth = 100; 
+            state.contentHeight = 100;
+        }
+        
+        // Log and validate dimensions
+        log('info', `Read raw dimensions: W=${state.contentWidth}, H=${state.contentHeight}`);
+        
+        // Apply fallbacks for invalid dimensions
+        if (!state.contentWidth || state.contentWidth <= 0 || isNaN(state.contentWidth)) { 
+            log('warn', `Invalid width (${state.contentWidth}). Forcing fallback: 100.`); 
+            state.contentWidth = 100; 
+        }
+        if (!state.contentHeight || state.contentHeight <= 0 || isNaN(state.contentHeight)) { 
+            log('warn', `Invalid height (${state.contentHeight}). Forcing fallback: 100.`); 
+            state.contentHeight = 100; 
+        }
+        
+        log('info', `Using dimensions for scaling: W=${state.contentWidth}, H=${state.contentHeight}`);
+        return true;
+    }
+
     // --- Initialization Function (to be called externally) ---
-    function init() {
+    function init(container = document) {
         // Prevent multiple initializations
         if (state.initialized) {
             log('warn', "Initialization attempted again, but already initialized.");
@@ -133,8 +170,8 @@ SpiralTower.background = (function() {
         }
         log('info', "Initializing Background module v6.1...");
 
-        // 1. Find Wrapper Element
-        state.wrapper = document.querySelector('.spiral-tower-floor-wrapper');
+        // 1. Find Wrapper Element - Use container parameter for Barba support
+        state.wrapper = container.querySelector('.spiral-tower-floor-wrapper');
         if (!state.wrapper) {
             log('error', "Initialization failed: '.spiral-tower-floor-wrapper' element not found in DOM.");
             return Promise.reject("Wrapper element not found"); // Signal failure
@@ -145,24 +182,7 @@ SpiralTower.background = (function() {
          state.wrapper.style.visibility = 'hidden'; // Start hidden
 
         // 2. Read Content Dimensions
-        const body = document.body;
-        state.contentType = body.getAttribute('data-bg-type');
-        log('info', `Body data-bg-type: ${state.contentType}`);
-        // ... [Keep the logic for reading/validating contentWidth/Height from v6's init] ...
-        if (state.contentType === 'image') {
-            state.contentWidth = parseInt(body.getAttribute('data-img-width'), 10); state.contentHeight = parseInt(body.getAttribute('data-img-height'), 10);
-        } else if (state.contentType === 'video') {
-            log('info', "Video type detected, using default 16:9 dimensions (1920x1080).");
-            state.contentWidth = 1920; state.contentHeight = 1080;
-            if (!state.wrapper.querySelector('#youtube-player')) log('warn', "Video type, but #youtube-player not found.");
-        } else {
-            log('warn', "No valid data-bg-type found. Using fallback."); state.contentWidth = 100; state.contentHeight = 100;
-        }
-        log('info', `Read raw dimensions: W=${state.contentWidth}, H=${state.contentHeight}`);
-        if (!state.contentWidth || state.contentWidth <= 0 || isNaN(state.contentWidth)) { log('warn', `Invalid width (${state.contentWidth}). Forcing fallback: 100.`); state.contentWidth = 100; }
-        if (!state.contentHeight || state.contentHeight <= 0 || isNaN(state.contentHeight)) { log('warn', `Invalid height (${state.contentHeight}). Forcing fallback: 100.`); state.contentHeight = 100; }
-        log('info', `Using dimensions for scaling: W=${state.contentWidth}, H=${state.contentHeight}`);
-        // --- [End of dimension reading logic] ---
+        readContentDimensions();
 
         // 3. Initial Scaling Attempt
         log('info', "Performing initial scale and position...");
@@ -184,14 +204,47 @@ SpiralTower.background = (function() {
         return Promise.resolve(); // Signal success
     }
 
-
     // --- Public API ---
     // Expose the init function so the core/loader script can call it
     return {
         init: init,
         isInitialized: () => state.initialized,
-        // Expose forceUpdate for debugging if needed
-        forceUpdate: scaleAndPositionWrapper
+        
+        // Enhanced forceUpdate function with fresh element finding for Barba transitions
+        forceUpdate: function() {
+            log('info', "forceUpdate called - refreshing background scaling");
+            
+            // 1. Re-find the wrapper element in the DOM
+            state.wrapper = document.querySelector('.spiral-tower-floor-wrapper');
+            if (!state.wrapper) {
+                log('error', "forceUpdate: Cannot find wrapper element in DOM");
+                return false;
+            }
+            
+            // 2. Make sure basic positioning is established
+            state.wrapper.style.position = 'fixed';
+            
+            // 3. Re-read dimensions from the document
+            readContentDimensions();
+            
+            // 4. Apply scaling
+            return scaleAndPositionWrapper();
+        },
+        
+        // Reinit method for Barba transitions
+        reinit: function(container = document) {
+            log('info', "reinit called - resetting state and re-initializing");
+            
+            // Reset critical state values
+            state.initialized = false;
+            state.wrapper = null;
+            state.contentWidth = 0;
+            state.contentHeight = 0;
+            state.contentType = null;
+            
+            // Run full initialization again
+            return init(container);
+        }
     };
 })();
 

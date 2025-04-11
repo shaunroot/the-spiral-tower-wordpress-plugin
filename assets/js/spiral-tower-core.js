@@ -69,6 +69,8 @@ SpiralTower.core = (function () {
                     console.log('%c>>> HOOK: beforeEnter START', 'color: blue; font-weight: bold;');
                     if (next && next.container) {
                         next.container.classList.add('barba-new');
+                        
+                        // Make sure the container is visible but with 0 opacity
                         gsap.set(next.container, {
                             position: 'absolute',
                             top: 0,
@@ -79,16 +81,37 @@ SpiralTower.core = (function () {
                             opacity: 0,
                             zIndex: 2
                         });
+                
+                        // Pre-setup the wrapper for new container, but keep it visible
+                        const newWrapper = next.container.querySelector('.spiral-tower-floor-wrapper');
+                        if (newWrapper) {
+                            console.log('Setting up new wrapper:', newWrapper);
+                            newWrapper.style.position = 'fixed';
+                            newWrapper.style.visibility = 'visible'; // Make it visible from the start
+                            // Don't scale it yet - let the animation handle that
+                        }
                     }
                     console.log('%c<<< HOOK: beforeEnter END', 'color: blue; font-weight: bold;');
                 },
                 // Inside spiral-tower-core.js -> initBarba() -> hooks -> afterEnter()
                 afterEnter({ next }) {
                     console.log('%c>>> HOOK: afterEnter START', 'color: blue; font-weight: bold;');
+                    console.log('LOG: Barba afterEnter - Attempting to reinitialize background');
 
-                    // Increased Delay YouTube initialization further after transition/scaling
+                    // Try to reinitialize background module for the new container
+                    let backgroundInitialized = false;
+                    if (SpiralTower.background && typeof SpiralTower.background.forceUpdate === 'function') {
+                        console.log('LOG: Barba afterEnter - Forcing background update for new container');
+                        // Using forceUpdate instead of reinit to ensure fresh element lookup
+                        backgroundInitialized = SpiralTower.background.forceUpdate();
+                        console.log(`LOG: Background update ${backgroundInitialized ? 'succeeded' : 'failed'}`);
+                    } else {
+                        console.error('LOG: SpiralTower.background.forceUpdate is not available');
+                    }
+
+                    // Increased Delay for YouTube initialization, waiting longer if background init failed
                     setTimeout(() => {
-                        console.log("LOG: Barba afterEnter - Initializing YouTube Player (Longer Delay).");
+                        console.log("LOG: Barba afterEnter - Initializing YouTube Player (Delayed after background)");
                         // Check if API is ready
                         if (window.YT && typeof window.YT.Player === 'function') {
                             if (SpiralTower.youtube && typeof SpiralTower.youtube.initializePlayerForContainer === 'function') {
@@ -100,20 +123,30 @@ SpiralTower.core = (function () {
                                     SpiralTower.youtube.initializePlayerForContainer(next.container);
                                 } else {
                                     console.warn("LOG: Barba afterEnter - Wrapper not ready or visible, delaying YouTube init further or skipping.", wrapper ? computedStyle : 'no wrapper');
-                                    // Optionally, try again later or rely on a different trigger
+
+                                    // Last desperate attempt to update background if it looks like it's not ready
+                                    if (SpiralTower.background && typeof SpiralTower.background.forceUpdate === 'function') {
+                                        console.log('LOG: Last attempt background update');
+                                        SpiralTower.background.forceUpdate();
+                                    }
                                 }
                             }
                         } else {
-                            console.log("LOG: Barba afterEnter (Longer Delay) - YT API not ready yet, onYouTubeIframeAPIReady should handle init.");
+                            console.log("LOG: Barba afterEnter (Delayed) - YT API not ready yet, onYouTubeIframeAPIReady should handle init.");
                             // Update visuals even if API isn't ready
                             if (SpiralTower.youtube && typeof SpiralTower.youtube.updateSoundToggleVisuals === 'function') {
                                 SpiralTower.youtube.updateSoundToggleVisuals(true);
                             }
                         }
-                    }, 250); // **Increased delay to 250ms** (adjust if necessary)
+                    }, backgroundInitialized ? 250 : 400); // Wait longer if background init failed
 
                     // Setup scrolling (keep existing logic/delay)
-                    setTimeout(() => { /* ... scroll setup ... */ }, 150);
+                    setTimeout(() => {
+                        console.log("LOG: Barba afterEnter - Setting up scrolling (delayed)");
+                        if (SpiralTower.scroll && typeof SpiralTower.scroll.setupScrolling === 'function') {
+                            SpiralTower.scroll.setupScrolling();
+                        }
+                    }, 200);
 
                     console.log('%c<<< HOOK: afterEnter END', 'color: blue; font-weight: bold;');
                 },
@@ -137,6 +170,13 @@ SpiralTower.core = (function () {
                 async enter(data) {
                     console.log('%c>>> TRANSITION: enter START', 'color: green;');
 
+                    // Try to initialize background before transition animation
+                    if (SpiralTower.background && typeof SpiralTower.background.forceUpdate === 'function') {
+                        console.log('LOG: Transition enter - Trying early background update');
+                        const success = SpiralTower.background.forceUpdate();
+                        console.log(`LOG: Early background update ${success ? 'succeeded' : 'failed'}`);
+                    }
+
                     let transitions = [];
                     if (SpiralTower.transitions && typeof SpiralTower.transitions.getTransitions === 'function') {
                         transitions = SpiralTower.transitions.getTransitions();
@@ -145,7 +185,10 @@ SpiralTower.core = (function () {
                     }
 
                     const randomEnterIndex = Math.floor(Math.random() * (transitions.length || 1));
-                    const enterTransition = transitions[randomEnterIndex];
+                    // Instead of random selection
+                    const enterTransition = transitions.find(t => t.name === 'pageCover') || transitions[0];
+                    
+                    const temp = transitions[randomEnterIndex];
                     console.log(`LOG: Selected random ENTER animation: ${enterTransition ? enterTransition.name : 'undefined'}`);
 
                     if (enterTransition && typeof enterTransition.enter === 'function') {
@@ -172,6 +215,73 @@ SpiralTower.core = (function () {
                     }
                     document.documentElement.classList.remove('is-animating');
                     document.body.classList.remove('is-transitioning');
+
+                    // CRITICAL: Force background update AFTER all cleanup is done and DOM is settled
+                    if (SpiralTower.background && typeof SpiralTower.background.forceUpdate === 'function') {
+                        console.log('LOG: Forcing final background update after transition');
+                        setTimeout(() => {
+                            // Delay slightly to ensure DOM is completely settled
+                            const success = SpiralTower.background.forceUpdate();
+                            console.log(`LOG: Final background force update ${success ? 'succeeded' : 'failed'}`);
+                        }, 50);
+                    } else {
+                        // Fallback approach if background module is not available
+                        console.log('LOG: Background module not available - applying direct styling');
+                        setTimeout(() => {
+                            // Find the wrapper directly
+                            const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
+                            if (wrapper) {
+                                try {
+                                    // Apply basic styling
+                                    wrapper.style.position = 'fixed';
+                                    
+                                    // Read dimensions
+                                    const body = document.body;
+                                    const contentType = body.getAttribute('data-bg-type');
+                                    let contentWidth = 100;
+                                    let contentHeight = 100;
+                                    
+                                    if (contentType === 'image') {
+                                        contentWidth = parseInt(body.getAttribute('data-img-width'), 10); 
+                                        contentHeight = parseInt(body.getAttribute('data-img-height'), 10);
+                                    } else if (contentType === 'video') {
+                                        contentWidth = 1920; 
+                                        contentHeight = 1080;
+                                    }
+                                    
+                                    // Apply fallbacks for invalid dimensions
+                                    if (!contentWidth || contentWidth <= 0 || isNaN(contentWidth)) {
+                                        contentWidth = 100;
+                                    }
+                                    if (!contentHeight || contentHeight <= 0 || isNaN(contentHeight)) {
+                                        contentHeight = 100;
+                                    }
+                                    
+                                    // Calculate scale
+                                    const viewportWidth = window.innerWidth;
+                                    const viewportHeight = window.innerHeight;
+                                    const scaleX = viewportWidth / contentWidth;
+                                    const scaleY = viewportHeight / contentHeight;
+                                    const scale = Math.max(scaleX, scaleY);
+                                    
+                                    // Apply styling directly
+                                    wrapper.style.width = `${contentWidth}px`;
+                                    wrapper.style.height = `${contentHeight}px`;
+                                    wrapper.style.top = '50%';
+                                    wrapper.style.left = '50%';
+                                    wrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
+                                    wrapper.style.visibility = 'visible';
+                                    
+                                    console.log('Applied direct wrapper styling with scale:', scale);
+                                } catch (err) {
+                                    console.error('Direct styling fallback failed:', err);
+                                }
+                            } else {
+                                console.error('Could not find wrapper element for direct styling');
+                            }
+                        }, 50);
+                    }
+
                     console.log("LOG: --- Barba Transition Complete ---");
                     console.log('%c<<< TRANSITION: enter END', 'color: green;');
                 }
@@ -267,8 +377,6 @@ SpiralTower.core = (function () {
 
         return allLoaded;
     }
-
-    // --- Start Replace inside spiral-tower-core.js ---
 
     // Main initialization function
     async function init() {
@@ -373,10 +481,9 @@ SpiralTower.core = (function () {
         } catch (error) {
             console.error("Error during Core initialization sequence:", error);
         }
-    } // End of modified init function
+    }
 
-    // --- Keep the rest of spiral-tower-core.js the same ---
-    // (Including the event listener at the end that calls this init function)
+    // Register for the modules loaded event
     document.addEventListener('spiralTowerModulesLoaded', init);
 
     // Also provide a manual initialization method

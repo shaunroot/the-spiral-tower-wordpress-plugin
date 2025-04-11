@@ -6,7 +6,7 @@
 window.SpiralTower = window.SpiralTower || {};
 
 // Initialize transitions module
-SpiralTower.transitions = (function() {
+SpiralTower.transitions = (function () {
     // Array to store all transition animations
     let transitionAnimations = [];
 
@@ -139,59 +139,118 @@ SpiralTower.transitions = (function() {
                 }
             },
             // Horizontal Slide transition
+            // Updated horizontalSlide transition
             {
-                name: 'horizontalSlide', // 3
+                name: 'horizontalSlide',
                 enter: async function enterHorizontalSlide(container) {
                     console.log("  Executing enterHorizontalSlide");
-                    const { wrapper } = SpiralTower.utils.getFloorElements(container);
 
-                    if (!wrapper) return;
+                    if (!container) return;
 
-                    // Make container visible
-                    gsap.set(container, { visibility: 'visible', opacity: 1 });
+                    // Make container visible but don't mess with the wrapper
+                    gsap.set(container, {
+                        visibility: 'visible',
+                        opacity: 1
+                    });
 
                     // Randomly choose direction (from left or right)
                     const fromLeft = Math.random() > 0.5;
 
-                    // Set initial state with direction, scale, rotation and opacity
-                    gsap.set(wrapper, {
+                    // Create a full-screen overlay to animate
+                    const overlay = document.createElement('div');
+                    overlay.className = 'barba-transition-overlay';
+                    Object.assign(overlay.style, {
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: '#fff',
+                        zIndex: 1000,
+                        pointerEvents: 'none'
+                    });
+                    document.body.appendChild(overlay);
+
+                    // Set initial state
+                    gsap.set(overlay, {
                         x: fromLeft ? -window.innerWidth : window.innerWidth,
-                        opacity: 0,
-                        scale: 0.8,
-                        rotation: fromLeft ? -5 : 5, // Slight rotation based on direction
-                        transformOrigin: 'center center'
+                        opacity: 1
                     });
 
                     // Create timeline for the animation
                     const tl = gsap.timeline();
 
-                    // First complete the positional slide without bounce
-                    tl.to(wrapper, {
+                    // First slide in the overlay
+                    tl.to(overlay, {
                         x: 0,
-                        opacity: 1,
-                        rotation: 0,
-                        duration: SpiralTower.config.TRANSITION_DURATION * 0.9,
-                        ease: 'power3.out' // Smoother slowdown at the end
+                        duration: SpiralTower.config.TRANSITION_DURATION * 0.5,
+                        ease: 'power3.out'
                     });
 
-                    // Then handle the scale with a bounce effect separately
-                    tl.to(wrapper, {
-                        scale: 1.05, // Slight overshoot
-                        duration: SpiralTower.config.TRANSITION_DURATION * 0.2,
-                        ease: 'power1.inOut'
-                    }, "-=0.1"); // Slight overlap
-
-                    tl.to(wrapper, {
-                        scale: 1, // Back to normal
-                        duration: SpiralTower.config.TRANSITION_DURATION * 0.25,
-                        ease: 'elastic.out(1.2, 0.5)' // Elastic bounce on the scale only
+                    // Then slide it out, revealing the content
+                    tl.to(overlay, {
+                        x: fromLeft ? window.innerWidth : -window.innerWidth,
+                        duration: SpiralTower.config.TRANSITION_DURATION * 0.5,
+                        ease: 'power3.in'
                     });
 
                     // Wait for animation to complete
                     await tl;
 
-                    // Clear transform properties
-                    gsap.set(wrapper, { clearProps: 'x,scale,rotation,transformOrigin' });
+                    // Clean up
+                    if (overlay && overlay.parentNode) {
+                        overlay.parentNode.removeChild(overlay);
+                    }
+                }
+            },
+            // Page-level transition that works regardless of DOM structure
+            {
+                name: 'pageCover',
+                enter: async function enterPageCover(container) {
+                    console.log("Executing pageCover transition");
+
+                    // Create overlay elements for transition
+                    const overlay = document.createElement('div');
+                    overlay.className = 'page-transition-overlay';
+                    Object.assign(overlay.style, {
+                        position: 'fixed',
+                        zIndex: 10000, // Very high to ensure it's above everything
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: '#000', // Or any color that works with your design
+                        pointerEvents: 'none'
+                    });
+                    document.body.appendChild(overlay);
+
+                    // Make everything visible immediately
+                    if (container) {
+                        container.style.visibility = 'visible';
+                        container.style.opacity = '1';
+                    }
+
+                    // Create the animation sequence
+                    const tl = gsap.timeline();
+
+                    // Start with fully visible overlay
+                    gsap.set(overlay, { opacity: 1 });
+
+                    // Fade out overlay to reveal new page
+                    tl.to(overlay, {
+                        opacity: 0,
+                        duration: SpiralTower.config.TRANSITION_DURATION * 0.8,
+                        ease: 'power2.inOut',
+                        onComplete: () => {
+                            // Remove overlay when done
+                            if (overlay && overlay.parentNode) {
+                                overlay.parentNode.removeChild(overlay);
+                            }
+                        }
+                    });
+
+                    // Wait for animation to complete
+                    await tl;
                 }
             },
             // Bump Slide transition
@@ -629,15 +688,15 @@ SpiralTower.transitions = (function() {
     // Public API
     return {
         // Initialize this module
-        init: function() {
+        init: function () {
             console.log("Transitions module initializing");
             initTransitions();
             console.log("Transitions module initialized");
             return Promise.resolve();
         },
-        
+
         // Get all transitions
-        getTransitions: function() {
+        getTransitions: function () {
             return transitionAnimations;
         }
     };
