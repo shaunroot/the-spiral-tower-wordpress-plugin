@@ -8,7 +8,12 @@
 // Ensure the global SpiralTower object exists
 window.SpiralTower = window.SpiralTower || {};
 
+window.SpiralTower.logger = window.SpiralTower.logger || { log: console.log, warn: console.warn, error: console.error }; // Basic fallback
+
 SpiralTower.background = (function () {
+
+    const logger = SpiralTower.logger;   // Get logger instance
+
     // --- State ---
     let state = {
         initialized: false, // Flag to prevent multiple initializations
@@ -33,7 +38,7 @@ SpiralTower.background = (function () {
         } else if (level === 'warn') {
             console.warn(prefix, message, ...optionalParams);
         } else if (state.config.debug) {
-            console.log(prefix, message, ...optionalParams);
+            logger.log(prefix, message, ...optionalParams);
         }
     }
 
@@ -246,9 +251,3 @@ SpiralTower.background = (function () {
         }
     };
 })();
-
-// --- REMOVED Initialization Trigger ---
-// NO document.addEventListener('DOMContentLoaded', ...) here anymore!
-// Rely on the external loader/core script to call SpiralTower.background.init()
-
-console.log("[SpiralTower.background v6.1] Script loaded."); // Log script load immediately
