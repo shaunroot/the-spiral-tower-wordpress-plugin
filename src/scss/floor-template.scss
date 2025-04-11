@@ -265,6 +265,8 @@
    box-shadow: $box-shadow !important;
    box-sizing: border-box !important;
    cursor: pointer !important; /* Indicate it's clickable */
+   will-change: transform, opacity; /* Optimize for animations */
+   transform: translateX(0); 
  
    h1 {
      margin: 0 !important;
@@ -331,7 +333,7 @@
      display: block !important;
      box-sizing: border-box !important;
      letter-spacing: -0.5px;
-     font-size: 1.2rem; // Adjust base font size
+     font-size: 1.8rem; // Adjust base font size
      line-height: 1.6;
    }
    h1, h2, h3, h4, h5, h6 {
@@ -531,3 +533,6 @@
   border: none !important;
   transform: none !important;
 }
+
+
+

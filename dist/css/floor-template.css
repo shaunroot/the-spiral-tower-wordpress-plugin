@@ -633,6 +633,8 @@ body .container {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
   box-sizing: border-box !important;
   cursor: pointer !important; /* Indicate it's clickable */
+  will-change: transform, opacity; /* Optimize for animations */
+  transform: translateX(0);
 }
 .spiral-tower-floor-title h1 {
   margin: 0 !important;
@@ -693,7 +695,7 @@ body .container {
   display: block !important;
   box-sizing: border-box !important;
   letter-spacing: -0.5px;
-  font-size: 1.2rem;
+  font-size: 1.8rem;
   line-height: 1.6;
 }
 .spiral-tower-floor-content h1, .spiral-tower-floor-content h2, .spiral-tower-floor-content h3, .spiral-tower-floor-content h4, .spiral-tower-floor-content h5, .spiral-tower-floor-content h6 {

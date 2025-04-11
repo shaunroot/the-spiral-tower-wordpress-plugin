@@ -170,7 +170,6 @@ SpiralTower.background = (function () {
         }
         log('info', "Initializing Background module v6.1...");
 
-        // 1. Find Wrapper Element - Use container parameter for Barba support
         state.wrapper = container.querySelector('.spiral-tower-floor-wrapper');
         if (!state.wrapper) {
             log('error', "Initialization failed: '.spiral-tower-floor-wrapper' element not found in DOM.");
