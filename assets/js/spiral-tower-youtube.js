@@ -4,9 +4,13 @@
  */
 
 window.SpiralTower = window.SpiralTower || {};
+window.SpiralTower.logger = window.SpiralTower.logger || { log: console.log, warn: console.warn, error: console.error }; // Basic fallback
 
 // Initialize YouTube module
 SpiralTower.youtube = (function() {
+
+    const logger = SpiralTower.logger;   // Get logger instance
+    
     // Module state
     let ytPlayer = null;
     let isPlayerReady = false;
@@ -14,7 +18,7 @@ SpiralTower.youtube = (function() {
 
     // Update sound toggle button visuals
     function updateSoundToggleVisuals(isMuted) {
-        console.log('>>> FN: updateSoundToggleVisuals START', { isMuted });
+        logger.log('>>> FN: updateSoundToggleVisuals START', { isMuted });
         const btnOn = document.getElementById('volume-on-icon');
         const btnOff = document.getElementById('volume-off-icon');
         const parentBtn = document.getElementById('button-sound-toggle');
@@ -22,7 +26,7 @@ SpiralTower.youtube = (function() {
         const hasYoutubeOnPage = currentContainer ? currentContainer.querySelector('#youtube-player') : null;
 
         if (!btnOn || !btnOff || !parentBtn) {
-            console.log('<<< FN: updateSoundToggleVisuals END - Elements missing');
+            logger.log('<<< FN: updateSoundToggleVisuals END - Elements missing');
             return;
         }
 
@@ -32,30 +36,30 @@ SpiralTower.youtube = (function() {
             parentBtn.style.opacity = '1';
             btnOff.style.display = isMuted ? 'block' : 'none';
             btnOn.style.display = isMuted ? 'none' : 'block';
-            console.log('--- Sound toggle VISIBLE, Muted:', isMuted);
+            logger.log('--- Sound toggle VISIBLE, Muted:', isMuted);
         } else {
             parentBtn.style.display = 'none';
-            console.log('--- Sound toggle HIDDEN (no player)');
+            logger.log('--- Sound toggle HIDDEN (no player)');
         }
-        console.log('<<< FN: updateSoundToggleVisuals END');
+        logger.log('<<< FN: updateSoundToggleVisuals END');
     }
 
     // Initialize player for container
     function initializePlayerForContainer(container) {
-        console.log('>>> FN: initializePlayerForContainer START');
+        logger.log('>>> FN: initializePlayerForContainer START');
         if (!container) {
-            console.log("LOG: initializePlayer - No container provided.");
+            logger.log("LOG: initializePlayer - No container provided.");
             updateSoundToggleVisuals(true);
-            console.log('<<< FN: initializePlayerForContainer END - No container');
+            logger.log('<<< FN: initializePlayerForContainer END - No container');
             return;
         }
         const iframe = container.querySelector('#youtube-player');
         videoPlayer = iframe; // Update reference
 
         if (iframe) {
-            console.log("LOG: Found iframe (#youtube-player), attempting to create YT.Player...");
+            logger.log("LOG: Found iframe (#youtube-player), attempting to create YT.Player...");
             if (ytPlayer && typeof ytPlayer.destroy === 'function') {
-                console.log("LOG: Destroying existing ytPlayer before creating new one.");
+                logger.log("LOG: Destroying existing ytPlayer before creating new one.");
                 destroyPlayer();
             }
             try {
@@ -66,7 +70,7 @@ SpiralTower.youtube = (function() {
                         'onStateChange': onPlayerStateChange
                     }
                 });
-                console.log("LOG: YT.Player object requested/created:", ytPlayer);
+                logger.log("LOG: YT.Player object requested/created:", ytPlayer);
             } catch (e) {
                 console.error("LOG: Error creating YT.Player:", e);
                 ytPlayer = null;
@@ -74,17 +78,17 @@ SpiralTower.youtube = (function() {
                 updateSoundToggleVisuals(true);
             }
         } else {
-            console.log("LOG: Iframe '#youtube-player' not found in this container.");
+            logger.log("LOG: Iframe '#youtube-player' not found in this container.");
             ytPlayer = null;
             isPlayerReady = false;
             updateSoundToggleVisuals(true);
         }
-        console.log('<<< FN: initializePlayerForContainer END');
+        logger.log('<<< FN: initializePlayerForContainer END');
     }
 
     // YouTube player event handlers
     function onPlayerReady(event) {
-        console.log('LOG: YouTube Player Ready.');
+        logger.log('LOG: YouTube Player Ready.');
         if (event && event.target) {
             ytPlayer = event.target;
             isPlayerReady = true;
@@ -97,7 +101,7 @@ SpiralTower.youtube = (function() {
     }
 
     function onPlayerStateChange(event) {
-        // console.log("Player state changed:", event.data);
+        // logger.log("Player state changed:", event.data);
         if (event.data === YT.PlayerState.ENDED && ytPlayer) { /* Loop logic if needed */ }
     }
 
@@ -110,59 +114,59 @@ SpiralTower.youtube = (function() {
 
     // Toggle sound
     function toggleSound() {
-        console.log('>>> FN: toggleSound START');
-        console.log("LOG: toggleSound called. Current ytPlayer:", ytPlayer, "isPlayerReady:", isPlayerReady);
+        logger.log('>>> FN: toggleSound START');
+        logger.log("LOG: toggleSound called. Current ytPlayer:", ytPlayer, "isPlayerReady:", isPlayerReady);
         if (!ytPlayer || !isPlayerReady) {
             console.warn('LOG: Player not ready or not available to toggle sound.');
-            console.log('<<< FN: toggleSound END - Player not ready');
+            logger.log('<<< FN: toggleSound END - Player not ready');
             return;
         }
         try {
             if (ytPlayer.isMuted()) {
                 ytPlayer.unMute();
-                console.log('LOG: Sound Unmuted');
+                logger.log('LOG: Sound Unmuted');
                 updateSoundToggleVisuals(false);
             } else {
                 ytPlayer.mute();
-                console.log('LOG: Sound Muted');
+                logger.log('LOG: Sound Muted');
                 updateSoundToggleVisuals(true);
             }
         } catch (e) {
             console.error("LOG: Error toggling sound:", e);
         }
-        console.log('<<< FN: toggleSound END');
+        logger.log('<<< FN: toggleSound END');
     }
 
     // Destroy player
     function destroyPlayer() {
-        console.log('>>> FN: destroyPlayer START');
-        console.log('LOG: Attempting to destroy YouTube player...');
+        logger.log('>>> FN: destroyPlayer START');
+        logger.log('LOG: Attempting to destroy YouTube player...');
         if (ytPlayer && typeof ytPlayer.destroy === 'function') {
             try {
                 if (typeof ytPlayer.stopVideo === 'function' && typeof ytPlayer.getPlayerState === 'function') {
                     const state = ytPlayer.getPlayerState();
                     if (state === YT.PlayerState.PLAYING || state === YT.PlayerState.PAUSED || state === YT.PlayerState.BUFFERING) {
                         ytPlayer.stopVideo();
-                        console.log('LOG: Called stopVideo().');
+                        logger.log('LOG: Called stopVideo().');
                     }
                 }
                 ytPlayer.destroy();
-                console.log('LOG: YouTube Player Destroyed.');
+                logger.log('LOG: YouTube Player Destroyed.');
             } catch (e) {
                 console.error("LOG: Error destroying player:", e);
             }
         } else {
-            console.log('LOG: No player instance found to destroy or destroy function unavailable.');
+            logger.log('LOG: No player instance found to destroy or destroy function unavailable.');
         }
         ytPlayer = null;
         isPlayerReady = false;
         updateSoundToggleVisuals(true);
-        console.log('<<< FN: destroyPlayer END');
+        logger.log('<<< FN: destroyPlayer END');
     }
 
     // YouTube IFrame API Ready handler - defined on window for API callback
     window.onYouTubeIframeAPIReady = function() {
-        console.log('%cLOG: window.onYouTubeIframeAPIReady CALLED.', 'color: green; font-weight: bold;');
+        logger.log('%cLOG: window.onYouTubeIframeAPIReady CALLED.', 'color: green; font-weight: bold;');
         const currentContainer = document.querySelector('[data-barba="container"]');
         initializePlayerForContainer(currentContainer);
     };
@@ -171,7 +175,7 @@ SpiralTower.youtube = (function() {
     return {
         // Initialize module
         init: function() {
-            console.log("YouTube module initialized");
+            logger.log("YouTube module initialized");
             return Promise.resolve();
         },
         

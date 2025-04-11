@@ -5,9 +5,13 @@
  */
 
 window.SpiralTower = window.SpiralTower || {};
+window.SpiralTower.logger = window.SpiralTower.logger || { log: console.log, warn: console.warn, error: console.error }; // Basic fallback
 
 // Initialize transitions module
 SpiralTower.transitions = (function() {
+
+    const logger = SpiralTower.logger;   // Get logger instance
+
     // Module state
     let initialized = false;
     let isAnimating = false;
@@ -20,7 +24,7 @@ SpiralTower.transitions = (function() {
 
     // Run entrance animations when page loads
     function runEntranceAnimations() {
-        console.log("Running entrance animations");
+        logger.log("Running entrance animations");
         isAnimating = true;
 
         // Get the main elements
@@ -46,7 +50,7 @@ SpiralTower.transitions = (function() {
         const tl = gsap.timeline({
             onComplete: () => {
                 isAnimating = false;
-                console.log("Entrance animations complete");
+                logger.log("Entrance animations complete");
             }
         });
 
@@ -71,7 +75,7 @@ SpiralTower.transitions = (function() {
 
     // Run exit animations before navigating to a new page
     function runExitAnimations(callback) {
-        console.log("Running exit animations");
+        logger.log("Running exit animations");
         isAnimating = true;
 
         // Get the main elements
@@ -82,7 +86,7 @@ SpiralTower.transitions = (function() {
         const tl = gsap.timeline({
             onComplete: () => {
                 isAnimating = false;
-                console.log("Exit animations complete");
+                logger.log("Exit animations complete");
                 // Call the callback function to continue navigation
                 if (typeof callback === 'function') {
                     callback();
@@ -148,11 +152,11 @@ SpiralTower.transitions = (function() {
     // Initialize the module
     function init() {
         if (initialized) {
-            console.log("Transitions already initialized, skipping");
+            logger.log("Transitions already initialized, skipping");
             return Promise.resolve();
         }
 
-        console.log("Initializing simple transitions module");
+        logger.log("Initializing simple transitions module");
         
         // Set up link interception for smooth page transitions
         setupLinkInterception();
@@ -161,7 +165,7 @@ SpiralTower.transitions = (function() {
         runEntranceAnimations();
         
         initialized = true;
-        console.log("Transitions module initialized");
+        logger.log("Transitions module initialized");
         return Promise.resolve();
     }
 

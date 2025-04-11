@@ -7,8 +7,12 @@
  */
 
 window.SpiralTower = window.SpiralTower || {};
+window.SpiralTower.logger = window.SpiralTower.logger || { log: console.log, warn: console.warn, error: console.error }; // Basic fallback
 
 SpiralTower.gizmos = (function() {
+
+    const logger = SpiralTower.logger;   // Get logger instance
+
     let state = {
         initialized: false,
         config: {
@@ -19,7 +23,7 @@ SpiralTower.gizmos = (function() {
 
     function log(message, ...optionalParams) {
         if (state.config.debug) {
-            console.log(`[SpiralTower.gizmos v5] ${message}`, ...optionalParams);
+            logger.log(`[SpiralTower.gizmos v5] ${message}`, ...optionalParams);
         }
     }
 
@@ -33,7 +37,7 @@ SpiralTower.gizmos = (function() {
             // Add any click listeners or interactivity setup here later if needed
             // gizmos.forEach(gizmo => {
             //   gizmo.addEventListener('click', () => {
-            //      console.log(`Gizmo ${gizmo.id} clicked!`);
+            //      logger.log(`Gizmo ${gizmo.id} clicked!`);
             //   });
             // });
 
@@ -52,15 +56,15 @@ SpiralTower.gizmos = (function() {
 
 // --- Initialization Trigger ---
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("[SpiralTower.gizmos v5 Init Trigger] DOMContentLoaded.");
+    logger.log("[SpiralTower.gizmos v5 Init Trigger] DOMContentLoaded.");
     // No need to wait specifically for background, as this script doesn't depend on it
     // But delaying slightly can prevent potential race conditions during initial load
     setTimeout(() => {
-        console.log("[SpiralTower.gizmos v5 Init Trigger] Attempting init...");
+        logger.log("[SpiralTower.gizmos v5 Init Trigger] Attempting init...");
         if (window.SpiralTower && window.SpiralTower.gizmos && !window.SpiralTower.gizmos.isInitialized()) {
             SpiralTower.gizmos.init();
         } else {
-            console.log("[SpiralTower.gizmos v5 Init Trigger] Already initialized or not found.");
+            logger.log("[SpiralTower.gizmos v5 Init Trigger] Already initialized or not found.");
         }
     }, 50); // Small delay
 });
