@@ -348,23 +348,13 @@ class Spiral_Tower_Plugin
 
             // Pass data to the main script
             wp_localize_script(
-                'spiral-tower-main-script',  // <<< Use the SAME handle as wp_enqueue_script
-                'spiralTowerData',           // Object name in JavaScript
-                array(                       // Data array
+                'spiral-tower-main-script',  
+                'spiralTowerData',           
+                array(                       
                     'youtubeId' => $youtube_id,
                     // Add other data as needed
                 )
             );
-
-            // Enqueue color extractor script (if still needed)
-             wp_enqueue_script(
-                 'spiral-tower-color-extractor',
-                  SPIRAL_TOWER_PLUGIN_URL . 'assets/js/color-extractor.js', // Verify path
-                 array(),
-                 '1.0.0',
-                 true
-             );
-
         } // End $load_assets check
     }
 

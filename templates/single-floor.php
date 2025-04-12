@@ -45,9 +45,9 @@ if (!empty($background_youtube_url)) {
 	} elseif (preg_match('/^[a-zA-Z0-9_-]{11}$/', $background_youtube_url)) {
 		$youtube_id = $background_youtube_url;
 	}
-	if (!empty($youtube_id)) {
-		$has_youtube = true;
-	}
+	//if (!empty($youtube_id)) {
+	$has_youtube = true;
+	//}
 }
 
 // --- Determine VISUAL Background Type for Scrolling ---
@@ -88,9 +88,10 @@ if ($has_youtube && !$youtube_audio_only) {
 		<?php // --- Background Image or Video --- ?>
 		<?php if ($visual_bg_type === 'image' && $has_feat_image): ?>
 			<div id="image-background" class="background-container">
-				<img id="background-image" src="<?php echo esc_url($featured_image); ?>" alt="...">
+				<img id="background-image" src="<?php echo esc_url($featured_image); ?>">
 			</div>
-		<?php elseif ($visual_bg_type === 'video' && $has_youtube): ?>
+		<?php endif; ?>
+		<?php if ($has_youtube): ?>
 			<div id="youtube-background"
 				class="background-container <?php echo $youtube_audio_only ? 'audio-only' : ''; ?>">
 				<?php // If using youtube-container div, ensure it's also 100% w/h ?>
@@ -144,40 +145,80 @@ if ($has_youtube && !$youtube_audio_only) {
 		<div class="spiral-tower-floor-content">
 			<?php the_content(); ?>
 		</div>
-	</div>	
+	</div>
 	<?php // ----- END: Your Content Structure ----- ?>
 
 
-	<div id="toolbar">
+	<div id="toolbar"> <?php // ----- START: Toolbar----- ?>
 
-		<div id="button-stairs" class="tooltip-trigger" data-tooltip="Take the STAIRS!">
-			<img src="/wp-content/plugins/the-spiral-tower/dist/images/stairs.svg" alt="Stairs Icon" />
+		<?php // ----- START: Content Visibility Toggle Button HTML ----- ?>
+		<div id="button-content-toggle" class="tooltip-trigger" data-tooltip="Toggle Content Visibility">
+			<?php // --- SVG Icons for Content Toggle --- ?>
+			<svg id="content-hidden-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+				fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+				class="lucide lucide-eye-off" style="display: none;"> <?php // Hidden by default ?>
+				<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+				<path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+				<path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+				<line x1="2" x2="22" y1="2" y2="22" />
+			</svg>
+			<svg id="content-visible-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+				fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+				class="lucide lucide-search" style="display: inline-block;"> <?php // Default icon shown ?>
+				<circle cx="11" cy="11" r="8" />
+				<path d="m21 21-4.3-4.3" />
+			</svg>
 		</div>
+		<?php // ----- END: Content Visibility Toggle Button HTML ----- ?>
+
+		<a href="/stairs" id="button-stairs" class="tooltip-trigger" data-tooltip="Take the STAIRS!">
+			<img src="/wp-content/plugins/the-spiral-tower/dist/images/stairs.svg" alt="Stairs Icon" />
+		</a>
+
+		<?php // ----- START: Text Only Toggle Button HTML ----- ?>
+		<div id="button-text-toggle" class="tooltip-trigger" data-tooltip="Toggle Text Only Mode">
+			<?php // --- SVG Icons for Text Toggle --- ?>
+			<svg id="text-only-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+				fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+				class="icon-text-mode" style="display: inline-block;"> <?php // Default icon shown ?>
+				<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+				<polyline points="14 2 14 8 20 8" />
+				<line x1="16" x2="8" y1="13" y2="13" />
+				<line x1="16" x2="8" y1="17" y2="17" />
+				<line x1="10" x2="8" y1="9" y2="9" />
+			</svg>
+			<svg id="full-view-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+				fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+				class="icon-full-mode" style="display: none;"> <?php // Hidden by default ?>
+				<rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+				<circle cx="9" cy="9" r="2" />
+				<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+			</svg>
+		</div>
+		<?php // ----- END: Text Only Toggle Button HTML ----- ?>
 
 		<?php // ----- START: Sound Toggle Button HTML ----- ?>
-		<?php // Conditionally output the button container if YouTube is supposed to be on the page
-		if ($has_youtube): ?>
+		<?php if ($has_youtube || $youtube_audio_only): ?>
 			<div id="button-sound-toggle" class="tooltip-trigger" data-tooltip="Toggle volume">
-				<?php // Start hidden - JS will show it when player is ready ?>
-
-				<?php // --- SVG Icons --- ?>
+				<?php // --- SVG Icons for Sound --- ?>
 				<svg id="volume-off-icon" xmlns="http://www.w3.org/2000/svg" version="1.0" width="40" height="40"
-					viewBox="0 0 75 75" style="display: block; visibility: visible; opacity: 1;">
+					viewBox="0 0 75 75" style="display: block;">
 					<path d="m39,14-17,15H6V48H22l17,15z" fill="#fff" stroke="#000" stroke-width="2" />
 					<path d="m49,26 20,24m0-24-20,24" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" />
 				</svg>
 				<svg id="volume-on-icon" xmlns="http://www.w3.org/2000/svg" version="1.0" width="40" height="40"
-					viewBox="0 0 75 75" style="display: none; visibility: visible; opacity: 1;">
+					viewBox="0 0 75 75" style="display: none;">
 					<path d="M39.389,13.769 L22.235,28.606 L6,28.606 L6,47.699 L21.989,47.699 L39.389,62.75 L39.389,13.769z"
 						fill="#fff" stroke="#000" stroke-width="2" />
 					<path d="M48,27.6a19.5,19.5 0 0 1 0,21.4M55.1,20.5a30,30 0 0 1 0,35.6M61.6,14a38.8,38.8 0 0 1 0,48.6"
 						fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" />
 				</svg>
 			</div>
-		<?php endif; // End $has_youtube condition for button HTML ?>
+		<?php endif; ?>
 		<?php // ----- END: Sound Toggle Button HTML ----- ?>
 
 	</div> <?php // ----- END: Toolbar----- ?>
+
 
 	<?php // ----- START: Output Custom Interface Script --- ?>
 	<?php

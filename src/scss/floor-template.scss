@@ -302,17 +302,15 @@
    z-index: 1000 !important; // Above wrapper/gizmos, potentially below title if desired
    box-sizing: border-box !important;
    transition: opacity 0.5s ease !important; // Adjust timing
-   opacity: 0 !important; /* Start hidden, shown on title hover */
+   // opacity: 0 !important; /* Start hidden, shown on title hover */
    margin-top: 60px !important; /* Offset below title - Adjust as needed */
    max-height: calc(80vh - 100px) !important; /* Limit height */
  }
- 
- // Show container on title hover (Keep from Original)
- .spiral-tower-floor-title:hover ~ .spiral-tower-floor-container,
- .spiral-tower-floor-container:hover {
-   opacity: 1 !important;
+
+ .spiral-tower-floor-container.content-hidden {
+  opacity: 0;
  }
- 
+  
  .spiral-tower-floor-content {
    // Keep original styles for content box appearance
    background-color: var(--content-bg-color, rgba(35, 35, 35, 0.85)) !important;
@@ -367,10 +365,10 @@
    right: 15px;  // Adjust position
    z-index: 9999 !important; // Very high
    background: rgba(0, 0, 0, 0.6);
-   border-radius: 5px;
-   overflow: hidden;
+   overflow: visible;
+   opacity: 0.8;
  
-   > div { // Direct children buttons
+   > a, > div { // Direct children buttons
      display: flex; // Use flex for centering icon
      justify-content: center;
      align-items: center;
@@ -380,17 +378,26 @@
      cursor: pointer;
      border-left: 1px solid rgba(255, 255, 255, 0.2);
      transition: background-color 0.2s ease;
- 
+     padding: 8px;
      &:first-child { border-left: none; }
-     &:hover { background-color: rgba(255, 255, 255, 0.1); }
- 
-     img, svg { // Style icons within buttons
-       max-width: 70%;
-       max-height: 70%;
-       display: block;
-       fill: white; // Default fill for SVGs
-     }
+     &:hover { background-color: rgba(255, 255, 255, 0.1); }     
    }
+
+   #toolbar > div img,
+   #toolbar > div svg {
+     width: 100%;
+     height: 100%;
+     max-width: 70%;
+     max-height: 70%;
+     display: flex;        /* Use flex to allow it to flex within its container */
+     align-items: center;
+     justify-content: center;
+     margin: auto;
+     fill: white;
+     opacity: 0.8;
+     pointer-events: none; /* Optional: ensures clicks go to button, not SVG */
+   }
+   
  
    #button-sound-toggle {
       // Keep original logic for showing/hiding via JS
@@ -405,7 +412,7 @@
    }
  }
  
- // Tooltip Styles (Keep from Original)
+ // Tooltip Styles 
  .tooltip-trigger {
    position: relative;
    cursor: help;
@@ -495,9 +502,6 @@
    }
  }
 
-
-
-
  /* Ensure these are active */
 .spiral-tower-floor-wrapper {
   position: fixed !important;
@@ -536,3 +540,17 @@
 
 
 
+
+
+ /* --------------------------------------------------------
+ * 8. TEXT ONLY MODE
+ * -------------------------------------------------------- */
+
+ body.text-only-mode {
+
+  .spiral-tower-floor-wrapper {
+     display: none !important;
+  }
+
+  
+ }

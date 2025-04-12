@@ -23,13 +23,13 @@ window.SpiralTower.config = {
         globalEnable: true, // Master switch for all non-error logs
         modules: {
             loader: false,      // Logs from this script loader file
-            core: false,
+            core: true,
             utils: false,
             background: false,
-            gizmos: false,      // Set to false if you want less noise from optional modules
+            gizmos: false,      
             youtube: false,
-            transitions: false
-            // Add keys for any other modules you create here
+            transitions: false,
+            colorExtractor: false
         }
     }
 };
@@ -100,6 +100,7 @@ if (typeof spiralTowerWpSettings !== 'undefined' && spiralTowerWpSettings.loggin
     // Ensure the filenames match your actual files.
     const scripts = [
         'spiral-tower-utils.js',
+        'spiral-tower-color-extractor.js',
         'spiral-tower-background.js',
         'spiral-tower-gizmos.js',
         'spiral-tower-youtube.js',

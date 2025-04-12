@@ -667,14 +667,12 @@ body .container {
   z-index: 1000 !important;
   box-sizing: border-box !important;
   transition: opacity 0.5s ease !important;
-  opacity: 0 !important; /* Start hidden, shown on title hover */
   margin-top: 60px !important; /* Offset below title - Adjust as needed */
   max-height: calc(80vh - 100px) !important; /* Limit height */
 }
 
-.spiral-tower-floor-title:hover ~ .spiral-tower-floor-container,
-.spiral-tower-floor-container:hover {
-  opacity: 1 !important;
+.spiral-tower-floor-container.content-hidden {
+  opacity: 0;
 }
 
 .spiral-tower-floor-content {
@@ -744,10 +742,10 @@ body .container {
   right: 15px;
   z-index: 9999 !important;
   background: rgba(0, 0, 0, 0.6);
-  border-radius: 5px;
-  overflow: hidden;
+  overflow: visible;
+  opacity: 0.8;
 }
-#toolbar > div {
+#toolbar > a, #toolbar > div {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -757,18 +755,27 @@ body .container {
   cursor: pointer;
   border-left: 1px solid rgba(255, 255, 255, 0.2);
   transition: background-color 0.2s ease;
+  padding: 8px;
 }
-#toolbar > div:first-child {
+#toolbar > a:first-child, #toolbar > div:first-child {
   border-left: none;
 }
-#toolbar > div:hover {
+#toolbar > a:hover, #toolbar > div:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
-#toolbar > div img, #toolbar > div svg {
+#toolbar #toolbar > div img,
+#toolbar #toolbar > div svg {
+  width: 100%;
+  height: 100%;
   max-width: 70%;
   max-height: 70%;
-  display: block;
+  display: flex; /* Use flex to allow it to flex within its container */
+  align-items: center;
+  justify-content: center;
+  margin: auto;
   fill: white;
+  opacity: 0.8;
+  pointer-events: none; /* Optional: ensures clicks go to button, not SVG */
 }
 #toolbar #button-sound-toggle {
   display: none;
@@ -905,6 +912,13 @@ body .container {
   display: block !important;
   border: none !important;
   transform: none !important;
+}
+
+/* --------------------------------------------------------
+* 8. TEXT ONLY MODE
+* -------------------------------------------------------- */
+body.text-only-mode .spiral-tower-floor-wrapper {
+  display: none !important;
 }
 
 /*# sourceMappingURL=floor-template.css.map*/
