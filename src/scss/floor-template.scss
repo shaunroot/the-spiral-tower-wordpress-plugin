@@ -4,505 +4,641 @@
  * Positioning for .floor-gizmo relies on inline styles (left%, top%) in HTML.
  */
 
- @use 'portal'; // Assuming these are valid SASS module imports
- @use 'stairs'; // Assuming these are valid SASS module imports
- 
- :root {
-   /* Default colors (fallbacks) - Keep these */
-   --background-color: #000;
-   --title-bg-color: rgba(20, 20, 20, 0.85);
-   --content-bg-color: rgba(35, 35, 35, 0.85);
-   --title-text-color: #fff;
-   --content-text-color: #e6e6e6;
-   --subtitle-color: #e90303;
- 
-   --title-font: 'Metamorphous', serif;
-   --body-font: 'Winky Sans', sans-serif;
- }
- 
- /* Variables - non-color styles remain the same */
- $border-radius: 15px;
- $box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
- $container-width: 80%;
- $container-max-width: 800px;
- $padding-standard: 20px;
- $padding-large: 30px;
- $margin-standard: 30px;
- $margin-large: 80px;
- 
- /* --------------------------------------------------------
+@use 'portal'; // Assuming these are valid SASS module imports
+@use 'stairs'; // Assuming these are valid SASS module imports
+
+:root {
+  /* Default colors (fallbacks) - Keep these */
+  --background-color: #000;
+  --title-bg-color: rgba(20, 20, 20, 0.85);
+  --content-bg-color: rgba(35, 35, 35, 0.85);
+  --title-text-color: #fff;
+  --content-text-color: #e6e6e6;
+  --subtitle-color: #e90303;
+
+  --title-font: 'Metamorphous', serif;
+  --body-font: 'Winky Sans', sans-serif;
+}
+
+/* Variables - non-color styles remain the same */
+$border-radius: 15px;
+$box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+$container-width: 80%;
+$container-max-width: 800px;
+$padding-standard: 20px;
+$padding-large: 30px;
+$margin-standard: 30px;
+$margin-large: 80px;
+
+/* --------------------------------------------------------
  * 1. FULL VIEWPORT & RESET
  * Ensures html/body fill viewport without scrollbars.
  * -------------------------------------------------------- */
- html,
- html.floor-template-active,
- html.floor-fullscreen {
-   height: 100% !important;
-   min-height: 100% !important;
-   margin: 0 !important;
-   padding: 0 !important;
-   overflow: hidden !important; /* Prevent scrollbars */
-   box-sizing: border-box !important;
- }
- 
- body,
- body.floor-template-active,
- body.floor-fullscreen {
-   margin: 0 !important;
-   padding: 0 !important;
-   width: 100% !important;
-   height: 100% !important;
-   min-height: 100vh !important;
-   overflow: hidden !important; /* Prevent scrollbars */
-   background: var(--background-color) !important; // Use variable, or fallback
-   max-width: 100% !important;
-   font-family: var(--body-font) !important;
-   box-sizing: border-box !important;
- }
- 
- *, *::before, *::after {
-   box-sizing: inherit;
- }
- 
- 
- /* --------------------------------------------------------
+html,
+html.floor-template-active,
+html.floor-fullscreen {
+  height: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  /* Prevent scrollbars */
+  box-sizing: border-box !important;
+}
+
+body,
+body.floor-template-active,
+body.floor-fullscreen {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  overflow: hidden !important;
+  /* Prevent scrollbars */
+  background: var(--background-color) !important; // Use variable, or fallback
+  max-width: 100% !important;
+  font-family: var(--body-font) !important;
+  box-sizing: border-box !important;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+
+/* --------------------------------------------------------
  * 2. HIDE WORDPRESS ELEMENTS (Keep from Original)
  * -------------------------------------------------------- */
- // Assuming your original rules here were correct for hiding theme elements
- #wpadminbar,
- .admin-bar #wpadminbar,
- nav, #site-navigation, .main-navigation, .menu, .menu-toggle,
- .site-header, .site-header-menu, .site-branding, #masthead, .nav-menu,
- .top-bar, .navigation-top, .primary-navigation, .navigation,
- .main-header, .header, #header,
- .site-footer, #colophon, .footer, footer {
-   display: none !important;
-   visibility: hidden !important;
-   opacity: 0 !important;
-   height: 0 !important;
-   width: 0 !important;
-   margin: 0 !important;
-   padding: 0 !important;
-   border: 0 !important;
- }
- 
- /* Hide common theme containers (Keep from Original) */
- body #page,
- body #content,
- body .site,
- body .site-content,
- body .content-area,
- body #wrapper,
- body #main,
- body .content-wrapper,
- body .container {
-   background: transparent !important;
-   padding: 0 !important;
-   margin: 0 !important;
-   max-width: 100% !important;
-   width: 100% !important;
-   display: block !important; // Allow our content inside them if necessary
-   border: 0 !important;
-   box-shadow: none !important;
- }
- 
- /* --------------------------------------------------------
+// Assuming your original rules here were correct for hiding theme elements
+#wpadminbar,
+.admin-bar #wpadminbar,
+nav,
+#site-navigation,
+.main-navigation,
+.menu,
+.menu-toggle,
+.site-header,
+.site-header-menu,
+.site-branding,
+#masthead,
+.nav-menu,
+.top-bar,
+.navigation-top,
+.primary-navigation,
+.navigation,
+.main-header,
+.header,
+#header,
+.site-footer,
+#colophon,
+.footer,
+footer {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+/* Hide common theme containers (Keep from Original) */
+body #page,
+body #content,
+body .site,
+body .site-content,
+body .content-area,
+body #wrapper,
+body #main,
+body .content-wrapper,
+body .container {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  display: block !important; // Allow our content inside them if necessary
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* --------------------------------------------------------
  * 3. WRAPPER (SCALED VIA JS)
  * Positioned fixed, centered, scaled by JS transform.
  * -------------------------------------------------------- */
- .spiral-tower-floor-wrapper {
-   position: fixed !important;
-   /* top: 50%, left: 50% are set dynamically by JS */
-   /* width, height are set dynamically by JS to content's natural size */
-   /* transform: translate(-50%, -50%) scale(N) is set dynamically by JS */
-   transform-origin: center center !important; /* ESSENTIAL for scaling */
-   overflow: hidden !important; /* ESSENTIAL */
-   z-index: 1 !important;
-   visibility: hidden; /* Hide until JS positions and shows it */
-   margin: 0 !important;
-   padding: 0 !important;
-   /* outline: 3px solid cyan !important; */ /* DEBUG */
- }
- 
- /* --------------------------------------------------------
+.spiral-tower-floor-wrapper {
+  position: fixed !important;
+  /* top: 50%, left: 50% are set dynamically by JS */
+  /* width, height are set dynamically by JS to content's natural size */
+  /* transform: translate(-50%, -50%) scale(N) is set dynamically by JS */
+  transform-origin: center center !important;
+  /* ESSENTIAL for scaling */
+  overflow: hidden !important;
+  /* ESSENTIAL */
+  z-index: 1 !important;
+  visibility: hidden;
+  /* Hide until JS positions and shows it */
+  margin: 0 !important;
+  padding: 0 !important;
+  /* outline: 3px solid cyan !important; */
+  /* DEBUG */
+}
+
+/* --------------------------------------------------------
  * 4. BACKGROUND CONTENT (Image/Video)
  * Fills the wrapper using absolute positioning.
  * -------------------------------------------------------- */
- .background-container { /* General container for bg elements */
-   position: absolute !important;
-   top: 0 !important;
-   left: 0 !important;
-   width: 100% !important; /* Fill parent wrapper */
-   height: 100% !important; /* Fill parent wrapper */
-   overflow: hidden !important;
-   z-index: 1 !important; /* Below gizmo container */
- }
- 
- #background-image { /* The actual <img> element */
-   display: block !important;
-   position: absolute !important;
-   top: 0 !important;
-   left: 0 !important;
-   width: 100% !important; /* Fill background-container */
-   height: 100% !important; /* Fill background-container */
-   object-fit: initial !important; /* Do not use object-fit, parent scaling handles it */
-   object-position: initial !important;
-   transform: none !important;
- }
- 
- #youtube-background { /* Container specific to YouTube */
-   &.audio-only {
-     /* Keep original audio-only hiding styles */
-     position: absolute !important;
-     width: 1px !important;
-     height: 1px !important;
-     top: -9999px !important;
-     left: -9999px !important;
-     opacity: 0 !important;
-     visibility: hidden !important;
-     overflow: hidden !important;
-     pointer-events: none !important;
-   }
- }
- 
- .youtube-container { /* Inner container if needed for aspect ratio */
+.background-container {
+  /* General container for bg elements */
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  /* Fill parent wrapper */
+  height: 100% !important;
+  /* Fill parent wrapper */
+  overflow: hidden !important;
+  z-index: 1 !important;
+  /* Below gizmo container */
+}
+
+#background-image {
+  /* The actual <img> element */
+  display: block !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  /* Fill background-container */
+  height: 100% !important;
+  /* Fill background-container */
+  object-fit: initial !important;
+  /* Do not use object-fit, parent scaling handles it */
+  object-position: initial !important;
+  transform: none !important;
+}
+
+#youtube-background {
+
+  /* Container specific to YouTube */
+  &.audio-only {
+    /* Keep original audio-only hiding styles */
     position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important; /* Fill parent #youtube-background */
-    height: 100% !important; /* Fill parent #youtube-background */
+    width: 1px !important;
+    height: 1px !important;
+    top: -9999px !important;
+    left: -9999px !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
     overflow: hidden !important;
- }
- 
- #youtube-player { /* The actual <iframe> */
-   display: block !important;
-   position: absolute !important;
-   top: 0 !important;
-   left: 0 !important;
-   width: 100% !important; /* Fill youtube-container */
-   height: 100% !important; /* Fill youtube-container */
-   border: none !important;
-   transform: none !important;
-   // Remove old aspect ratio / min-width/height rules relying on viewport units
- }
+    pointer-events: none !important;
+  }
+}
+
+.youtube-container {
+  /* Inner container if needed for aspect ratio */
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  /* Fill parent #youtube-background */
+  height: 100% !important;
+  /* Fill parent #youtube-background */
+  overflow: hidden !important;
+}
+
+#youtube-player {
+  /* The actual <iframe> */
+  display: block !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  /* Fill youtube-container */
+  height: 100% !important;
+  /* Fill youtube-container */
+  border: none !important;
+  transform: none !important;
+  // Remove old aspect ratio / min-width/height rules relying on viewport units
+}
 
 
- 
- /* --------------------------------------------------------
+
+/* --------------------------------------------------------
  * 5. GIZMOS CONTAINER & GIZMOS (v5 - CSS Positioning)
  * -------------------------------------------------------- */
- .wrapper-floor-gizmos { /* Container INSIDE the scaled wrapper */
-   position: absolute !important; /* CRUCIAL: Relative to scaled wrapper */
-   top: 0 !important;
-   left: 0 !important;
-   width: 100% !important; /* CRUCIAL: Spans the wrapper's current size */
-   height: 100% !important; /* CRUCIAL: Spans the wrapper's current size */
-   pointer-events: none !important; /* Allow clicks through to background */
-   z-index: 10 !important; /* Above background, below UI */
-   /* outline: 2px dashed yellow !important; */ /* DEBUG */
- }
- 
- .floor-gizmo { /* Individual Gizmo */
-   position: absolute !important; /* CRUCIAL: Relative to wrapper-floor-gizmos */
-   /* top: % and left: % MUST be set via inline style in HTML template */
-   transform: translate(-50%, -50%); /* Centers the gizmo element on its coordinate point */
-   transform-origin: center center;
-   pointer-events: auto !important; /* Make gizmo clickable */
-   z-index: 11 !important; /* Above gizmo container */
-   cursor: pointer !important;
- 
-   /* --- Base Visual Style (Customize as needed) --- */
-    transition: transform 0.2s ease; /* Smooth hover effect */
- 
-   /* Example for tooltip inside gizmo - adjust as needed */
-   .gizmo-tooltip {
+.wrapper-floor-gizmos {
+  /* Container INSIDE the scaled wrapper */
+  position: absolute !important;
+  /* CRUCIAL: Relative to scaled wrapper */
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  /* CRUCIAL: Spans the wrapper's current size */
+  height: 100% !important;
+  /* CRUCIAL: Spans the wrapper's current size */
+  pointer-events: none !important;
+  /* Allow clicks through to background */
+  z-index: 10 !important;
+  /* Above background, below UI */
+  /* outline: 2px dashed yellow !important; */
+  /* DEBUG */
+}
+
+.floor-gizmo {
+  /* Individual Gizmo */
+  position: absolute !important;
+  /* CRUCIAL: Relative to wrapper-floor-gizmos */
+  /* top: % and left: % MUST be set via inline style in HTML template */
+  transform: translate(-50%, -50%);
+  /* Centers the gizmo element on its coordinate point */
+  transform-origin: center center;
+  pointer-events: auto !important;
+  /* Make gizmo clickable */
+  z-index: 11 !important;
+  /* Above gizmo container */
+  cursor: pointer !important;
+
+  /* --- Base Visual Style (Customize as needed) --- */
+  transition: transform 0.2s ease;
+  /* Smooth hover effect */
+
+  /* Example for tooltip inside gizmo - adjust as needed */
+  .gizmo-tooltip {
+    position: absolute !important;
+    bottom: 120%;
+    /* Position above */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    color: white !important;
+    padding: 5px 10px !important;
+    border-radius: 4px !important;
+    white-space: nowrap !important;
+    font-size: 14px !important;
+    opacity: 0 !important;
+    transition: opacity 0.2s ease !important;
+    pointer-events: none !important;
+
+    .floor-gizmo:hover & {
+      opacity: 1 !important;
+    }
+
+    // Optional arrow
+    &::after {
+      /* Creates the arrow */
+      content: '' !important;
       position: absolute !important;
-      bottom: 120%; /* Position above */
+      top: 100% !important;
       left: 50% !important;
-      transform: translateX(-50%) !important;
-      background-color: rgba(0, 0, 0, 0.8) !important;
-      color: white !important;
-      padding: 5px 10px !important;
-      border-radius: 4px !important;
-      white-space: nowrap !important;
-      font-size: 14px !important;
-      opacity: 0 !important;
-      transition: opacity 0.2s ease !important;
-      pointer-events: none !important;
- 
-      .floor-gizmo:hover & {
-         opacity: 1 !important;
-      }
-      // Optional arrow
-      &::after { /* Creates the arrow */
-        content: '' !important;
-        position: absolute !important;
-        top: 100% !important;
-        left: 50% !important;
-        margin-left: -5px !important;
-        border-width: 5px !important;
-        border-style: solid !important;
-        border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent !important;
-      }
-   }
- }
- 
- /* --------------------------------------------------------
+      margin-left: -5px !important;
+      border-width: 5px !important;
+      border-style: solid !important;
+      border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent !important;
+    }
+  }
+}
+
+/* --------------------------------------------------------
  * 6. FIXED UI ELEMENTS (Title, Content, Toolbar)
  * These stay fixed relative to the viewport.
  * -------------------------------------------------------- */
- .spiral-tower-floor-title {
-   // Keep original styles but ensure position: fixed and high z-index
-   position: fixed !important;
-   top: 0 !important;
-   left: 0 !important;
-   width: 100% !important;
-   z-index: 1001 !important; // Above gizmos and wrapper
-   margin: 0 !important;
-   border-radius: 0 !important;
-   background-color: var(--title-bg-color, rgba(20, 20, 20, 0.85)) !important;
-   padding: $padding-standard !important;
-   box-shadow: $box-shadow !important;
-   box-sizing: border-box !important;
-   cursor: pointer !important; /* Indicate it's clickable */
-   will-change: transform, opacity; /* Optimize for animations */
-   transform: translateX(0); 
- 
-   h1 {
-     margin: 0 !important;
-     padding: 0 !important;
-     font-size: 1.5em !important; // Adjust as needed
-     color: var(--title-text-color, #fff) !important;
-     font-weight: bold !important;
-     line-height: 1.2 !important;
-     font-family: var(--title-font, 'Metamorphous', serif) !important;
-     letter-spacing: -0.5px;
-     text-align: center;
-   }
- }
- 
- .spiral-tower-floor-number {
-   // Keep original styles
-   font-size: 0.8em !important;
-   margin-bottom: 6px !important;
-   font-weight: bold !important;
-   color: var(--subtitle-color, #e90303) !important;
-   font-family: var(--title-font) !important;
-   text-align: center;
- }
- 
- .spiral-tower-floor-container {
-   // Keep original styles but ensure position: fixed and high z-index
-   position: fixed !important;
-   top: 50% !important; // Centered vertically
-   left: 50% !important; // Centered horizontally
-   transform: translate(-50%, -50%) !important; // Actual centering
-   width: $container-width !important;
-   max-width: $container-max-width !important;
-   z-index: 1000 !important; // Above wrapper/gizmos, potentially below title if desired
-   box-sizing: border-box !important;
-   transition: opacity 0.5s ease !important; // Adjust timing
-   // opacity: 0 !important; /* Start hidden, shown on title hover */
-   margin-top: 60px !important; /* Offset below title - Adjust as needed */
-   max-height: calc(80vh - 100px) !important; /* Limit height */
- }
+.spiral-tower-floor-title {
+  // Keep original styles but ensure position: fixed and high z-index
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 1001 !important; // Above gizmos and wrapper
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background-color: var(--title-bg-color, rgba(20, 20, 20, 0.85)) !important;
+  padding: $padding-standard !important;
+  box-shadow: $box-shadow !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  /* Indicate it's clickable */
+  will-change: transform, opacity;
+  /* Optimize for animations */
+  transform: translateX(0);
 
- .spiral-tower-floor-container.content-hidden {
+  h1 {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 1.5em !important; // Adjust as needed
+    color: var(--title-text-color, #fff) !important;
+    font-weight: bold !important;
+    line-height: 1.2 !important;
+    font-family: var(--title-font, 'Metamorphous', serif) !important;
+    letter-spacing: -0.5px;
+    text-align: center;
+  }
+}
+
+.spiral-tower-floor-number {
+  // Keep original styles
+  font-size: 0.8em !important;
+  margin-bottom: 6px !important;
+  font-weight: bold !important;
+  color: var(--subtitle-color, #e90303) !important;
+  font-family: var(--title-font) !important;
+  text-align: center;
+}
+
+.spiral-tower-floor-container {
+  // Keep original styles but ensure position: fixed and high z-index
+  position: fixed !important;
+  top: 50% !important; // Centered vertically
+  left: 50% !important; // Centered horizontally
+  transform: translate(-50%, -50%) !important; // Actual centering
+  width: $container-width !important;
+  max-width: $container-max-width !important;
+  z-index: 1000 !important; // Above wrapper/gizmos, potentially below title if desired
+  box-sizing: border-box !important;
+  transition: opacity 0.5s ease !important; // Adjust timing
+  // opacity: 0 !important; /* Start hidden, shown on title hover */
+  margin-top: 60px !important;
+  /* Offset below title - Adjust as needed */
+  max-height: calc(80vh - 100px) !important;
+  /* Limit height */
+}
+
+/* Hide content toggle button when text-only mode is active */
+#button-content-toggle.hidden-by-text-mode {
+  display: none !important;
+  /* Use !important if necessary to override other display rules */
+}
+
+.spiral-tower-floor-container.content-hidden {
   opacity: 0;
- }
-  
- .spiral-tower-floor-content {
-   // Keep original styles for content box appearance
-   background-color: var(--content-bg-color, rgba(35, 35, 35, 0.85)) !important;
-   padding: $padding-large !important;
-   border-radius: $border-radius !important;
-   box-shadow: $box-shadow !important;
-   box-sizing: border-box !important;
-   color: var(--content-text-color, #e6e6e6) !important;
-   position: relative !important;
-   max-height: 100% !important; /* Fill the container's max-height */
-   overflow-y: auto !important; /* Enable scrolling if content exceeds max-height */
-   font-family: var(--body-font) !important;
- 
-   // Keep original styles for elements inside content
-   p, ul, ol, li, blockquote {
-     color: var(--content-text-color, #e6e6e6) !important;
-     max-width: 100% !important;
-     display: block !important;
-     box-sizing: border-box !important;
-     letter-spacing: -0.5px;
-     font-size: 1.8rem; // Adjust base font size
-     line-height: 1.6;
-   }
-   h1, h2, h3, h4, h5, h6 {
-     color: var(--title-text-color, #fff) !important;
-     font-family: var(--title-font) !important;
-     margin: 1.5em 0 0.5em;
-   }
-   a {
-     color: var(--subtitle-color, #e90303) !important;
-     text-decoration: none !important;
-     &:hover { text-decoration: underline !important; }
-   }
-   strong, b { font-weight: bold; }
-   em, i { font-style: italic; }
- }
- 
- // Keep scrollbar styles (adjust colors maybe)
- .spiral-tower-floor-content::-webkit-scrollbar { width: 10px !important; }
- .spiral-tower-floor-content::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3) !important; }
- .spiral-tower-floor-content::-webkit-scrollbar-thumb { background-color: var(--subtitle-color, #e90303) !important; border-radius: 5px; }
- .spiral-tower-floor-content::-webkit-scrollbar-thumb:hover { background-color: rgba(233, 3, 3, 0.8) !important; }
- 
- 
- /* --------------------------------------------------------
+}
+
+.spiral-tower-floor-content {
+  // Keep original styles for content box appearance
+  background-color: var(--content-bg-color, rgba(35, 35, 35, 0.85)) !important;
+  padding: $padding-large !important;
+  border-radius: $border-radius !important;
+  box-shadow: $box-shadow !important;
+  box-sizing: border-box !important;
+  color: var(--content-text-color, #e6e6e6) !important;
+  position: relative !important;
+  max-height: 100% !important;
+  /* Fill the container's max-height */
+  overflow-y: auto !important;
+  /* Enable scrolling if content exceeds max-height */
+  font-family: var(--body-font) !important;
+
+  // Keep original styles for elements inside content
+  p,
+  ul,
+  ol,
+  li,
+  blockquote {
+    color: var(--content-text-color, #e6e6e6) !important;
+    max-width: 100% !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    letter-spacing: -0.5px;
+    font-size: 1.8rem; // Adjust base font size
+    line-height: 1.6;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--title-text-color, #fff) !important;
+    font-family: var(--title-font) !important;
+    margin: 1.5em 0 0.5em;
+  }
+
+  a {
+    color: var(--subtitle-color, #e90303) !important;
+    text-decoration: none !important;
+
+    &:hover {
+      text-decoration: underline !important;
+    }
+  }
+
+  strong,
+  b {
+    font-weight: bold;
+  }
+
+  em,
+  i {
+    font-style: italic;
+  }
+}
+
+// Keep scrollbar styles (adjust colors maybe)
+.spiral-tower-floor-content::-webkit-scrollbar {
+  width: 10px !important;
+}
+
+.spiral-tower-floor-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+.spiral-tower-floor-content::-webkit-scrollbar-thumb {
+  background-color: var(--subtitle-color, #e90303) !important;
+  border-radius: 5px;
+}
+
+.spiral-tower-floor-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(233, 3, 3, 0.8) !important;
+}
+
+
+/* --------------------------------------------------------
  * 7. TOOLBAR & TOOLTIPS (Keep from Original)
  * -------------------------------------------------------- */
- #toolbar {
-   display: flex;
-   position: fixed;
-   bottom: 15px; // Adjust position
-   right: 15px;  // Adjust position
-   z-index: 9999 !important; // Very high
-   background: rgba(0, 0, 0, 0.6);
-   overflow: visible;
-   opacity: 0.8;
- 
-   > a, > div { // Direct children buttons
-     display: flex; // Use flex for centering icon
-     justify-content: center;
-     align-items: center;
-     width: 40px; // Adjust size
-     height: 40px; // Adjust size
-     padding: 5px;
-     cursor: pointer;
-     border-left: 1px solid rgba(255, 255, 255, 0.2);
-     transition: background-color 0.2s ease;
-     padding: 8px;
-     &:first-child { border-left: none; }
-     &:hover { background-color: rgba(255, 255, 255, 0.1); }     
-   }
+#toolbar {
+  display: flex;
+  position: fixed;
+  bottom: 15px; // Adjust position
+  right: 15px; // Adjust position
+  z-index: 9999 !important; // Very high
+  background: rgba(0, 0, 0, 0.6);
+  overflow: visible;
+  opacity: 0.8;
 
-   #toolbar > div img,
-   #toolbar > div svg {
-     width: 100%;
-     height: 100%;
-     max-width: 70%;
-     max-height: 70%;
-     display: flex;        /* Use flex to allow it to flex within its container */
-     align-items: center;
-     justify-content: center;
-     margin: auto;
-     fill: white;
-     opacity: 0.8;
-     pointer-events: none; /* Optional: ensures clicks go to button, not SVG */
-   }
-   
- 
-   #button-sound-toggle {
-      // Keep original logic for showing/hiding via JS
-      // Start hidden - JS will show it when player is ready
-      display: none; // JS should change this to flex or block
-      opacity: 0; // JS might fade this in
-      visibility: hidden;
-      transition: opacity 0.3s ease;
- 
-      // Keep SVG styles for volume on/off
-      #volume-off-icon, #volume-on-icon { /* ... svg styles ... */ }
-   }
- }
- 
- // Tooltip Styles 
- .tooltip-trigger {
-   position: relative;
-   cursor: help;
-   // Optional indicator: border-bottom: 1px dotted black;
- }
- .tooltip-trigger::after { // The tooltip box
-   content: attr(data-tooltip);
-   position: absolute;
-   bottom: 110%; // Position above
-   left: 50%;
-   transform: translateX(-50%);
-   margin-bottom: 5px;
-   background-color: #333;
-   color: #fff;
-   padding: 5px 10px;
-   border-radius: 4px;
-   font-size: 0.9em;
-   font-family: var(--body-font);
-   white-space: nowrap;
-   opacity: 0; // Hidden by default
-   visibility: hidden;
-   transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
-   z-index: 10000; // Above everything
- }
- .tooltip-trigger::before { // The tooltip arrow
-   content: '';
-   position: absolute;
-   bottom: 110%; // Position with tooltip box
-   left: 50%;
-   transform: translateX(-50%);
-   margin-bottom: 0px; // Position just below the box edge
-   border-width: 5px;
-   border-style: solid;
-   border-color: #333 transparent transparent transparent; // Arrow pointing down
-   opacity: 0; // Hidden by default
-   visibility: hidden;
-   transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
-   z-index: 10001; // Above tooltip box
- }
- .tooltip-trigger:hover::after,
- .tooltip-trigger:hover::before { // Show on hover
-   opacity: 1;
-   visibility: visible;
- }
- 
- 
- /* --------------------------------------------------------
+  >a,
+  >div {
+    // Direct children buttons
+    display: flex; // Use flex for centering icon
+    justify-content: center;
+    align-items: center;
+    width: 40px; // Adjust size
+    height: 40px; // Adjust size
+    padding: 5px;
+    cursor: pointer;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    transition: background-color 0.2s ease;
+    padding: 8px;
+
+    &:first-child {
+      border-left: none;
+    }
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  #toolbar>div img,
+  #toolbar>div svg {
+    width: 100%;
+    height: 100%;
+    max-width: 70%;
+    max-height: 70%;
+    display: flex;
+    /* Use flex to allow it to flex within its container */
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    fill: white;
+    opacity: 0.8;
+    pointer-events: none;
+    /* Optional: ensures clicks go to button, not SVG */
+  }
+
+  #button-sound-toggle {
+    // Keep original logic for showing/hiding via JS
+    // Start hidden - JS will show it when player is ready
+    display: none; // JS should change this to flex or block
+    opacity: 0; // JS might fade this in
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+
+    // Keep SVG styles for volume on/off
+    #volume-off-icon,
+    #volume-on-icon {
+      /* ... svg styles ... */
+    }
+  }
+}
+
+// Tooltip Styles 
+.tooltip-trigger {
+  position: relative;
+  cursor: help;
+  // Optional indicator: border-bottom: 1px dotted black;
+}
+
+.tooltip-trigger::after {
+  // The tooltip box
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 110%; // Position above
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 5px;
+  background-color: #333;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: var(--body-font);
+  white-space: nowrap;
+  opacity: 0; // Hidden by default
+  visibility: hidden;
+  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+  z-index: 10000; // Above everything
+}
+
+.tooltip-trigger::before {
+  // The tooltip arrow
+  content: '';
+  position: absolute;
+  bottom: 110%; // Position with tooltip box
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 0px; // Position just below the box edge
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent; // Arrow pointing down
+  opacity: 0; // Hidden by default
+  visibility: hidden;
+  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+  z-index: 10001; // Above tooltip box
+}
+
+.tooltip-trigger:hover::after,
+.tooltip-trigger:hover::before {
+  // Show on hover
+  opacity: 1;
+  visibility: visible;
+}
+
+
+/* --------------------------------------------------------
  * 8. RESPONSIVE ADJUSTMENTS (Keep/Adjust from Original)
  * Adjust padding, font sizes, container widths for smaller screens.
  * -------------------------------------------------------- */
- @media (max-width: 768px) {
-   .spiral-tower-floor-container {
-     width: 90% !important;
-     margin-top: 50px !important; // Adjust offset based on title height
-     max-height: calc(85vh - 80px) !important;
-   }
-   .spiral-tower-floor-title {
-     padding: 15px !important;
-     h1 { font-size: 1.3em !important; }
-   }
-   .spiral-tower-floor-content {
-     padding: $padding-standard !important;
-     font-size: 1.1rem; // Adjust content font size
-   }
-   // Adjust toolbar position if needed
- }
- 
- @media (max-width: 480px) {
-   .spiral-tower-floor-container {
-     width: 95% !important;
-     margin-top: 45px !important;
-     max-height: calc(80vh - 70px) !important;
-   }
-   .spiral-tower-floor-title {
-     padding: 12px !important;
-     h1 { font-size: 1.2em !important; }
-   }
-    .spiral-tower-floor-content {
-      font-size: 1rem; // Adjust content font size
-      padding: 15px !important;
-    }
-   // Adjust toolbar position/size if needed
-   #toolbar {
-      bottom: 10px;
-      right: 10px;
-      > div { width: 35px; height: 35px; }
-   }
- }
+@media (max-width: 768px) {
+  .spiral-tower-floor-container {
+    width: 90% !important;
+    margin-top: 50px !important; // Adjust offset based on title height
+    max-height: calc(85vh - 80px) !important;
+  }
 
- /* Ensure these are active */
+  .spiral-tower-floor-title {
+    padding: 15px !important;
+
+    h1 {
+      font-size: 1.3em !important;
+    }
+  }
+
+  .spiral-tower-floor-content {
+    padding: $padding-standard !important;
+    font-size: 1.1rem; // Adjust content font size
+  }
+
+  // Adjust toolbar position if needed
+}
+
+@media (max-width: 480px) {
+  .spiral-tower-floor-container {
+    width: 95% !important;
+    margin-top: 45px !important;
+    max-height: calc(80vh - 70px) !important;
+  }
+
+  .spiral-tower-floor-title {
+    padding: 12px !important;
+
+    h1 {
+      font-size: 1.2em !important;
+    }
+  }
+
+  .spiral-tower-floor-content {
+    font-size: 1rem; // Adjust content font size
+    padding: 15px !important;
+  }
+
+  // Adjust toolbar position/size if needed
+  #toolbar {
+    bottom: 10px;
+    right: 10px;
+
+    >div {
+      width: 35px;
+      height: 35px;
+    }
+  }
+}
+
+/* Ensure these are active */
 .spiral-tower-floor-wrapper {
   position: fixed !important;
   transform-origin: center center !important;
@@ -511,8 +647,10 @@
   /* Start hidden - JS MUST set visibility: visible */
   visibility: hidden;
   /* JS sets width, height, top, left, transform */
-  margin: 0 !important; /* Ensure no margin interferes */
-  padding: 0 !important; /* Ensure no padding interferes */
+  margin: 0 !important;
+  /* Ensure no margin interferes */
+  padding: 0 !important;
+  /* Ensure no padding interferes */
 }
 
 .background-container,
@@ -521,8 +659,10 @@
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
-  width: 100% !important; /* Fill wrapper */
-  height: 100% !important; /* Fill wrapper */
+  width: 100% !important;
+  /* Fill wrapper */
+  height: 100% !important;
+  /* Fill wrapper */
   overflow: hidden !important;
 }
 
@@ -531,8 +671,10 @@
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
-  width: 100% !important; /* Fill container */
-  height: 100% !important; /* Fill container */
+  width: 100% !important;
+  /* Fill container */
+  height: 100% !important;
+  /* Fill container */
   display: block !important;
   border: none !important;
   transform: none !important;
@@ -542,15 +684,15 @@
 
 
 
- /* --------------------------------------------------------
+/* --------------------------------------------------------
  * 8. TEXT ONLY MODE
  * -------------------------------------------------------- */
 
- body.text-only-mode {
+body.text-only-mode {
 
   .spiral-tower-floor-wrapper {
-     display: none !important;
+    display: none !important;
   }
 
-  
- }
+
+}
