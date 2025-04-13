@@ -67,8 +67,27 @@ class Spiral_Tower_Plugin
 
         // Add metabox for pages to use floor template
         add_action('add_meta_boxes', array($this, 'add_floor_template_metabox'));
-        add_action('save_post', array($this, 'save_floor_template_meta'));   
+        add_action('save_post', array($this, 'save_floor_template_meta'));
+        
+        // Add hook for the stairs page
+        add_action('init', array($this, 'setup_stairs_page'));
     } 
+
+    /**
+     * Setup the stairs page to use our template
+     */
+    public function setup_stairs_page() {
+        // This will run on plugin activation and whenever the init hook fires
+        // Get the page with "/stairs" slug
+        $stairs_page = get_page_by_path('stairs');
+        
+        if ($stairs_page) {
+            // Set the meta to use our floor template if it's not already set
+            if (get_post_meta($stairs_page->ID, '_use_floor_template', true) !== '1') {
+                update_post_meta($stairs_page->ID, '_use_floor_template', '1');
+            }
+        }
+    }
 
     /**
      * Add metabox to enable floor template for pages
@@ -241,6 +260,16 @@ class Spiral_Tower_Plugin
             return $template; // Bail if no ID
         }
 
+        // Check if we're on the stairs page
+        $current_url = $_SERVER['REQUEST_URI'];
+        if (rtrim($current_url, '/') === '/stairs' || $current_url === '/stairs/') {
+            // For the stairs page, use single.php from the theme
+            $single_template = get_template_directory() . '/single.php';
+            if (file_exists($single_template)) {
+                return $single_template;
+            }
+        }
+
         if (is_singular('floor')) {
             $use_plugin_template = true;
         } elseif (is_page($post_id)) { // Check if it's specifically a page
@@ -284,7 +313,11 @@ class Spiral_Tower_Plugin
         $load_assets = false;
         $post_id = get_the_ID();
 
-        if (is_singular('floor')) {
+        // Check if we're on the stairs page
+        $current_url = $_SERVER['REQUEST_URI'];
+        $is_stairs_page = (rtrim($current_url, '/') === '/stairs' || $current_url === '/stairs/');
+
+        if (is_singular('floor') || $is_stairs_page) {
             $load_assets = true;
         } elseif (is_page($post_id)) {
             $use_floor_meta = get_post_meta($post_id, '_use_floor_template', true);
@@ -374,6 +407,9 @@ class Spiral_Tower_Plugin
 
         // Create floor author role
         $this->floor_manager->create_floor_author_role();
+        
+        // Setup the stairs page
+        $this->setup_stairs_page();
 
         // Flush rewrite rules ONCE on activation
         flush_rewrite_rules();

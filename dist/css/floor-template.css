@@ -431,12 +431,16 @@ body.floor-fullscreen {
   width: 100% !important;
   height: 100% !important;
   min-height: 100vh !important;
-  overflow: hidden !important;
+  overflow: auto;
   /* Prevent scrollbars */
   background: var(--background-color) !important;
   max-width: 100% !important;
   font-family: var(--body-font) !important;
   box-sizing: border-box !important;
+}
+
+body.single-floor {
+  overflow: hidden !important;
 }
 
 *,
@@ -715,18 +719,18 @@ body .container {
 }
 
 .spiral-tower-floor-container {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  width: 80% !important;
-  max-width: 800px !important;
-  z-index: 1000 !important;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  max-width: 800px;
+  z-index: 1000;
   box-sizing: border-box !important;
   transition: opacity 0.5s ease !important;
-  margin-top: 60px !important;
+  margin-top: 60px;
   /* Offset below title - Adjust as needed */
-  max-height: calc(80vh - 100px) !important;
+  max-height: calc(80vh - 100px);
   /* Limit height */
 }
 
@@ -748,9 +752,9 @@ body .container {
   box-sizing: border-box !important;
   color: var(--content-text-color, #e6e6e6) !important;
   position: relative !important;
-  max-height: 100% !important;
+  max-height: 100%;
   /* Fill the container's max-height */
-  overflow-y: auto !important;
+  overflow-y: auto;
   /* Enable scrolling if content exceeds max-height */
   font-family: var(--body-font) !important;
 }
@@ -924,36 +928,36 @@ body .container {
  * -------------------------------------------------------- */
 @media (max-width: 768px) {
   .spiral-tower-floor-container {
-    width: 90% !important;
-    margin-top: 50px !important;
-    max-height: calc(85vh - 80px) !important;
+    width: 90%;
+    margin-top: 50px;
+    max-height: calc(85vh - 80px);
   }
   .spiral-tower-floor-title {
-    padding: 15px !important;
+    padding: 15px;
   }
   .spiral-tower-floor-title h1 {
-    font-size: 1.3em !important;
+    font-size: 1.3em;
   }
   .spiral-tower-floor-content {
-    padding: 20px !important;
+    padding: 20px;
     font-size: 1.1rem;
   }
 }
 @media (max-width: 480px) {
   .spiral-tower-floor-container {
-    width: 95% !important;
-    margin-top: 45px !important;
-    max-height: calc(80vh - 70px) !important;
+    width: 95%;
+    margin-top: 45px;
+    max-height: calc(80vh - 70px);
   }
   .spiral-tower-floor-title {
-    padding: 12px !important;
+    padding: 12px;
   }
   .spiral-tower-floor-title h1 {
-    font-size: 1.2em !important;
+    font-size: 1.2em;
   }
   .spiral-tower-floor-content {
     font-size: 1rem;
-    padding: 15px !important;
+    padding: 15px;
   }
   #toolbar {
     bottom: 10px;
@@ -977,6 +981,9 @@ body .container {
   /* Ensure no margin interferes */
   padding: 0 !important;
   /* Ensure no padding interferes */
+}
+.spiral-tower-floor-wrapper a {
+  text-decoration: none;
 }
 
 .background-container,
@@ -1009,7 +1016,37 @@ body .container {
 /* --------------------------------------------------------
  * 8. TEXT ONLY MODE
  * -------------------------------------------------------- */
+body.text-only-mode {
+  overflow: auto !important;
+}
 body.text-only-mode .spiral-tower-floor-wrapper {
+  display: none !important;
+}
+body.text-only-mode .spiral-tower-floor-container {
+  width: auto !important;
+  height: auto !important;
+  margin: 140px auto 20px auto;
+  position: relative !important;
+  transform: none;
+  top: auto;
+  left: auto;
+}
+body.text-only-mode .spiral-tower-floor-container .spiral-tower-floor-content {
+  max-height: none;
+}
+body.text-only-mode .portals-text-only {
+  display: block !important;
+  margin-top: 40px;
+  text-align: center;
+}
+body.text-only-mode .portals-text-only img {
+  display: none;
+}
+body.text-only-mode .portals-text-only a {
+  text-decoration: underline;
+}
+
+.portals-text-only {
   display: none !important;
 }
 

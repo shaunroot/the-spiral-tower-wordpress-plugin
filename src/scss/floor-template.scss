@@ -54,13 +54,19 @@ body.floor-fullscreen {
   width: 100% !important;
   height: 100% !important;
   min-height: 100vh !important;
-  overflow: hidden !important;
+  overflow: auto;
   /* Prevent scrollbars */
   background: var(--background-color) !important; // Use variable, or fallback
   max-width: 100% !important;
   font-family: var(--body-font) !important;
   box-sizing: border-box !important;
 }
+
+
+body.single-floor {
+  overflow: hidden !important;
+}
+
 
 *,
 *::before,
@@ -351,19 +357,19 @@ body .container {
 
 .spiral-tower-floor-container {
   // Keep original styles but ensure position: fixed and high z-index
-  position: fixed !important;
-  top: 50% !important; // Centered vertically
-  left: 50% !important; // Centered horizontally
-  transform: translate(-50%, -50%) !important; // Actual centering
-  width: $container-width !important;
-  max-width: $container-max-width !important;
-  z-index: 1000 !important; // Above wrapper/gizmos, potentially below title if desired
+  position: fixed;
+  top: 50%; // Centered vertically
+  left: 50%; // Centered horizontally
+  transform: translate(-50%, -50%); // Actual centering
+  width: $container-width;
+  max-width: $container-max-width;
+  z-index: 1000; // Above wrapper/gizmos, potentially below title if desired
   box-sizing: border-box !important;
   transition: opacity 0.5s ease !important; // Adjust timing
   // opacity: 0 !important; /* Start hidden, shown on title hover */
-  margin-top: 60px !important;
+  margin-top: 60px;
   /* Offset below title - Adjust as needed */
-  max-height: calc(80vh - 100px) !important;
+  max-height: calc(80vh - 100px);
   /* Limit height */
 }
 
@@ -386,9 +392,9 @@ body .container {
   box-sizing: border-box !important;
   color: var(--content-text-color, #e6e6e6) !important;
   position: relative !important;
-  max-height: 100% !important;
+  max-height: 100%;
   /* Fill the container's max-height */
-  overflow-y: auto !important;
+  overflow-y: auto;
   /* Enable scrolling if content exceeds max-height */
   font-family: var(--body-font) !important;
 
@@ -585,21 +591,21 @@ body .container {
  * -------------------------------------------------------- */
 @media (max-width: 768px) {
   .spiral-tower-floor-container {
-    width: 90% !important;
-    margin-top: 50px !important; // Adjust offset based on title height
-    max-height: calc(85vh - 80px) !important;
+    width: 90%;
+    margin-top: 50px; // Adjust offset based on title height
+    max-height: calc(85vh - 80px);
   }
 
   .spiral-tower-floor-title {
-    padding: 15px !important;
+    padding: 15px;
 
     h1 {
-      font-size: 1.3em !important;
+      font-size: 1.3em;
     }
   }
 
   .spiral-tower-floor-content {
-    padding: $padding-standard !important;
+    padding: $padding-standard;
     font-size: 1.1rem; // Adjust content font size
   }
 
@@ -608,22 +614,22 @@ body .container {
 
 @media (max-width: 480px) {
   .spiral-tower-floor-container {
-    width: 95% !important;
-    margin-top: 45px !important;
-    max-height: calc(80vh - 70px) !important;
+    width: 95%;
+    margin-top: 45px;
+    max-height: calc(80vh - 70px);
   }
 
   .spiral-tower-floor-title {
-    padding: 12px !important;
+    padding: 12px;
 
     h1 {
-      font-size: 1.2em !important;
+      font-size: 1.2em;
     }
   }
 
   .spiral-tower-floor-content {
     font-size: 1rem; // Adjust content font size
-    padding: 15px !important;
+    padding: 15px;
   }
 
   // Adjust toolbar position/size if needed
@@ -651,6 +657,10 @@ body .container {
   /* Ensure no margin interferes */
   padding: 0 !important;
   /* Ensure no padding interferes */
+
+  a {
+    text-decoration: none;
+  }
 }
 
 .background-container,
@@ -690,9 +700,42 @@ body .container {
 
 body.text-only-mode {
 
+  overflow: auto !important;
+
   .spiral-tower-floor-wrapper {
     display: none !important;
   }
 
+  .spiral-tower-floor-container {
 
+    width: auto !important;
+    height: auto !important;
+    margin: 140px auto 20px auto;
+    position: relative !important;
+    transform: none;
+    top: auto;
+    left: auto;
+
+    .spiral-tower-floor-content {
+      max-height: none;
+    }
+  }
+
+  .portals-text-only {
+    display: block !important;
+    margin-top: 40px;
+    text-align: center;
+
+    img {
+      display: none;
+    }
+
+    a {
+      text-decoration: underline;
+    }
+  }
+}
+
+.portals-text-only {
+  display: none !important;
 }

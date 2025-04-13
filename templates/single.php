@@ -106,8 +106,7 @@ $portals = get_posts(array(
 	<?php elseif ($visual_bg_type === 'video'): ?> data-bg-type="video" <?php endif; // If visual_bg_type is null, no data-bg-type is set ?>>
 
 
-	<div class="spiral-tower-floor-wrapper" data-barba="container"
-		data-barba-namespace="floor-<?php echo get_the_ID(); ?>">
+	
 
 		<?php // --- Background Image or Video --- ?>
 		<?php if ($visual_bg_type === 'image' && $has_feat_image): ?>
@@ -159,7 +158,6 @@ $portals = get_posts(array(
 
 		</div> <?php // end .wrapper-floor-gizmos ?>
 
-	</div> <?php // end .spiral-tower-floor-wrapper ?>
 
 	<?php // --- Rest of your template (Title, Content Container, Toolbar, etc.) --- ?>
 

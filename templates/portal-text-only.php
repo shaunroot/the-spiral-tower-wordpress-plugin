@@ -10,22 +10,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Get floor styling
-$title_color = get_post_meta($post_id, '_title_color', true);
-$title_bg_color = get_post_meta($post_id, '_title_background_color', true);
-$content_color = get_post_meta($post_id, '_content_color', true);
-$content_bg_color = get_post_meta($post_id, '_content_background_color', true);
-
-// Apply default styles if not set
-if (empty($title_color))
-    $title_color = '#ffffff';
-if (empty($title_bg_color))
-    $title_bg_color = 'rgba(0,0,0,0.7)';
-if (empty($content_color))
-    $content_color = '#ffffff';
-if (empty($content_bg_color))
-    $content_bg_color = 'rgba(0,0,0,0.5)';
-
 ?>
 
 <?php foreach ($portals as $portal):
@@ -69,51 +53,31 @@ if (empty($content_bg_color))
         continue;
     }
 
-    // Format portal type for display
-    $portal_type_display = ucfirst($portal_type);
 
-    // Get portal icon/image based on type
-    $portal_icon = '';
     switch ($portal_type) {
         case 'text':
             $portal_icon = '<div class="portal-icon portal-text">' . esc_html($destination_title) . '</div>';
             break;
         case 'gateway':
-            $portal_icon = '<div class="portal-icon portal-gateway"></div>';
+            $portal_icon = '<div class="portal-icon portal-text"> Gateway to' . esc_html($destination_title) . '</div>';
             break;
         case 'vortex':
-            $portal_icon = '<div class="portal-icon portal-vortex"></div>';
+            $portal_icon = '<div class="portal-icon portal-text"> Vortex to' . esc_html($destination_title) . '</div>';
             break;
         case 'door':
-            $portal_icon = '<div class="portal-icon portal-door"></div>';
+            $portal_icon = '<div class="portal-icon portal-text">Door to' . esc_html($destination_title) . '</div>';
             break;
         case 'invisible':
-            $portal_icon = '<div class="portal-icon portal-invisible"></div>';
+            $portal_icon = '';
             break;
         case 'custom':
-            if (!empty($custom_image)) {
-                $portal_icon = '<div class="portal-icon portal-custom"><img src="' . esc_url($custom_image) . '" alt="Custom Portal"></div>';
-            } else {
-                $portal_icon = '<div class="portal-icon portal-custom"></div>';
-            }
+            $portal_icon = '<div class="portal-icon portal-text">' . esc_html($destination_title) . '</div>';
             break;
     }
     ?>
 
-    <div class="floor-gizmo" style="left: 20.25%; top: 58%;">
-        <a href="<?php echo esc_url($destination_url); ?>" class="spiral-tower-portal-link floor-transition-link">
-            <?php echo $portal_icon; ?>
-        </a>
-
-        <!-- <br>[ $portal->post_title : <?php echo esc_html($portal->post_title); ?>]
-        <br>[ $portal_type_display: <?php echo esc_html($portal_type_display); ?>]
-        <br>[ $destination_url: <?php echo esc_url($destination_url); ?>]
-        <br>[ $destination_title: <?php echo esc_html($destination_title); ?>]
-        <br>[ $destination_floor_id: <?php echo esc_html($destination_floor_id); ?>] -->
-
-        
-    </div>
-
-
+    <a href="<?php echo esc_url($destination_url); ?>" class="spiral-tower-portal-link floor-transition-link">
+        <?php echo $portal_icon; ?>
+    </a>
 
 <?php endforeach; ?>
