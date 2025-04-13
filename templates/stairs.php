@@ -69,27 +69,6 @@ wp_reset_postdata();
                                         </a>
                                     </li>
                                 <?php endforeach; ?>
-
-
-                                <?php foreach ($floors as $floor): ?>
-                                    <li>
-                                        <a href="<?php echo esc_url($floor['url']); ?>" class="floor-button">
-                                            <span class="floor-number"><?php echo esc_html($floor['number']); ?></span>
-                                            <span class="floor-title"><?php echo esc_html($floor['title']); ?></span>
-                                        </a>
-                                    </li>
-                                <?php endforeach; ?>
-                                <?php foreach ($floors as $floor): ?>
-                                    <li>
-                                        <a href="<?php echo esc_url($floor['url']); ?>" class="floor-button">
-                                            <span class="floor-number"><?php echo esc_html($floor['number']); ?></span>
-                                            <span class="floor-title"><?php echo esc_html($floor['title']); ?></span>
-                                        </a>
-                                    </li>
-                                <?php endforeach; ?>
-
-
-
                             </ul>
                         </div>
                     </div>
