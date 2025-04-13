@@ -50,8 +50,8 @@ SpiralTower.core = (function () {
                 toggleButton.classList.add('active');
                 toggleButton.dataset.tooltip = "Show Content";
             }
-             if (visibleIcon) visibleIcon.style.display = 'none';
-             if (hiddenIcon) hiddenIcon.style.display = 'inline-block';
+            if (visibleIcon) visibleIcon.style.display = 'none';
+            if (hiddenIcon) hiddenIcon.style.display = 'inline-block';
         }
     }
 
@@ -87,7 +87,7 @@ SpiralTower.core = (function () {
             logger.log(MODULE_NAME, "Text-only active: Forcing content visible and hiding content toggle button.");
             applyContentVisibilityUI(true); // Force content to be visible
             if (contentToggleButton) {
-                 contentToggleButton.classList.add('hidden-by-text-mode'); // Hide content toggle button using CSS class
+                contentToggleButton.classList.add('hidden-by-text-mode'); // Hide content toggle button using CSS class
             }
             // --- End ---
 
@@ -103,57 +103,57 @@ SpiralTower.core = (function () {
             if (textIcon) textIcon.style.display = 'inline-block';
             if (fullViewIcon) fullViewIcon.style.display = 'none';
 
-             // --- Show content toggle button and restore saved content visibility ---
-             logger.log(MODULE_NAME, "Text-only inactive: Showing content toggle button and restoring saved content visibility.");
-             if (contentToggleButton) {
-                 contentToggleButton.classList.remove('hidden-by-text-mode'); // Show content toggle button
-             }
-             // Restore content visibility based on its saved state (isContentVisible)
-             applyContentVisibilityUI(isContentVisible);
-             // --- End ---
+            // --- Show content toggle button and restore saved content visibility ---
+            logger.log(MODULE_NAME, "Text-only inactive: Showing content toggle button and restoring saved content visibility.");
+            if (contentToggleButton) {
+                contentToggleButton.classList.remove('hidden-by-text-mode'); // Show content toggle button
+            }
+            // Restore content visibility based on its saved state (isContentVisible)
+            applyContentVisibilityUI(isContentVisible);
+            // --- End ---
 
             logger.log(MODULE_NAME, "Disabled text-only mode.");
         }
     }
 
 
-     /**
-      * Sets up hover listeners for the floor title to temporarily SHOW content.
-      * Disables effect if text-only mode is active.
-      * @param {HTMLElement|null} [container=document] - The parent container to search within.
-      */
-     function setupTitleHoverListeners(container = document) {
-         // logger.log(MODULE_NAME, "Attempting to set up title hover listeners (hover SHOWS content) in container:", container); // Verbose
-         const titleElement = container.querySelector('.spiral-tower-floor-title');
-         const contentContainer = container.querySelector('.spiral-tower-floor-container');
+    /**
+     * Sets up hover listeners for the floor title to temporarily SHOW content.
+     * Disables effect if text-only mode is active.
+     * @param {HTMLElement|null} [container=document] - The parent container to search within.
+     */
+    function setupTitleHoverListeners(container = document) {
+        // logger.log(MODULE_NAME, "Attempting to set up title hover listeners (hover SHOWS content) in container:", container); // Verbose
+        const titleElement = container.querySelector('.spiral-tower-floor-title');
+        const contentContainer = container.querySelector('.spiral-tower-floor-container');
 
-         if (!titleElement) {
-             logger.error(MODULE_NAME, "setupTitleHoverListeners: FAILED TO FIND '.spiral-tower-floor-title'");
-             return;
-         }
-         if (!contentContainer) {
-             logger.warn(MODULE_NAME, "setupTitleHoverListeners: Could not find '.spiral-tower-floor-container'. Hover effect cannot work.");
-             return;
-         }
+        if (!titleElement) {
+            logger.error(MODULE_NAME, "setupTitleHoverListeners: FAILED TO FIND '.spiral-tower-floor-title'");
+            return;
+        }
+        if (!contentContainer) {
+            logger.warn(MODULE_NAME, "setupTitleHoverListeners: Could not find '.spiral-tower-floor-container'. Hover effect cannot work.");
+            return;
+        }
 
-         titleElement.addEventListener('mouseenter', () => {
-             // Disable hover effect if text-only mode is active
-             if (isTextOnlyActive) {
-                  return;
-             }
-             contentContainer.classList.remove('content-hidden');
-             contentContainer.style.display = '';
-         });
+        titleElement.addEventListener('mouseenter', () => {
+            // Disable hover effect if text-only mode is active
+            if (isTextOnlyActive) {
+                return;
+            }
+            contentContainer.classList.remove('content-hidden');
+            contentContainer.style.display = '';
+        });
 
-         titleElement.addEventListener('mouseleave', () => {
-             // Disable hover effect if text-only mode is active
-              if (isTextOnlyActive) {
-                   return;
-              }
-             applyContentVisibilityUI(isContentVisible, container);
-         });
-         logger.log(MODULE_NAME, "Title hover listeners attached successfully.");
-     }
+        titleElement.addEventListener('mouseleave', () => {
+            // Disable hover effect if text-only mode is active
+            if (isTextOnlyActive) {
+                return;
+            }
+            applyContentVisibilityUI(isContentVisible, container);
+        });
+        logger.log(MODULE_NAME, "Title hover listeners attached successfully.");
+    }
 
 
     // Setup global click listeners
@@ -164,14 +164,14 @@ SpiralTower.core = (function () {
             // --- Text Only Toggle Button Listener ---
             const textToggleButton = event.target.closest('#button-text-toggle');
             if (textToggleButton) {
-                 logger.log(MODULE_NAME, "Text Only toggle button clicked.");
-                 if (SpiralTower.utils?.isTextOnly && SpiralTower.utils?.setTextOnly) {
-                     const newIsEnabled = !SpiralTower.utils.isTextOnly(); // Read current state before toggling
-                     SpiralTower.utils.setTextOnly(newIsEnabled); // Save
-                     applyTextOnlyMode(newIsEnabled); // Update UI (this now handles content visibility too)
-                 } else {
-                     logger.warn(MODULE_NAME, "Text Only toggle clicked, but Utils module or functions not found.");
-                 }
+                logger.log(MODULE_NAME, "Text Only toggle button clicked.");
+                if (SpiralTower.utils?.isTextOnly && SpiralTower.utils?.setTextOnly) {
+                    const newIsEnabled = !SpiralTower.utils.isTextOnly(); // Read current state before toggling
+                    SpiralTower.utils.setTextOnly(newIsEnabled); // Save
+                    applyTextOnlyMode(newIsEnabled); // Update UI (this now handles content visibility too)
+                } else {
+                    logger.warn(MODULE_NAME, "Text Only toggle clicked, but Utils module or functions not found.");
+                }
             }
 
             // --- Sound Toggle Button Listener ---
@@ -193,11 +193,11 @@ SpiralTower.core = (function () {
                 logger.log(MODULE_NAME, "Content toggle button clicked.");
                 const newState = !isContentVisible;
                 if (SpiralTower.utils?.saveSetting) {
-                     SpiralTower.utils.saveSetting('contentVisible', newState);
-                     isContentVisible = newState; // Update state variable
-                     applyContentVisibilityUI(isContentVisible); // Update UI
+                    SpiralTower.utils.saveSetting('contentVisible', newState);
+                    isContentVisible = newState; // Update state variable
+                    applyContentVisibilityUI(isContentVisible); // Update UI
                 } else {
-                     logger.warn(MODULE_NAME, "Content toggle clicked, but Utils module or saveSetting function not found.");
+                    logger.warn(MODULE_NAME, "Content toggle clicked, but Utils module or saveSetting function not found.");
                 }
             }
 
@@ -206,10 +206,11 @@ SpiralTower.core = (function () {
     }
 
     // Load YouTube IFrame Player API script if needed
-     function loadYouTubeAPI() {
+    function loadYouTubeAPI() {
         if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
             if (document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
-                logger.log(MODULE_NAME, "YouTube API script tag already exists, waiting..."); return; }
+                logger.log(MODULE_NAME, "YouTube API script tag already exists, waiting..."); return;
+            }
             logger.log(MODULE_NAME, "YouTube API not found. Injecting script tag.");
             var tag = document.createElement('script');
             tag.src = "https://www.youtube.com/iframe_api";
@@ -218,10 +219,10 @@ SpiralTower.core = (function () {
             if (firstScriptTag?.parentNode) { firstScriptTag.parentNode.insertBefore(tag, firstScriptTag); }
             else { document.head.appendChild(tag); }
         } else { logger.log(MODULE_NAME, "YouTube API already available."); }
-     }
+    }
 
-     // Content display support functions (Scrollable/Long Content)
-     function setupContentDisplayChecks() {
+    // Content display support functions (Scrollable/Long Content)
+    function setupContentDisplayChecks() {
         logger.log(MODULE_NAME, "Setting up content display checks...");
         const contentElement = document.querySelector('.spiral-tower-floor-content');
         if (!contentElement) { logger.warn(MODULE_NAME, "Content element not found for display checks."); return; }
@@ -240,21 +241,28 @@ SpiralTower.core = (function () {
         if (SpiralTower.utils?.waitForImages) { SpiralTower.utils.waitForImages(contentElement).then(() => { checkScrollable(); checkContentLength(); }); }
         else { window.addEventListener('load', () => { checkScrollable(); checkContentLength(); }); }
         logger.log(MODULE_NAME, "Content display checks initialized.");
-     }
+    }
 
-     // Check if all REQUIRED modules are loaded AND have init functions
-     function checkRequiredModules() {
+    // Check if all REQUIRED modules are loaded AND have init functions
+    function checkRequiredModules() {
         logger.log(MODULE_NAME, "Checking readiness of required modules...");
-        const required = [ { key: 'utils', checkInit: true }, { key: 'background', checkInit: true }, { key: 'youtube', checkInit: true }, { key: 'transitions', checkInit: true } ];
+        const required = [
+            { key: 'utils', checkInit: true },
+            { key: 'background', checkInit: true },
+            { key: 'youtube', checkInit: true },
+            { key: 'transitions', checkInit: true },
+            { key: 'scrollArrows', checkInit: true }
+        ];
         let allReady = true;
         required.forEach(mod => {
             if (!SpiralTower[mod.key] || (mod.checkInit && typeof SpiralTower[mod.key].init !== 'function')) {
-                logger.error(MODULE_NAME, `REQUIRED module missing or invalid: SpiralTower.${mod.key}`); allReady = false; }
+                logger.error(MODULE_NAME, `REQUIRED module missing or invalid: SpiralTower.${mod.key}`); allReady = false;
+            }
         });
         if (!SpiralTower.gizmos?.init) { logger.warn(MODULE_NAME, "Optional module 'gizmos' missing or invalid."); }
         if (!allReady) { logger.error(MODULE_NAME, "Required modules not ready."); }
         return allReady;
-     }
+    }
 
     // --- Main Initialization Function ---
     async function init() {
@@ -274,12 +282,12 @@ SpiralTower.core = (function () {
                 logger.log(MODULE_NAME, "Initializing: gizmos...");
                 await SpiralTower.gizmos.init();
                 logger.log(MODULE_NAME, "Initialized: gizmos.");
-             }
+            }
             if (SpiralTower.colorExtractor?.init) {
                 logger.log(MODULE_NAME, "Initializing: colorExtractor...");
                 await SpiralTower.colorExtractor.init();
                 logger.log(MODULE_NAME, "Initialized: colorExtractor.");
-             }
+            }
             logger.log(MODULE_NAME, "Initializing: youtube...");
             await SpiralTower.youtube.init();
             logger.log(MODULE_NAME, "Initialized: youtube.");
@@ -288,25 +296,30 @@ SpiralTower.core = (function () {
             logger.log(MODULE_NAME, "Initialized: transitions.");
             logger.log(MODULE_NAME, "--- All Module Initializations Attempted ---");
 
+            if (SpiralTower.scrollArrows?.init) {
+                logger.log(MODULE_NAME, "Initializing: scrollArrows...");
+                await SpiralTower.scrollArrows.init();
+                logger.log(MODULE_NAME, "Initialized: scrollArrows.");
+            }
 
             logger.log(MODULE_NAME, "--- Setting up Core Features ---");
 
             // --- Load Initial States ---
             // Load text-only state first
             if (SpiralTower.utils?.isTextOnly) {
-                 isTextOnlyActive = SpiralTower.utils.isTextOnly();
-                 logger.log(MODULE_NAME, `Initial 'textOnly' state loaded: ${isTextOnlyActive}`);
+                isTextOnlyActive = SpiralTower.utils.isTextOnly();
+                logger.log(MODULE_NAME, `Initial 'textOnly' state loaded: ${isTextOnlyActive}`);
             } else {
-                 logger.warn(MODULE_NAME, "Utils module or isTextOnly function not found. Defaulting textOnly to false.");
-                 isTextOnlyActive = false;
+                logger.warn(MODULE_NAME, "Utils module or isTextOnly function not found. Defaulting textOnly to false.");
+                isTextOnlyActive = false;
             }
             // Load content visibility state (This is the only place it should be loaded)
             if (SpiralTower.utils?.loadSetting) {
                 isContentVisible = SpiralTower.utils.loadSetting('contentVisible', false); // Default false (hidden)
                 logger.log(MODULE_NAME, `Initial 'contentVisible' state loaded: ${isContentVisible}`);
             } else {
-                 logger.warn(MODULE_NAME, "Utils module or loadSetting function not found. Defaulting contentVisible to false.");
-                 isContentVisible = false;
+                logger.warn(MODULE_NAME, "Utils module or loadSetting function not found. Defaulting contentVisible to false.");
+                isContentVisible = false;
             }
             // --- End Load Initial States ---
 
@@ -354,10 +367,25 @@ SpiralTower.core = (function () {
             setupTitleHoverListeners(nextContainer);
 
             // --- Other transition handling ---
-            if (SpiralTower.background?.reinit) { SpiralTower.background.reinit(nextContainer); }
-            if (SpiralTower.colorExtractor?.reinit) { SpiralTower.colorExtractor.reinit(); }
-            if (SpiralTower.youtube?.destroyPlayer) { SpiralTower.youtube.destroyPlayer(); }
-            if (SpiralTower.youtube?.initializePlayerForContainer) { SpiralTower.youtube.initializePlayerForContainer(nextContainer); }
+            if (SpiralTower.background?.reinit) {
+                SpiralTower.background.reinit(nextContainer);
+            }
+
+            if (SpiralTower.colorExtractor?.reinit) { 
+                SpiralTower.colorExtractor.reinit(); 
+            }
+
+            if (SpiralTower.youtube?.destroyPlayer) { 
+                SpiralTower.youtube.destroyPlayer(); 
+            }
+
+            if (SpiralTower.youtube?.initializePlayerForContainer) {
+                SpiralTower.youtube.initializePlayerForContainer(nextContainer);
+            }
+            
+            if (SpiralTower.scrollArrows?.reinit) {
+                SpiralTower.scrollArrows.reinit(nextContainer);
+            }
             setupContentDisplayChecks(); // Re-run checks for new content
 
             logger.log(MODULE_NAME, "Page transition handling complete.");

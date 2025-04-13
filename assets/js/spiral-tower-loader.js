@@ -105,7 +105,9 @@ if (typeof spiralTowerWpSettings !== 'undefined' && spiralTowerWpSettings.loggin
         'spiral-tower-gizmos.js',
         'spiral-tower-youtube.js',
         'spiral-tower-transitions.js',
-        'spiral-tower-core.js' // Core should usually load last or near last
+        'spiral-tower-scrollto-plugin.js', // Add this line (load after GSAP, before scroll arrows)
+        'spiral-tower-scroll-arrows.js',   // Add this line (load before core)
+        'spiral-tower-core.js'             // Core should usually load last
     ];
 
     // Get the current script path for relative loading

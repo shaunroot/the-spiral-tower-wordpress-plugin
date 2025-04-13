@@ -214,7 +214,6 @@ SpiralTower.background = (function () {
         init: init,
         isInitialized: () => state.initialized,
         
-        // Enhanced forceUpdate function with fresh element finding for Barba transitions
         forceUpdate: function() {
             log('info', "forceUpdate called - refreshing background scaling");
             
@@ -235,7 +234,6 @@ SpiralTower.background = (function () {
             return scaleAndPositionWrapper();
         },
         
-        // Reinit method for Barba transitions
         reinit: function(container = document) {
             log('info', "reinit called - resetting state and re-initializing");
             

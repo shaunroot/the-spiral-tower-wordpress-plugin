@@ -127,7 +127,6 @@ $portals = get_posts(array(
 			</div>
 		<?php endif; ?>
 
-
 		<?php // --- Gizmo Container --- ?>
 		<div class="wrapper-floor-gizmos">
 
@@ -191,7 +190,34 @@ $portals = get_posts(array(
 	// ----- END: Portals --- ?>
 
 
-
+	<!-- // START - BG scrolling -->
+	<div class="spiral-tower-scroll-arrows">
+		<div class="scroll-arrow scroll-up" id="scroll-up">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+				stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="18 15 12 9 6 15"></polyline>
+			</svg>
+		</div>
+		<div class="scroll-arrow scroll-right" id="scroll-right">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+				stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="9 18 15 12 9 6"></polyline>
+			</svg>
+		</div>
+		<div class="scroll-arrow scroll-down" id="scroll-down">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+				stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="6 9 12 15 18 9"></polyline>
+			</svg>
+		</div>
+		<div class="scroll-arrow scroll-left" id="scroll-left">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+				stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="15 6 9 12 15 18"></polyline>
+			</svg>
+		</div>
+	</div>
+	<!-- // END - BG scrolling -->
 
 
 	<div id="toolbar"> <?php // ----- START: Toolbar----- ?>
@@ -215,6 +241,25 @@ $portals = get_posts(array(
 			</svg>
 		</div>
 		<?php // ----- END: Content Visibility Toggle Button HTML ----- ?>
+
+		<?php // ----- START: Edit Post Button (Conditional) ----- ?>
+        <?php
+        // Check if the current user can edit this specific post
+        if ( current_user_can( 'edit_post', get_the_ID() ) ) :
+            $edit_post_url = get_edit_post_link( get_the_ID() );
+            if ( $edit_post_url ) : // Make sure we got a valid URL
+        ?>
+            <a href="<?php echo esc_url( $edit_post_url ); ?>" id="button-edit-post" class="tooltip-trigger" data-tooltip="Edit this Floor"> <?php // target="_blank" opens editor in new tab ?>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                    <path d="m15 5 4 4"/>
+                </svg>
+            </a>
+        <?php
+            endif; // end if $edit_post_url
+        endif; // end if current_user_can
+        ?>
+        <?php // ----- END: Edit Post Button (Conditional) ----- ?>		
 
 		<a href="/stairs" id="button-stairs" class="tooltip-trigger" data-tooltip="Take the STAIRS!">
 			<img src="/wp-content/plugins/the-spiral-tower/dist/images/stairs.svg" alt="Stairs Icon" />

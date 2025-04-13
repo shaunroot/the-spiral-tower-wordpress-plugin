@@ -342,13 +342,11 @@ class Spiral_Tower_Plugin
             // GSAP (from CDN)
             wp_enqueue_script('gsap', 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js', array(), null, true);
 
-            // Barba Core (from CDN)
-            wp_enqueue_script('barba-core', 'https://unpkg.com/@barba/core', array(), null, true);
+            // GSAP ScrollTo Plugin (from CDN)
+            wp_enqueue_script('gsap-scrollto', 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js', array('gsap'), null, true);
 
-            // Barba Prefetch (from CDN) - Added
-             wp_enqueue_script('barba-prefetch', 'https://unpkg.com/@barba/prefetch', array('barba-core'), null, true);
 
-             // imagesLoaded (from CDN) - Added
+            // imagesLoaded (from CDN)
              wp_enqueue_script('imagesloaded', 'https://unpkg.com/imagesloaded@5/imagesloaded.pkgd.min.js', array(), null, true);
 
 
@@ -357,7 +355,7 @@ class Spiral_Tower_Plugin
             wp_enqueue_script(
                 'spiral-tower-loader', // *** Use a consistent, unique handle ***
                 $script_path,
-                array('gsap', 'barba-core', 'barba-prefetch', 'imagesloaded'), // *** Add ALL dependencies ***
+                array('gsap', 'gsap-scrollto', 'imagesloaded'), // *** Add ALL dependencies ***
                 '1.0.1', // Bump version on changes
                 true // Load in footer
             );
