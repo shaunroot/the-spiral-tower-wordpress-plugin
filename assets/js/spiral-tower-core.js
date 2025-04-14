@@ -37,6 +37,7 @@ SpiralTower.core = (function () {
 
         if (shouldBeVisible) { // Show content UI
             contentContainer.classList.remove('content-hidden');
+            contentContainer.classList.add('content-visible'); // Add this class for visibility
             contentContainer.style.display = ''; // Reset potential inline style from hover
             if (toggleButton) {
                 toggleButton.classList.remove('active');
@@ -46,6 +47,7 @@ SpiralTower.core = (function () {
             if (hiddenIcon) hiddenIcon.style.display = 'none';
         } else { // Hide content UI
             contentContainer.classList.add('content-hidden');
+            contentContainer.classList.remove('content-visible'); // Remove the visible class
             if (toggleButton) {
                 toggleButton.classList.add('active');
                 toggleButton.dataset.tooltip = "Show Content";
@@ -54,7 +56,6 @@ SpiralTower.core = (function () {
             if (hiddenIcon) hiddenIcon.style.display = 'inline-block';
         }
     }
-
 
     /**
      * Applies or removes the 'text-only-mode' class to the body,
@@ -126,7 +127,7 @@ SpiralTower.core = (function () {
         // logger.log(MODULE_NAME, "Attempting to set up title hover listeners (hover SHOWS content) in container:", container); // Verbose
         const titleElement = container.querySelector('.spiral-tower-floor-title');
         const contentContainer = container.querySelector('.spiral-tower-floor-container');
-
+    
         if (!titleElement) {
             logger.error(MODULE_NAME, "setupTitleHoverListeners: FAILED TO FIND '.spiral-tower-floor-title'");
             return;
@@ -135,16 +136,17 @@ SpiralTower.core = (function () {
             logger.warn(MODULE_NAME, "setupTitleHoverListeners: Could not find '.spiral-tower-floor-container'. Hover effect cannot work.");
             return;
         }
-
+    
         titleElement.addEventListener('mouseenter', () => {
             // Disable hover effect if text-only mode is active
             if (isTextOnlyActive) {
                 return;
             }
             contentContainer.classList.remove('content-hidden');
+            contentContainer.classList.add('content-visible'); // Add visible class
             contentContainer.style.display = '';
         });
-
+    
         titleElement.addEventListener('mouseleave', () => {
             // Disable hover effect if text-only mode is active
             if (isTextOnlyActive) {
@@ -371,18 +373,18 @@ SpiralTower.core = (function () {
                 SpiralTower.background.reinit(nextContainer);
             }
 
-            if (SpiralTower.colorExtractor?.reinit) { 
-                SpiralTower.colorExtractor.reinit(); 
+            if (SpiralTower.colorExtractor?.reinit) {
+                SpiralTower.colorExtractor.reinit();
             }
 
-            if (SpiralTower.youtube?.destroyPlayer) { 
-                SpiralTower.youtube.destroyPlayer(); 
+            if (SpiralTower.youtube?.destroyPlayer) {
+                SpiralTower.youtube.destroyPlayer();
             }
 
             if (SpiralTower.youtube?.initializePlayerForContainer) {
                 SpiralTower.youtube.initializePlayerForContainer(nextContainer);
             }
-            
+
             if (SpiralTower.scrollArrows?.reinit) {
                 SpiralTower.scrollArrows.reinit(nextContainer);
             }

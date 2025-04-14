@@ -250,74 +250,69 @@ class Spiral_Tower_Plugin
 
     /**
      * Force our custom template for floors or pages using the template meta.
-     */
-    public function floor_template($template)
-    {
-        $use_plugin_template = false;
-        $post_id = get_the_ID(); // Get current post/page ID
+     */public function floor_template($template)
+{
+    $use_plugin_template = false;
+    $post_id = get_the_ID(); // Get current post/page ID
 
-        if (!$post_id) {
-            return $template; // Bail if no ID
-        }
-
-        // Check if we're on the stairs page
-        $current_url = $_SERVER['REQUEST_URI'];
-        if (rtrim($current_url, '/') === '/stairs' || $current_url === '/stairs/') {
-            // For the stairs page, use single.php from the theme
-            $single_template = get_template_directory() . '/single.php';
-            if (file_exists($single_template)) {
-                return $single_template;
-            }
-        }
-
-        if (is_singular('floor')) {
-            $use_plugin_template = true;
-        } elseif (is_page($post_id)) { // Check if it's specifically a page
-            $use_floor_meta = get_post_meta($post_id, '_use_floor_template', true);
-            if ($use_floor_meta === '1') {
-                $use_plugin_template = true;
-            }
-        }
-
-        if ($use_plugin_template) {
-            $plugin_template_path = SPIRAL_TOWER_PLUGIN_DIR . 'templates/single-floor.php';
-            if (file_exists($plugin_template_path)) {
-                // Aggressively remove theme actions - Use with caution!
-                remove_all_actions('wp_head');
-                remove_all_actions('wp_footer');
-
-                // Re-add essential WordPress actions
-                add_action('wp_head', 'wp_enqueue_scripts', 1);
-                add_action('wp_head', 'wp_print_styles', 8);
-                add_action('wp_head', 'wp_print_head_scripts', 9);
-                add_action('wp_head', 'wp_site_icon', 99); // Add site icon support back
-                add_action('wp_head', '_wp_render_title_tag', 1); // Add title tag support back
-
-                add_action('wp_footer', 'wp_print_footer_scripts', 20);
-
-                return $plugin_template_path;
-            }
-        }
-
-        return $template; // Return original template if not overriding
+    if (!$post_id) {
+        return $template; // Bail if no ID
     }
 
+    // Check if we're on the stairs page
+    $current_url = $_SERVER['REQUEST_URI'];
+    if (rtrim($current_url, '/') === '/stairs' || $current_url === '/stairs/') {
+        // For the stairs page, use single.php from the theme
+        $single_template = get_template_directory() . '/single.php';
+        if (file_exists($single_template)) {
+            return $single_template;
+        }
+    }
 
-    /**
-     * Enqueue styles and scripts for floor template pages.
-     * Renamed from enqueue_floor_styles to enqueue_floor_assets.
-     */
+    if (is_singular('floor') || is_singular('room')) {
+        $use_plugin_template = true;
+    } elseif (is_page($post_id)) { // Check if it's specifically a page
+        $use_floor_meta = get_post_meta($post_id, '_use_floor_template', true);
+        if ($use_floor_meta === '1') {
+            $use_plugin_template = true;
+        }
+    }
+
+    if ($use_plugin_template) {
+        $plugin_template_path = SPIRAL_TOWER_PLUGIN_DIR . 'templates/single-floor.php';
+        if (file_exists($plugin_template_path)) {
+            // Aggressively remove theme actions - Use with caution!
+            remove_all_actions('wp_head');
+            remove_all_actions('wp_footer');
+
+            // Re-add essential WordPress actions
+            add_action('wp_head', 'wp_enqueue_scripts', 1);
+            add_action('wp_head', 'wp_print_styles', 8);
+            add_action('wp_head', 'wp_print_head_scripts', 9);
+            add_action('wp_head', 'wp_site_icon', 99); // Add site icon support back
+            add_action('wp_head', '_wp_render_title_tag', 1); // Add title tag support back
+
+            add_action('wp_footer', 'wp_print_footer_scripts', 20);
+
+            return $plugin_template_path;
+        }
+    }
+
+    return $template; // Return original template if not overriding
+}
+
     public function enqueue_floor_assets()
     {
         // Determine if we should load floor assets
         $load_assets = false;
         $post_id = get_the_ID();
-
+    
         // Check if we're on the stairs page
         $current_url = $_SERVER['REQUEST_URI'];
         $is_stairs_page = (rtrim($current_url, '/') === '/stairs' || $current_url === '/stairs/');
-
-        if (is_singular('floor') || $is_stairs_page) {
+    
+        // Check if it's a floor, room, or a page using the floor template
+        if (is_singular('floor') || is_singular('room') || $is_stairs_page) {
             $load_assets = true;
         } elseif (is_page($post_id)) {
             $use_floor_meta = get_post_meta($post_id, '_use_floor_template', true);
@@ -325,31 +320,31 @@ class Spiral_Tower_Plugin
                 $load_assets = true;
             }
         }
-
-        // Only load assets if it's a floor or page using the template
+    
+        // Only load assets if it's a floor, room, or page using the template
         if ($load_assets && $post_id) { // Added $post_id check
-
+    
             // --- STYLES ---
             wp_enqueue_style('spiral-tower-google-fonts-preconnect', 'https://fonts.googleapis.com', array(), null);
             wp_enqueue_style('spiral-tower-google-fonts-preconnect-crossorigin', 'https://fonts.gstatic.com', array(), null);
              wp_style_add_data( 'spiral-tower-google-fonts-preconnect-crossorigin', 'crossorigin', 'anonymous' ); // Add crossorigin attribute
             wp_enqueue_style('spiral-tower-google-fonts', 'https://fonts.googleapis.com/css2?family=Bilbo&family=Metamorphous&family=Winky+Sans:ital,wght@0,300..900;1,300..900&display=swap', array(), null);
             wp_enqueue_style('spiral-tower-floor-style', SPIRAL_TOWER_PLUGIN_URL . 'dist/css/floor-template.css', array('spiral-tower-google-fonts'), '1.0.1'); // Assumes CSS is in dist/css
-
-
+    
+    
             // --- SCRIPTS ---
-
+    
             // GSAP (from CDN)
             wp_enqueue_script('gsap', 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js', array(), null, true);
-
+    
             // GSAP ScrollTo Plugin (from CDN)
             wp_enqueue_script('gsap-scrollto', 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js', array('gsap'), null, true);
-
-
+    
+    
             // imagesLoaded (from CDN)
              wp_enqueue_script('imagesloaded', 'https://unpkg.com/imagesloaded@5/imagesloaded.pkgd.min.js', array(), null, true);
-
-
+    
+    
             // JS Module Loader
             $script_path = SPIRAL_TOWER_PLUGIN_URL . 'assets/js/spiral-tower-loader.js';
             wp_enqueue_script(
@@ -359,13 +354,20 @@ class Spiral_Tower_Plugin
                 '1.0.1', // Bump version on changes
                 true // Load in footer
             );
-
+    
             // --- Robustly Get YouTube ID for Localization ---
             $youtube_id = '';
             $current_post_id = get_the_ID(); // Use get_the_ID() which is safer here than get_queried_object_id() inside wp_enqueue_scripts sometimes
-
-            // Check if we got a valid ID and if it's the correct context (floor or page using template)
-            if ($current_post_id && (get_post_type($current_post_id) === 'floor' || (get_post_type($current_post_id) === 'page' && get_post_meta($current_post_id, '_use_floor_template', true) === '1'))) {
+    
+            // Determine the post type to get the appropriate meta
+            $current_post_type = get_post_type($current_post_id);
+    
+            // Check if we got a valid ID and if it's the correct context (floor, room, or page using template)
+            if ($current_post_id && 
+               ($current_post_type === 'floor' || 
+                $current_post_type === 'room' || 
+                ($current_post_type === 'page' && get_post_meta($current_post_id, '_use_floor_template', true) === '1'))) 
+            {
                  $background_youtube_url = get_post_meta($current_post_id, '_background_youtube_url', true);
                  if (!empty($background_youtube_url)) {
                      // Your existing regex logic to extract the ID
@@ -375,20 +377,55 @@ class Spiral_Tower_Plugin
                          $youtube_id = $background_youtube_url;
                      }
                  }
-             } // End check for valid floor/page context and ID
-
+             } // End check for valid context and ID
+    
             // Pass data to the main script
             wp_localize_script(
-                'spiral-tower-main-script',  
+                'spiral-tower-loader',  // Change to loader script
                 'spiralTowerData',           
                 array(                       
                     'youtubeId' => $youtube_id,
+                    'postType' => $current_post_type,
                     // Add other data as needed
                 )
             );
         } // End $load_assets check
     }
 
+    public function add_floor_body_class($classes)
+    {
+        if (is_singular('floor')) {
+            $classes[] = 'floor-template-active';
+            $classes[] = 'floor-fullscreen';
+            // Original class removals - keep if needed
+            $remove_classes = array(
+                'logged-in', 'admin-bar', 'customize-support', 'wp-custom-logo',
+                'has-header-image', 'has-sidebar', 'has-header-video'
+            );
+            foreach ($remove_classes as $class) {
+                $key = array_search($class, $classes);
+                if ($key !== false) {
+                    unset($classes[$key]);
+                }
+            }
+        } elseif (is_singular('room')) {
+            $classes[] = 'room-template-active';
+            $classes[] = 'floor-template-active'; // Add floor class for styling
+            $classes[] = 'floor-fullscreen';
+            // Remove same classes as for floors
+            $remove_classes = array(
+                'logged-in', 'admin-bar', 'customize-support', 'wp-custom-logo',
+                'has-header-image', 'has-sidebar', 'has-header-video'
+            );
+            foreach ($remove_classes as $class) {
+                $key = array_search($class, $classes);
+                if ($key !== false) {
+                    unset($classes[$key]);
+                }
+            }
+        }
+        return $classes;
+    }    
 
     /**
      * Activate the plugin

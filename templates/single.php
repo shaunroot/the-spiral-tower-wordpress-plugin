@@ -130,11 +130,6 @@ $portals = get_posts(array(
 		<?php // --- Gizmo Container --- ?>
 		<div class="wrapper-floor-gizmos">
 
-			<?php // --- Individual Gizmos - DEFINE POSITION HERE --- ?>
-			<!-- <div id="sample-gizmo-1" class="floor-gizmo" style="left: 50%; top: 50%;">
-				X-0-X
-			</div> -->
-
 			<?php // ----- START: Portals --- 
 			if ($portals) {
 				?>

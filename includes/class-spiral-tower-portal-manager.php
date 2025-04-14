@@ -25,7 +25,7 @@ class Spiral_Tower_Portal_Manager
         add_filter('manage_portal_posts_columns', array($this, 'add_portal_type_column'));
         add_action('manage_portal_posts_custom_column', array($this, 'display_portal_type_column'), 10, 2);
         add_filter('manage_edit-portal_sortable_columns', array($this, 'make_portal_type_column_sortable'));
-        
+
         // Portal listing on floor display
         add_action('spiral_tower_after_floor_content', array($this, 'display_floor_portals'));
     }
@@ -100,7 +100,7 @@ class Spiral_Tower_Portal_Manager
         $position_x = get_post_meta($post->ID, '_position_x', true);
         $position_y = get_post_meta($post->ID, '_position_y', true);
         $scale = get_post_meta($post->ID, '_scale', true);
-        
+
         // Origin and destination values
         $origin_type = get_post_meta($post->ID, '_origin_type', true);
         $origin_floor_id = get_post_meta($post->ID, '_origin_floor_id', true);
@@ -110,9 +110,12 @@ class Spiral_Tower_Portal_Manager
         $destination_room_id = get_post_meta($post->ID, '_destination_room_id', true);
 
         // Default values if empty
-        if (empty($position_x)) $position_x = '50';
-        if (empty($position_y)) $position_y = '50';
-        if (empty($scale)) $scale = '100';
+        if (empty($position_x))
+            $position_x = '50';
+        if (empty($position_y))
+            $position_y = '50';
+        if (empty($scale))
+            $scale = '100';
 
         // Output fields
         ?>
@@ -122,31 +125,38 @@ class Spiral_Tower_Portal_Manager
                 padding-bottom: 20px;
                 border-bottom: 1px solid #eee;
             }
+
             .portal-settings-section h3 {
                 margin-top: 0;
                 margin-bottom: 15px;
                 padding-bottom: 5px;
                 border-bottom: 1px solid #eee;
             }
+
             .portal-settings-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 grid-gap: 15px;
             }
+
             .portal-settings-field {
                 margin-bottom: 15px;
             }
+
             .portal-settings-field label {
                 display: block;
                 margin-bottom: 5px;
                 font-weight: bold;
             }
+
             .portal-settings-field input[type="number"] {
                 width: 100%;
             }
+
             .portal-settings-field select {
                 width: 100%;
             }
+
             .portal-image-preview {
                 max-width: 100%;
                 max-height: 150px;
@@ -166,7 +176,7 @@ class Spiral_Tower_Portal_Manager
                         <option value="room" <?php selected($origin_type, 'room'); ?>>Room</option>
                     </select>
                 </div>
-                
+
                 <div class="portal-settings-field origin-floor-field" <?php echo ($origin_type !== 'room') ? '' : 'style="display:none;"'; ?>>
                     <label for="origin_floor_id">Origin Floor:</label>
                     <select id="origin_floor_id" name="origin_floor_id">
@@ -179,7 +189,7 @@ class Spiral_Tower_Portal_Manager
                             'meta_key' => '_floor_number',
                             'order' => 'ASC'
                         ));
-                        
+
                         foreach ($floors as $floor) {
                             $floor_number = get_post_meta($floor->ID, '_floor_number', true);
                             echo '<option value="' . esc_attr($floor->ID) . '" ' . selected($origin_floor_id, $floor->ID, false) . '>';
@@ -189,7 +199,7 @@ class Spiral_Tower_Portal_Manager
                         ?>
                     </select>
                 </div>
-                
+
                 <div class="portal-settings-field origin-room-field" <?php echo ($origin_type === 'room') ? '' : 'style="display:none;"'; ?>>
                     <label for="origin_room_id">Origin Room:</label>
                     <select id="origin_room_id" name="origin_room_id">
@@ -201,7 +211,7 @@ class Spiral_Tower_Portal_Manager
                             'orderby' => 'title',
                             'order' => 'ASC'
                         ));
-                        
+
                         foreach ($rooms as $room) {
                             echo '<option value="' . esc_attr($room->ID) . '" ' . selected($origin_room_id, $room->ID, false) . '>';
                             echo esc_html($room->post_title);
@@ -212,7 +222,7 @@ class Spiral_Tower_Portal_Manager
                 </div>
             </div>
         </div>
-        
+
         <!-- Destination Section -->
         <div class="portal-settings-section">
             <h3>Destination</h3>
@@ -224,7 +234,7 @@ class Spiral_Tower_Portal_Manager
                         <option value="room" <?php selected($destination_type, 'room'); ?>>Room</option>
                     </select>
                 </div>
-                
+
                 <div class="portal-settings-field destination-floor-field" <?php echo ($destination_type !== 'room') ? '' : 'style="display:none;"'; ?>>
                     <label for="destination_floor_id">Destination Floor:</label>
                     <select id="destination_floor_id" name="destination_floor_id">
@@ -240,7 +250,7 @@ class Spiral_Tower_Portal_Manager
                         ?>
                     </select>
                 </div>
-                
+
                 <div class="portal-settings-field destination-room-field" <?php echo ($destination_type === 'room') ? '' : 'style="display:none;"'; ?>>
                     <label for="destination_room_id">Destination Room:</label>
                     <select id="destination_room_id" name="destination_room_id">
@@ -257,7 +267,7 @@ class Spiral_Tower_Portal_Manager
                 </div>
             </div>
         </div>
-        
+
         <!-- Portal Appearance Section -->
         <div class="portal-settings-section">
             <h3>Portal Appearance</h3>
@@ -282,13 +292,15 @@ class Spiral_Tower_Portal_Manager
 
                 <div class="portal-settings-field">
                     <label for="position_x">Position X (%):</label>
-                    <input type="number" id="position_x" name="position_x" value="<?php echo esc_attr($position_x); ?>" min="0" max="100">
+                    <input type="number" id="position_x" name="position_x" value="<?php echo esc_attr($position_x); ?>" min="0"
+                        max="100">
                     <span class="description">Horizontal position (0 = left, 100 = right)</span>
                 </div>
 
                 <div class="portal-settings-field">
                     <label for="position_y">Position Y (%):</label>
-                    <input type="number" id="position_y" name="position_y" value="<?php echo esc_attr($position_y); ?>" min="0" max="100">
+                    <input type="number" id="position_y" name="position_y" value="<?php echo esc_attr($position_y); ?>" min="0"
+                        max="100">
                     <span class="description">Vertical position (0 = top, 100 = bottom)</span>
                 </div>
 
@@ -297,28 +309,62 @@ class Spiral_Tower_Portal_Manager
                     <input type="number" id="scale" name="scale" value="<?php echo esc_attr($scale); ?>" min="10" max="500">
                     <span class="description">Size of the portal (100 = normal size)</span>
                 </div>
+
+                <p>
+                    <label>
+                        <input type="checkbox" name="use_custom_size" value="1" <?php checked($use_custom_size, '1'); ?> />
+                        Set custom size
+                    </label>
+                </p>
+
+                <div id="custom_size_fields" style="<?php echo $use_custom_size ? 'display:block;' : 'display:none;'; ?>">
+                    <p>
+                        <label for="portal_width">Width (%):</label><br>
+                        <input type="number" id="portal_width" name="portal_width" value="<?php echo esc_attr($width); ?>"
+                            min="1" max="100" style="width:100%;" />
+                    </p>
+                    <p>
+                        <label for="portal_height">Height (%):</label><br>
+                        <input type="number" id="portal_height" name="portal_height" value="<?php echo esc_attr($height); ?>"
+                            min="1" max="100" style="width:100%;" />
+                    </p>
+                </div>
+
+                <script type="text/javascript">
+                    jQuery(document).ready(function ($) {
+                        $('input[name="use_custom_size"]').on('change', function () {
+                            if ($(this).is(':checked')) {
+                                $('#custom_size_fields').show();
+                            } else {
+                                $('#custom_size_fields').hide();
+                            }
+                        });
+                    });
+                </script>
             </div>
         </div>
 
-        <div class="portal-settings-field" id="custom_image_field" style="<?php echo ($portal_type === 'custom') ? 'display:block;' : 'display:none;' ?>">
+        <div class="portal-settings-field" id="custom_image_field"
+            style="<?php echo ($portal_type === 'custom') ? 'display:block;' : 'display:none;' ?>">
             <label for="custom_image">Custom Image:</label>
             <input type="hidden" id="custom_image" name="custom_image" value="<?php echo esc_attr($custom_image); ?>">
             <button type="button" class="button" id="custom_image_button">Select Image</button>
-            <button type="button" class="button" id="custom_image_remove" style="<?php echo empty($custom_image) ? 'display:none;' : ''; ?>">Remove Image</button>
+            <button type="button" class="button" id="custom_image_remove"
+                style="<?php echo empty($custom_image) ? 'display:none;' : ''; ?>">Remove Image</button>
             <div id="custom_image_preview">
-                <?php if (!empty($custom_image)) : 
+                <?php if (!empty($custom_image)):
                     $image_url = wp_get_attachment_image_url($custom_image, 'medium');
-                    if ($image_url) : ?>
+                    if ($image_url): ?>
                         <img src="<?php echo esc_url($image_url); ?>" class="portal-image-preview">
-                    <?php endif; 
+                    <?php endif;
                 endif; ?>
             </div>
         </div>
 
         <script>
-            jQuery(document).ready(function($) {
+            jQuery(document).ready(function ($) {
                 // Show/hide custom image field based on portal type
-                $('#portal_type').on('change', function() {
+                $('#portal_type').on('change', function () {
                     if ($(this).val() === 'custom') {
                         $('#custom_image_field').show();
                     } else {
@@ -328,15 +374,15 @@ class Spiral_Tower_Portal_Manager
 
                 // Media uploader
                 var mediaUploader;
-                
-                $('#custom_image_button').on('click', function(e) {
+
+                $('#custom_image_button').on('click', function (e) {
                     e.preventDefault();
-                    
+
                     if (mediaUploader) {
                         mediaUploader.open();
                         return;
                     }
-                    
+
                     mediaUploader = wp.media({
                         title: 'Select Portal Image',
                         button: {
@@ -344,25 +390,25 @@ class Spiral_Tower_Portal_Manager
                         },
                         multiple: false
                     });
-                    
-                    mediaUploader.on('select', function() {
+
+                    mediaUploader.on('select', function () {
                         var attachment = mediaUploader.state().get('selection').first().toJSON();
                         $('#custom_image').val(attachment.id);
                         $('#custom_image_preview').html('<img src="' + attachment.url + '" class="portal-image-preview">');
                         $('#custom_image_remove').show();
                     });
-                    
+
                     mediaUploader.open();
                 });
-                
-                $('#custom_image_remove').on('click', function() {
+
+                $('#custom_image_remove').on('click', function () {
                     $('#custom_image').val('');
                     $('#custom_image_preview').html('');
                     $(this).hide();
                 });
-                
+
                 // Toggle origin fields based on selection
-                $('#origin_type').on('change', function() {
+                $('#origin_type').on('change', function () {
                     if ($(this).val() === 'floor') {
                         $('.origin-floor-field').show();
                         $('.origin-room-field').hide();
@@ -371,9 +417,9 @@ class Spiral_Tower_Portal_Manager
                         $('.origin-room-field').show();
                     }
                 });
-                
+
                 // Toggle destination fields based on selection
-                $('#destination_type').on('change', function() {
+                $('#destination_type').on('change', function () {
                     if ($(this).val() === 'floor') {
                         $('.destination-floor-field').show();
                         $('.destination-room-field').hide();
@@ -430,52 +476,75 @@ class Spiral_Tower_Portal_Manager
         // Save position X
         if (isset($_POST['position_x'])) {
             $position_x = intval($_POST['position_x']);
-            if ($position_x < 0) $position_x = 0;
-            if ($position_x > 100) $position_x = 100;
+            if ($position_x < 0)
+                $position_x = 0;
+            if ($position_x > 100)
+                $position_x = 100;
             update_post_meta($post_id, '_position_x', $position_x);
         }
 
         // Save position Y
         if (isset($_POST['position_y'])) {
             $position_y = intval($_POST['position_y']);
-            if ($position_y < 0) $position_y = 0;
-            if ($position_y > 100) $position_y = 100;
+            if ($position_y < 0)
+                $position_y = 0;
+            if ($position_y > 100)
+                $position_y = 100;
             update_post_meta($post_id, '_position_y', $position_y);
         }
 
         // Save scale
         if (isset($_POST['scale'])) {
             $scale = intval($_POST['scale']);
-            if ($scale < 10) $scale = 10;
-            if ($scale > 500) $scale = 500;
+            if ($scale < 10)
+                $scale = 10;
+            if ($scale > 500)
+                $scale = 500;
             update_post_meta($post_id, '_scale', $scale);
         }
-        
+
         // Save origin settings
         if (isset($_POST['origin_type'])) {
             update_post_meta($post_id, '_origin_type', sanitize_text_field($_POST['origin_type']));
         }
-        
+
         if (isset($_POST['origin_floor_id'])) {
             update_post_meta($post_id, '_origin_floor_id', sanitize_text_field($_POST['origin_floor_id']));
         }
-        
+
         if (isset($_POST['origin_room_id'])) {
             update_post_meta($post_id, '_origin_room_id', sanitize_text_field($_POST['origin_room_id']));
         }
-        
+
         // Save destination settings
         if (isset($_POST['destination_type'])) {
             update_post_meta($post_id, '_destination_type', sanitize_text_field($_POST['destination_type']));
         }
-        
+
         if (isset($_POST['destination_floor_id'])) {
             update_post_meta($post_id, '_destination_floor_id', sanitize_text_field($_POST['destination_floor_id']));
         }
-        
+
         if (isset($_POST['destination_room_id'])) {
             update_post_meta($post_id, '_destination_room_id', sanitize_text_field($_POST['destination_room_id']));
         }
+
+        $use_custom_size = isset($_POST['use_custom_size']) ? '1' : '0';
+        update_post_meta($post_id, '_use_custom_size', $use_custom_size);
+        
+        if ($use_custom_size === '1') {
+            if (isset($_POST['portal_width'])) {
+                update_post_meta($post_id, '_width', sanitize_text_field($_POST['portal_width']));
+            }
+            
+            if (isset($_POST['portal_height'])) {
+                update_post_meta($post_id, '_height', sanitize_text_field($_POST['portal_height']));
+            }
+        } else {
+            // If not using custom size, we can delete those meta values to keep the database clean
+            delete_post_meta($post_id, '_width');
+            delete_post_meta($post_id, '_height');
+        }        
     }
 
     /**
@@ -550,7 +619,7 @@ class Spiral_Tower_Portal_Manager
         $columns['portal_type'] = 'portal_type';
         return $columns;
     }
-    
+
     /**
      * Display portals for the current floor
      */
@@ -560,7 +629,7 @@ class Spiral_Tower_Portal_Manager
         if (get_post_type($post_id) !== 'floor') {
             return;
         }
-        
+
         // Query for portals that have this floor as origin
         $portals = get_posts(array(
             'post_type' => 'portal',
@@ -579,12 +648,12 @@ class Spiral_Tower_Portal_Manager
                 )
             )
         ));
-        
+
         // If no portals found, don't display anything
         if (empty($portals)) {
             return;
         }
-        
+
         // Load the portals template
         include plugin_dir_path(dirname(__FILE__)) . 'templates/portal.php';
     }

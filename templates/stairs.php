@@ -1,6 +1,6 @@
 <?php
 /**
- * Template for the Elevator page
+ * Template for the STAIRS page
  *
  * @package Spiral Tower
  */
@@ -42,7 +42,7 @@ wp_reset_postdata();
 <head>
     <meta charset="<?php bloginfo('charset'); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Elevator - <?php bloginfo('name'); ?></title>
+    <title>STAIRS - <?php bloginfo('name'); ?></title>
     <?php wp_head(); ?>
     <?php wp_enqueue_style('spiral-tower-elevator'); ?>
 </head>

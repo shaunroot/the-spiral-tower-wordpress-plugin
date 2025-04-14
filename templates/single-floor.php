@@ -130,11 +130,6 @@ $portals = get_posts(array(
 		<?php // --- Gizmo Container --- ?>
 		<div class="wrapper-floor-gizmos">
 
-			<?php // --- Individual Gizmos - DEFINE POSITION HERE --- ?>
-			<!-- <div id="sample-gizmo-1" class="floor-gizmo" style="left: 50%; top: 50%;">
-				X-0-X
-			</div> -->
-
 			<?php // ----- START: Portals --- 
 			if ($portals) {
 				?>
@@ -242,28 +237,6 @@ $portals = get_posts(array(
 		</div>
 		<?php // ----- END: Content Visibility Toggle Button HTML ----- ?>
 
-		<?php // ----- START: Edit Post Button (Conditional) ----- ?>
-        <?php
-        // Check if the current user can edit this specific post
-        if ( current_user_can( 'edit_post', get_the_ID() ) ) :
-            $edit_post_url = get_edit_post_link( get_the_ID() );
-            if ( $edit_post_url ) : // Make sure we got a valid URL
-        ?>
-            <a href="<?php echo esc_url( $edit_post_url ); ?>" id="button-edit-post" class="tooltip-trigger" data-tooltip="Edit this Floor"> <?php // target="_blank" opens editor in new tab ?>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil">
-                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                    <path d="m15 5 4 4"/>
-                </svg>
-            </a>
-        <?php
-            endif; // end if $edit_post_url
-        endif; // end if current_user_can
-        ?>
-        <?php // ----- END: Edit Post Button (Conditional) ----- ?>		
-
-		<a href="/stairs" id="button-stairs" class="tooltip-trigger" data-tooltip="Take the STAIRS!">
-			<img src="/wp-content/plugins/the-spiral-tower/dist/images/stairs.svg" alt="Stairs Icon" />
-		</a>
 
 		<?php // ----- START: Text Only Toggle Button HTML ----- ?>
 		<div id="button-text-toggle" class="tooltip-trigger" data-tooltip="Toggle Text Only Mode">
@@ -286,6 +259,30 @@ $portals = get_posts(array(
 			</svg>
 		</div>
 		<?php // ----- END: Text Only Toggle Button HTML ----- ?>
+
+
+		<?php // ----- START: Edit Post Button (Conditional) ----- ?>
+        <?php
+        // Check if the current user can edit this specific post
+        if ( current_user_can( 'edit_post', get_the_ID() ) ) :
+            $edit_post_url = get_edit_post_link( get_the_ID() );
+            if ( $edit_post_url ) : // Make sure we got a valid URL
+        ?>
+            <a href="<?php echo esc_url( $edit_post_url ); ?>" id="button-edit-post" class="tooltip-trigger" data-tooltip="Edit this Floor"> <?php // target="_blank" opens editor in new tab ?>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                    <path d="m15 5 4 4"/>
+                </svg>
+            </a>
+        <?php
+            endif; // end if $edit_post_url
+        endif; // end if current_user_can
+        ?>
+        <?php // ----- END: Edit Post Button (Conditional) ----- ?>		
+
+		<a href="/stairs" id="button-stairs" class="tooltip-trigger" data-tooltip="Take the STAIRS!">
+			<img src="/wp-content/plugins/the-spiral-tower/dist/images/stairs.svg" alt="Stairs Icon" />
+		</a>
 
 		<?php // ----- START: Sound Toggle Button HTML ----- ?>
 		<?php if ($has_youtube || $youtube_audio_only): ?>

@@ -622,8 +622,6 @@ body .container {
   /* Allow clicks through to background */
   z-index: 10 !important;
   /* Above background, below UI */
-  /* outline: 2px dashed yellow !important; */
-  /* DEBUG */
 }
 
 .floor-gizmo {
@@ -642,37 +640,63 @@ body .container {
   /* --- Base Visual Style (Customize as needed) --- */
   transition: transform 0.2s ease;
   /* Smooth hover effect */
-  /* Example for tooltip inside gizmo - adjust as needed */
 }
-.floor-gizmo .gizmo-tooltip {
-  position: absolute !important;
-  bottom: 120%;
-  /* Position above */
+
+/* Override the problematic rule that's emptying tooltip content */
+.floor-gizmo.tooltip-trigger::after {
+  /* Re-establish the tooltip content from the data-tooltip attribute */
+  content: attr(data-tooltip) !important;
+  /* Position in center */
+  bottom: auto !important;
+  top: 50% !important;
   left: 50% !important;
-  transform: translateX(-50%) !important;
-  background-color: rgba(0, 0, 0, 0.8) !important;
-  color: white !important;
-  padding: 5px 10px !important;
+  transform: translate(-50%, -50%) !important;
+  /* Make it visible and well-styled */
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  color: #fff !important;
+  font-weight: bold !important;
+  padding: 6px 12px !important;
   border-radius: 4px !important;
   white-space: nowrap !important;
-  font-size: 14px !important;
-  opacity: 0 !important;
-  transition: opacity 0.2s ease !important;
+  /* Control visibility */
+  opacity: 0 !important; /* Start hidden */
+  visibility: hidden !important;
+  transition: opacity 0.3s ease, visibility 0.3s ease !important;
+  /* Ensure it's on top */
+  z-index: 10000 !important;
+  /* Allow clicks to pass through */
   pointer-events: none !important;
 }
-.floor-gizmo:hover .floor-gizmo .gizmo-tooltip {
-  opacity: 1 !important;
+
+/* Ensure proper pointer-events behavior */
+.floor-gizmo.tooltip-trigger {
+  pointer-events: auto !important; /* Allow clicking on the gizmo */
 }
-.floor-gizmo .gizmo-tooltip::after {
-  /* Creates the arrow */
-  content: "" !important;
-  position: absolute !important;
-  top: 100% !important;
-  left: 50% !important;
-  margin-left: -5px !important;
-  border-width: 5px !important;
-  border-style: solid !important;
-  border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent !important;
+
+/* Make sure the link takes up the full gizmo area */
+.floor-gizmo.tooltip-trigger a.spiral-tower-portal-link {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+  z-index: 1 !important; /* Should be lower than the tooltip z-index */
+}
+
+/* Show on hover */
+.floor-gizmo.tooltip-trigger:hover::after {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Hide the tooltip arrow */
+.floor-gizmo.tooltip-trigger::before {
+  display: none !important;
+}
+
+/* For invisible portals - optional visibility style on hover */
+.floor-gizmo:hover .portal-invisible {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px dashed rgba(255, 255, 255, 0.3) !important;
 }
 
 /* --------------------------------------------------------
@@ -719,6 +743,7 @@ body .container {
 }
 
 .spiral-tower-floor-container {
+  pointer-events: none;
   position: fixed;
   top: 50%;
   left: 50%;
@@ -727,11 +752,12 @@ body .container {
   max-width: 800px;
   z-index: 1000;
   box-sizing: border-box !important;
+  opacity: 0;
+  /* Start with opacity 0 */
   transition: opacity 0.5s ease !important;
+  /* Keep your transition */
   margin-top: 60px;
-  /* Offset below title - Adjust as needed */
   max-height: calc(80vh - 100px);
-  /* Limit height */
 }
 
 /* Hide content toggle button when text-only mode is active */
@@ -742,6 +768,14 @@ body .container {
 
 .spiral-tower-floor-container.content-hidden {
   opacity: 0;
+}
+
+.spiral-tower-floor-container.content-visible {
+  opacity: 1;
+}
+
+body.text-only-mode .spiral-tower-floor-container {
+  opacity: 1 !important;
 }
 
 .spiral-tower-floor-content {
@@ -1060,8 +1094,10 @@ body.text-only-mode .portals-text-only a {
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none; /* Let clicks pass through to the background */
-  z-index: 1100; /* Above wrapper (z-index: 1) but below fixed UI (z-index: 1001) */
+  pointer-events: none;
+  /* Let clicks pass through to the background */
+  z-index: 1100;
+  /* Above wrapper (z-index: 1) but below fixed UI (z-index: 1001) */
 }
 
 /* Base styles for all arrow buttons */
@@ -1078,7 +1114,8 @@ body.text-only-mode .portals-text-only a {
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.3s ease, background-color 0.2s ease;
-  pointer-events: auto; /* Make arrows clickable */
+  pointer-events: auto;
+  /* Make arrows clickable */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 

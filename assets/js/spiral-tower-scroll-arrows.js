@@ -9,11 +9,11 @@
 (function() {
     // Config
     const config = {
-        scrollStep: 120,         // Pixels to move per click
-        continuousStep: 5,      // Pixels per frame when holding
-        animationDuration: 1.2,  // Duration of smooth scrolling in seconds
+        scrollStep: 100,         // Pixels to move per click
+        continuousStep: 8,      // Pixels per frame when holding
+        animationDuration: 1.5,  // Duration of smooth scrolling in seconds
         boundsBuffer: 10,        // Buffer to prevent seeing edge (increased to avoid black space)
-        logEnabled: true,        // Enable debug logging
+        logEnabled: false,        // Enable debug logging -- TODO replace this with normal debugger
         initRetryDelay: 100,     // Milliseconds to wait before retrying initialization
         maxInitRetries: 50,      // Maximum number of retries
         centeringOffset: 0,      // Adjust if needed to ensure centering

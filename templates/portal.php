@@ -33,6 +33,9 @@ if (empty($content_bg_color))
     $portal_position_x = get_post_meta($portal->ID, '_position_x', true);
     $portal_position_y = get_post_meta($portal->ID, '_position_y', true);
     $portal_scale = get_post_meta($portal->ID, '_scale', true);
+    $use_custom_size = get_post_meta($portal->ID, '_use_custom_size', true);
+    $portal_width = get_post_meta($portal->ID, '_width', true);
+    $portal_height = get_post_meta($portal->ID, '_height', true);
     $destination_type = get_post_meta($portal->ID, '_destination_type', true);
     $destination_floor_id = get_post_meta($portal->ID, '_destination_floor_id', true);
     $destination_room_id = get_post_meta($portal->ID, '_destination_room_id', true);
@@ -45,6 +48,30 @@ if (empty($content_bg_color))
         }
     }
 
+    // Default scale if not set
+    if (!$portal_scale) {
+        $portal_scale = 1;
+    }
+    else {
+        $portal_scale = $portal_scale / 100;
+    }
+
+    // Style attributes for the floor-gizmo div
+    $style_attrs = "left: {$portal_position_x}%; top: {$portal_position_y}%;";
+    
+    // Add transform with scale
+    $style_attrs .= " transform: scale({$portal_scale});";
+    
+    // Add custom width and height if enabled
+    if ($use_custom_size === '1') {
+        if (!empty($portal_width)) {
+            $style_attrs .= " width: {$portal_width}%;";
+        }
+        if (!empty($portal_height)) {
+            $style_attrs .= " height: {$portal_height}%;";
+        }
+    }
+
     // Get destination title and URL
     $destination_title = '';
     $destination_url = '';
@@ -53,7 +80,7 @@ if (empty($content_bg_color))
         $floor = get_post($destination_floor_id);
         if ($floor) {
             $floor_number = get_post_meta($destination_floor_id, '_floor_number', true);
-            $destination_title = "Floor {$destination_floor_id}: " . $floor->post_title;
+            $destination_title = "Floor {$floor_number}: " . $floor->post_title;
             $destination_url = get_permalink($destination_floor_id);
         }
     } elseif ($destination_type === 'room' && !empty($destination_room_id)) {
@@ -76,44 +103,40 @@ if (empty($content_bg_color))
     $portal_icon = '';
     switch ($portal_type) {
         case 'text':
-            $portal_icon = '<div class="portal-icon portal-text">' . esc_html($destination_title) . '</div>';
+            $portal_icon = '<div class="portal-text">' . esc_html($destination_title) . '</div>';
             break;
         case 'gateway':
-            $portal_icon = '<div class="portal-icon portal-gateway"></div>';
+            $portal_icon = '<div class="portal-gateway"></div>';
             break;
         case 'vortex':
-            $portal_icon = '<div class="portal-icon portal-vortex"></div>';
+            $portal_icon = '<div class="portal-vortex"></div>';
             break;
         case 'door':
-            $portal_icon = '<div class="portal-icon portal-door"></div>';
+            $portal_icon = '<div class="portal-door"></div>';
             break;
         case 'invisible':
-            $portal_icon = '<div class="portal-icon portal-invisible"></div>';
+            // For invisible portals, we don't add the data-tooltip attribute to the inner div anymore
+            $portal_icon = '<div class="portal-invisible"></div>';
             break;
         case 'custom':
             if (!empty($custom_image)) {
-                $portal_icon = '<div class="portal-icon portal-custom"><img src="' . esc_url($custom_image) . '" alt="Custom Portal"></div>';
+                $portal_icon = '<div class="portal-custom"><img src="' . esc_url($custom_image) . '" alt="Custom Portal"></div>';
             } else {
-                $portal_icon = '<div class="portal-icon portal-custom"></div>';
+                $portal_icon = '<div class="portal-custom"></div>';
             }
             break;
     }
+    
+    // Add a class to debug tooltip visibility issues if needed
+    // $debug_class = 'debug-tooltip'; // Uncomment for debugging
     ?>
 
-    <div class="floor-gizmo" style="left: 20.25%; top: 58%;">
+    <div class="floor-gizmo tooltip-trigger <?php echo isset($debug_class) ? $debug_class : ''; ?>" 
+         style="<?php echo esc_attr($style_attrs); ?>" 
+         data-tooltip="<?php echo esc_attr($destination_title); ?>">
         <a href="<?php echo esc_url($destination_url); ?>" class="spiral-tower-portal-link floor-transition-link">
             <?php echo $portal_icon; ?>
         </a>
-
-        <!-- <br>[ $portal->post_title : <?php echo esc_html($portal->post_title); ?>]
-        <br>[ $portal_type_display: <?php echo esc_html($portal_type_display); ?>]
-        <br>[ $destination_url: <?php echo esc_url($destination_url); ?>]
-        <br>[ $destination_title: <?php echo esc_html($destination_title); ?>]
-        <br>[ $destination_floor_id: <?php echo esc_html($destination_floor_id); ?>] -->
-
-        
     </div>
-
-
 
 <?php endforeach; ?>
