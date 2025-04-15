@@ -382,7 +382,7 @@ body .container {
 
 .spiral-tower-floor-container {
   position: relative; // <– This is the missing piece most of the time
-  z-index: 2;  
+  z-index: 2;
   pointer-events: none; // The will be links under the transparent container
   position: fixed;
   top: 50%; // Centered vertically
@@ -503,7 +503,7 @@ body.text-only-mode .spiral-tower-floor-container {
 
 
 /* --------------------------------------------------------
- * 7. TOOLBAR & TOOLTIPS (Keep from Original)
+ * 7. TOOLBAR & TOOLTIPS 
  * -------------------------------------------------------- */
 #toolbar {
   display: flex;
@@ -532,10 +532,10 @@ body.text-only-mode .spiral-tower-floor-container {
     &:first-child {
       border-left: none;
     }
+  }
 
-    &:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
+  #toolbar>div.tooltip-trigger:hover {
+    background-color: rgba(255, 255, 255, 0.1);
   }
 
   #toolbar>a img,
@@ -625,6 +625,91 @@ body.text-only-mode .spiral-tower-floor-container {
 
 
 /* --------------------------------------------------------
+ * 7b. TOOLBAR SEARCH EXTENSION 
+ * -------------------------------------------------------- */
+
+#toolbar-search-form {
+  /* --- Positioning & Size --- */
+  position: fixed;
+  bottom: 60px;
+  right: 75px;
+  width: 10vw;
+  min-width: 200px;
+  max-width: 300px;
+
+  /* --- Appearance --- */
+  background-color: transparent;
+  // border-radius: removed
+  box-shadow: $box-shadow; // Use theme variable or fallback
+  z-index: 10000;
+
+  /* --- Flex Layout for Input/Button --- */
+  display: flex;
+  align-items: stretch; // Make items fill height
+  flex-wrap: nowrap; // << ADDED: Ensure items stay on one line
+
+
+  input[type="text"] {
+    /* --- Sizing & Layout --- */
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: auto; 
+    height: 32px;
+    box-sizing: border-box;
+
+    /* --- Appearance (including darker bg and placeholder from previous step) --- */
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-right: none;
+    background-color: rgba(0, 0, 0, 0.7); // Darker background
+    color: #ddd;
+    font-family: var(--body-font);
+    font-size: 0.9em;
+
+    &::placeholder {
+      color: #bbb; // Lighter placeholder
+      opacity: 1;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--subtitle-color, #e90303);
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  button {
+    /* --- Sizing & Layout --- */
+    flex-shrink: 0;
+    flex-grow: 0;
+    height: 32px;
+    box-sizing: border-box;
+
+    /* --- Appearance --- */
+    padding: 0 12px;
+    background-color: rgba(85, 85, 85, 0.9);
+    color: #fff;
+    border: 1px solid rgba(119, 119, 119, 0.8);
+    // border-radius: removed
+    cursor: pointer;
+    font-family: var(--body-font);
+    font-size: 0.9em;
+    white-space: nowrap;
+    line-height: 30px;
+
+    // Hover effect removed previously
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+  }
+}
+
+
+
+/* --------------------------------------------------------
  * 8. RESPONSIVE ADJUSTMENTS (Keep/Adjust from Original)
  * Adjust padding, font sizes, container widths for smaller screens.
  * -------------------------------------------------------- */
@@ -706,7 +791,7 @@ body.text-only-mode .spiral-tower-floor-container {
 #image-background,
 #youtube-background {
   position: absolute !important;
-  pointer-events: none;  
+  pointer-events: none;
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;

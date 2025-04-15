@@ -23,7 +23,7 @@ window.SpiralTower.config = {
         globalEnable: true, // Master switch for all non-error logs
         modules: {
             loader: false,      // Logs from this script loader file
-            core: true,
+            core: false,
             utils: false,
             background: false,
             gizmos: false,      

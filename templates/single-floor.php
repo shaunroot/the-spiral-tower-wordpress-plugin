@@ -320,9 +320,32 @@ $portals = get_posts(array(
 		?>
 		<?php // ----- END: Edit Post Button (Conditional) ----- ?>
 
+
+		<?php // ----- START: STAIRS ----- ?>
 		<a href="/stairs" id="button-stairs" class="tooltip-trigger" data-tooltip="Take the STAIRS!">
 			<img src="/wp-content/plugins/the-spiral-tower/dist/images/stairs.svg" alt="Stairs Icon" />
 		</a>
+		<?php // ----- END: STAIRS ----- ?>
+
+
+		<?php // ----- START: TWIST ----- ?>
+		<div id="toolbar-search-trigger" class="tooltip-trigger" data-tooltip="TWIST">
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
+				stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+				<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+				<path d="M21 4l-18 0" />
+				<path d="M19 8l-14 0" />
+				<path d="M17 12l-10 0" />
+				<path d="M15 16l-6 0" />
+				<path d="M13 20l-2 0" />
+			</svg>
+		</div>
+		<div id="toolbar-search-form" style="display: none;">
+			<input type="text" id="toolbar-search-input" placeholder="Floor # or Keyword">
+			<button type="button" id="toolbar-search-submit">Go</button>
+		</div>
+		<?php // ----- END: TWIST ----- ?>
+
 
 		<?php // ----- START: Sound Toggle Button HTML ----- ?>
 		<?php if ($has_youtube || $youtube_audio_only): ?>
@@ -359,6 +382,161 @@ $portals = get_posts(array(
 	<?php // ----- END: Custom Interface Script --- ?>
 
 	<?php wp_footer(); ?>
+
+
+
+
+
+	<?php
+	// Prepare data for JavaScript (Keep this part)
+	$ajax_url = admin_url('admin-ajax.php');
+	$ajax_nonce = wp_create_nonce('spiral_tower_floor_search_nonce');
+	?>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			// --- Debug: Log that the script block started ---
+			console.log('Spiral Tower Search JS: DOMContentLoaded event fired.');
+
+			// Get elements
+			const searchTrigger = document.getElementById('toolbar-search-trigger');
+			const searchForm = document.getElementById('toolbar-search-form');
+			const searchInput = document.getElementById('toolbar-search-input');
+			const searchSubmit = document.getElementById('toolbar-search-submit');
+			const ajaxUrl = '<?php echo esc_url($ajax_url); ?>';
+			const ajaxNonce = '<?php echo esc_js($ajax_nonce); ?>';
+
+			if (searchForm) { searchForm.style.display = 'none'; }
+
+			// --- Debug: Log found elements (or null if not found) ---
+			console.log('Spiral Tower Search JS: Trying to find elements...');
+			console.log('  > Trigger Element (#toolbar-search-trigger):', searchTrigger);
+			console.log('  > Form Element (#toolbar-search-form):', searchForm);
+			console.log('  > Input Element (#toolbar-search-input):', searchInput);
+			console.log('  > Submit Element (#toolbar-search-submit):', searchSubmit);
+
+
+			// --- Toggle Search Form Visibility ---
+			if (searchTrigger && searchForm && searchInput) { // Also check searchInput here
+				console.log('Spiral Tower Search JS: Trigger, Form, and Input elements found. Attaching click listener to trigger...');
+				searchTrigger.addEventListener('click', function () {
+					console.log('Spiral Tower Search JS: Search Trigger CLICKED!');
+					// Check if currently hidden (inline style is 'none' or empty)
+					const isCurrentlyHidden = searchForm.style.display === 'none' || searchForm.style.display === '';
+					console.log('Spiral Tower Search JS: Form currently hidden?', isCurrentlyHidden);
+
+					if (isCurrentlyHidden) {
+						// If hidden, show it using flex
+						searchForm.style.display = 'flex';
+						console.log('Spiral Tower Search JS: Setting form display to: flex');
+						if (searchInput) { // Check searchInput exists before focusing
+							searchInput.focus();
+							console.log('Spiral Tower Search JS: Focusing input field.');
+						}
+					} else {
+						// If not hidden (must be 'flex'), hide it
+						searchForm.style.display = 'none';
+						console.log('Spiral Tower Search JS: Setting form display to: none');
+					}
+				});
+				console.log('Spiral Tower Search JS: Click listener attached to trigger.');
+			} else {
+				// --- Debug: Log if essential elements for toggle are missing ---
+				console.error('Spiral Tower Search JS: Could not find Search Trigger OR Search Form OR Search Input element. Cannot attach toggle listener.');
+			}
+
+			// --- Handle Search Submission ---
+			const performSearch = function () {
+				// --- Debug: Log search attempt ---
+				console.log('Spiral Tower Search JS: performSearch() called.');
+
+				const searchTerm = searchInput.value.trim();
+				// --- Debug: Log the search term ---
+				console.log('Spiral Tower Search JS: Search term entered:', searchTerm);
+
+				if (searchTerm === '') {
+					console.warn('Spiral Tower Search JS: Search term is empty, aborting.');
+					return;
+				}
+
+				console.log('Spiral Tower Search JS: Preparing AJAX request...');
+				searchSubmit.textContent = '...';
+				searchSubmit.disabled = true;
+
+				const formData = new FormData();
+				formData.append('action', 'spiral_tower_floor_search');
+				formData.append('nonce', ajaxNonce);
+				formData.append('search_term', searchTerm);
+
+				console.log('Spiral Tower Search JS: Sending AJAX request to:', ajaxUrl);
+				fetch(ajaxUrl, {
+					method: 'POST',
+					body: formData
+				})
+					.then(response => {
+						console.log('Spiral Tower Search JS: Received AJAX response.', response);
+						return response.json(); // Attempt to parse JSON
+					})
+					.then(data => {
+						console.log('Spiral Tower Search JS: Parsed AJAX response data:', data);
+						if (data.success && data.data.redirect_url) {
+							console.log('Spiral Tower Search JS: Search success! Redirecting to:', data.data.redirect_url);
+							window.location.href = data.data.redirect_url;
+						} else {
+							const errorMsg = data.data ? data.data.message : 'Unknown error or invalid response format.';
+							console.error('Spiral Tower Search JS: Search failed:', errorMsg);
+							alert('Search failed: ' + errorMsg);
+							searchSubmit.textContent = 'Go';
+							searchSubmit.disabled = false;
+						}
+					})
+					.catch(error => {
+						console.error('Spiral Tower Search JS: AJAX request fetch/parse error:', error);
+						alert('An error occurred during the search request.');
+						searchSubmit.textContent = 'Go';
+						searchSubmit.disabled = false;
+					});
+			};
+
+			// Listener for button click
+			if (searchSubmit && searchInput) { // Check input exists too
+				console.log('Spiral Tower Search JS: Attaching click listener to submit button.');
+				searchSubmit.addEventListener('click', performSearch);
+			} else {
+				console.error('Spiral Tower Search JS: Could not find Search Submit Button OR Search Input. Cannot attach submit listener.');
+			}
+
+			// Listener for Enter key in input field
+			if (searchInput) {
+				console.log('Spiral Tower Search JS: Attaching keypress listener to input field.');
+				searchInput.addEventListener('keypress', function (event) {
+					if (event.key === 'Enter') {
+						console.log('Spiral Tower Search JS: Enter key pressed in input.');
+						event.preventDefault();
+						performSearch();
+					}
+				});
+			} else {
+				// Note: Input missing error logged earlier if critical
+			}
+
+			// Optional: Hide form if user clicks outside
+			document.addEventListener('click', function (event) {
+				// Check if form exists AND is currently visible (inline style is 'flex')
+				if (searchTrigger && searchForm && searchForm.style.display === 'flex') {
+					const isClickInsideForm = searchForm.contains(event.target);
+					const isClickOnTrigger = searchTrigger.contains(event.target);
+
+					// Hide ONLY if the click was NOT inside the form AND NOT on the trigger button
+					if (!isClickInsideForm && !isClickOnTrigger) {
+						console.log('Spiral Tower Search JS: Click detected outside search form/trigger. Hiding form via inline style.');
+						searchForm.style.display = 'none'; // Hide using inline style
+					}
+				}
+			});
+
+			console.log('Spiral Tower Search JS: Script execution finished.');
+		});
+	</script>
 
 
 

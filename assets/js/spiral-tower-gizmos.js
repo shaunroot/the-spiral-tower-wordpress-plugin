@@ -17,7 +17,7 @@ SpiralTower.gizmos = (function() {
         initialized: false,
         config: {
             gizmoClass: 'floor-gizmo',
-            debug: true
+            debug: false
         }
     };
 
