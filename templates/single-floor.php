@@ -165,9 +165,46 @@ $portals = get_posts(array(
 		<?php endif; ?>
 		<h1><?php the_title(); ?></h1>
 	</div>
+
 	<div class="spiral-tower-floor-container">
 		<div class="spiral-tower-floor-content">
-			<?php the_content(); ?>
+			<?php
+			// Get the raw post content first
+			$raw_content = get_the_content();
+
+			// Apply standard WordPress filters (like wpautop, shortcodes)
+			$content = apply_filters('the_content', $raw_content);
+
+			// Check if the content (after stripping HTML tags and trimming whitespace) is effectively empty
+			if (empty(trim(strip_tags($content, '<a><img>')))) { // Allow links/images in the check if needed
+				// If content is empty, display "..."
+				echo '...';
+			} else {
+				// If content is not empty, process it for Reddit links
+				// Regex to find u/username patterns (case-insensitive)
+				// \b ensures we match whole words (prevents matching things like "emailu/user")
+				// Captures the 'u/' part and the username separately
+				$processed_content = preg_replace_callback(
+					'/\b(u\/([a-zA-Z0-9_-]+))\b/i', // Pattern: \b(u/ (username) )\b
+					function ($matches) {
+						// $matches[0] is the full match (e.g., u/Username or u/username)
+						// $matches[2] is just the username part (e.g., Username or username)
+						$full_match = $matches[0];
+						$username = $matches[2];
+						// Construct the Reddit URL - Reddit user URLs are case-insensitive in practice,
+						// but we use the captured username for consistency if needed elsewhere.
+						$url = 'https://www.reddit.com/user/' . esc_attr($username) . '/';
+						// Create the link, ensuring URL and displayed text are properly escaped
+						return '<a href="' . esc_url($url) . '" target="_blank" rel="noopener noreferrer">' . esc_html($full_match) . '</a>';
+					},
+					$content // Apply the regex to the filtered content
+				);
+
+				// Echo the processed content (it's already run through apply_filters)
+				// Use echo instead of the_content() because we've already processed it.
+				echo $processed_content;
+			}
+			?>
 		</div>
 	</div>
 	<?php // ----- END: Your Content Structure ----- ?>
@@ -262,23 +299,26 @@ $portals = get_posts(array(
 
 
 		<?php // ----- START: Edit Post Button (Conditional) ----- ?>
-        <?php
-        // Check if the current user can edit this specific post
-        if ( current_user_can( 'edit_post', get_the_ID() ) ) :
-            $edit_post_url = get_edit_post_link( get_the_ID() );
-            if ( $edit_post_url ) : // Make sure we got a valid URL
-        ?>
-            <a href="<?php echo esc_url( $edit_post_url ); ?>" id="button-edit-post" class="tooltip-trigger" data-tooltip="Edit this Floor"> <?php // target="_blank" opens editor in new tab ?>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil">
-                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                    <path d="m15 5 4 4"/>
-                </svg>
-            </a>
-        <?php
-            endif; // end if $edit_post_url
-        endif; // end if current_user_can
-        ?>
-        <?php // ----- END: Edit Post Button (Conditional) ----- ?>		
+		<?php
+		// Check if the current user can edit this specific post
+		if (current_user_can('edit_post', get_the_ID())):
+			$edit_post_url = get_edit_post_link(get_the_ID());
+			if ($edit_post_url): // Make sure we got a valid URL
+				?>
+				<a href="<?php echo esc_url($edit_post_url); ?>" id="button-edit-post" class="tooltip-trigger"
+					data-tooltip="Edit this Floor"> <?php // target="_blank" opens editor in new tab ?>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+						stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+						class="lucide lucide-pencil">
+						<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+						<path d="m15 5 4 4" />
+					</svg>
+				</a>
+				<?php
+			endif; // end if $edit_post_url
+		endif; // end if current_user_can
+		?>
+		<?php // ----- END: Edit Post Button (Conditional) ----- ?>
 
 		<a href="/stairs" id="button-stairs" class="tooltip-trigger" data-tooltip="Take the STAIRS!">
 			<img src="/wp-content/plugins/the-spiral-tower/dist/images/stairs.svg" alt="Stairs Icon" />

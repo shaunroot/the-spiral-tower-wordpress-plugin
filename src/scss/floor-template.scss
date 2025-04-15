@@ -236,7 +236,7 @@ body .container {
 /* --------------------------------------------------------
  * 5. GIZMOS CONTAINER & GIZMOS (v5 - CSS Positioning)
  * -------------------------------------------------------- */
- .wrapper-floor-gizmos {
+.wrapper-floor-gizmos {
   /* Container INSIDE the scaled wrapper */
   position: absolute !important;
   /* CRUCIAL: Relative to scaled wrapper */
@@ -275,13 +275,13 @@ body .container {
 .floor-gizmo.tooltip-trigger::after {
   /* Re-establish the tooltip content from the data-tooltip attribute */
   content: attr(data-tooltip) !important;
-  
+
   /* Position in center */
-  bottom: auto !important; 
+  bottom: auto !important;
   top: 50% !important;
   left: 50% !important;
   transform: translate(-50%, -50%) !important;
-  
+
   /* Make it visible and well-styled */
   background-color: rgba(0, 0, 0, 0.85) !important;
   color: #fff !important;
@@ -289,22 +289,24 @@ body .container {
   padding: 6px 12px !important;
   border-radius: 4px !important;
   white-space: nowrap !important;
-  
+
   /* Control visibility */
-  opacity: 0 !important; /* Start hidden */
+  opacity: 0 !important;
+  /* Start hidden */
   visibility: hidden !important;
   transition: opacity 0.3s ease, visibility 0.3s ease !important;
-  
+
   /* Ensure it's on top */
   z-index: 10000 !important;
-  
+
   /* Allow clicks to pass through */
   pointer-events: none !important;
 }
 
 /* Ensure proper pointer-events behavior */
 .floor-gizmo.tooltip-trigger {
-  pointer-events: auto !important; /* Allow clicking on the gizmo */
+  pointer-events: auto !important;
+  /* Allow clicking on the gizmo */
 }
 
 /* Make sure the link takes up the full gizmo area */
@@ -313,7 +315,8 @@ body .container {
   width: 100% !important;
   height: 100% !important;
   position: relative !important;
-  z-index: 1 !important; /* Should be lower than the tooltip z-index */
+  z-index: 1 !important;
+  /* Should be lower than the tooltip z-index */
 }
 
 /* Show on hover */
@@ -327,14 +330,12 @@ body .container {
   display: none !important;
 }
 
-/* For invisible portals - optional visibility style on hover */
-.floor-gizmo:hover .portal-invisible {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  border: 1px dashed rgba(255, 255, 255, 0.3) !important;
-}
+
+
+
 
 /* --------------------------------------------------------
- * 6. FIXED UI ELEMENTS (Title, Content, Toolbar)
+ * 6. UI ELEMENTS (Title, Content, Toolbar)
  * These stay fixed relative to the viewport.
  * -------------------------------------------------------- */
 .spiral-tower-floor-title {
@@ -380,6 +381,8 @@ body .container {
 }
 
 .spiral-tower-floor-container {
+  position: relative; // <– This is the missing piece most of the time
+  z-index: 2;  
   pointer-events: none; // The will be links under the transparent container
   position: fixed;
   top: 50%; // Centered vertically
@@ -395,6 +398,10 @@ body .container {
   /* Keep your transition */
   margin-top: 60px;
   max-height: calc(80vh - 100px);
+  overflow-y: auto;
+
+
+
 }
 
 /* Hide content toggle button when text-only mode is active */
@@ -699,6 +706,7 @@ body.text-only-mode .spiral-tower-floor-container {
 #image-background,
 #youtube-background {
   position: absolute !important;
+  pointer-events: none;  
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;

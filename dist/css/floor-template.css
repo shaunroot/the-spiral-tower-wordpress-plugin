@@ -139,11 +139,6 @@
   border: 2px solid rgba(200, 150, 80, 0.8);
   border-radius: 3px;
 }
-.spiral-tower-floor-wrapper .portal-invisible {
-  border: 2px dashed rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  animation: portal-fade 4s infinite alternate;
-}
 .spiral-tower-floor-wrapper .portal-custom img {
   width: 100%;
   height: 100%;
@@ -659,7 +654,8 @@ body .container {
   border-radius: 4px !important;
   white-space: nowrap !important;
   /* Control visibility */
-  opacity: 0 !important; /* Start hidden */
+  opacity: 0 !important;
+  /* Start hidden */
   visibility: hidden !important;
   transition: opacity 0.3s ease, visibility 0.3s ease !important;
   /* Ensure it's on top */
@@ -670,7 +666,8 @@ body .container {
 
 /* Ensure proper pointer-events behavior */
 .floor-gizmo.tooltip-trigger {
-  pointer-events: auto !important; /* Allow clicking on the gizmo */
+  pointer-events: auto !important;
+  /* Allow clicking on the gizmo */
 }
 
 /* Make sure the link takes up the full gizmo area */
@@ -679,7 +676,8 @@ body .container {
   width: 100% !important;
   height: 100% !important;
   position: relative !important;
-  z-index: 1 !important; /* Should be lower than the tooltip z-index */
+  z-index: 1 !important;
+  /* Should be lower than the tooltip z-index */
 }
 
 /* Show on hover */
@@ -693,14 +691,8 @@ body .container {
   display: none !important;
 }
 
-/* For invisible portals - optional visibility style on hover */
-.floor-gizmo:hover .portal-invisible {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  border: 1px dashed rgba(255, 255, 255, 0.3) !important;
-}
-
 /* --------------------------------------------------------
- * 6. FIXED UI ELEMENTS (Title, Content, Toolbar)
+ * 6. UI ELEMENTS (Title, Content, Toolbar)
  * These stay fixed relative to the viewport.
  * -------------------------------------------------------- */
 .spiral-tower-floor-title {
@@ -743,6 +735,8 @@ body .container {
 }
 
 .spiral-tower-floor-container {
+  position: relative;
+  z-index: 2;
   pointer-events: none;
   position: fixed;
   top: 50%;
@@ -758,6 +752,7 @@ body .container {
   /* Keep your transition */
   margin-top: 60px;
   max-height: calc(80vh - 100px);
+  overflow-y: auto;
 }
 
 /* Hide content toggle button when text-only mode is active */
@@ -1024,6 +1019,7 @@ body.text-only-mode .spiral-tower-floor-container {
 #image-background,
 #youtube-background {
   position: absolute !important;
+  pointer-events: none;
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;
