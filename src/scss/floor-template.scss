@@ -383,7 +383,6 @@ body .container {
 .spiral-tower-floor-container {
   position: relative; // <– This is the missing piece most of the time
   z-index: 2;
-  pointer-events: none; // The will be links under the transparent container
   position: fixed;
   top: 50%; // Centered vertically
   left: 50%; // Centered horizontally
@@ -399,9 +398,6 @@ body .container {
   margin-top: 60px;
   max-height: calc(80vh - 100px);
   overflow-y: auto;
-
-
-
 }
 
 /* Hide content toggle button when text-only mode is active */
@@ -412,10 +408,13 @@ body .container {
 
 .spiral-tower-floor-container.content-hidden {
   opacity: 0;
+  visibility: hidden !important; 
+  // wtf?
 }
 
 .spiral-tower-floor-container.content-visible {
   opacity: 1;
+  visibility: visible !important;
 }
 
 body.text-only-mode .spiral-tower-floor-container {
