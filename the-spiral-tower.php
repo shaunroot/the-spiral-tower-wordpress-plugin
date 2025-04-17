@@ -461,5 +461,50 @@ class Spiral_Tower_Plugin
     }
 }
 
+/**
+ * Enqueue the portal editor script for users who can edit floors
+ */
+function spiral_tower_enqueue_portal_editor() {
+    // Only load on floor pages
+    if (is_singular('floor') || (is_page() && get_post_meta(get_the_ID(), '_use_floor_template', true) === '1')) {
+        // Only load for users who can edit this post
+        if (current_user_can('edit_post', get_the_ID())) {
+            // Register and enqueue the script
+            wp_register_script(
+                'spiral-tower-portal-editor',
+                plugins_url('assets/js/spiral-tower-portal-editor.js', __FILE__),
+                array('jquery'),
+                '1.0.0',
+                true
+            );
+            
+            // Localize script with WordPress data
+            wp_localize_script('spiral-tower-portal-editor', 'wpPortalEditor', array(
+                'ajaxurl' => admin_url('admin-ajax.php'),
+                'security' => wp_create_nonce('portal_editor_nonce'),
+                'floorId' => get_the_ID()
+            ));
+            
+            wp_enqueue_script('spiral-tower-portal-editor');
+        }
+    }
+}
+add_action('wp_enqueue_scripts', 'spiral_tower_enqueue_portal_editor', 100);
+
+/**
+ * Add data attribute to body for floor ID
+ */
+function spiral_tower_add_floor_id_to_body($classes) {
+    if (is_singular('floor') || (is_page() && get_post_meta(get_the_ID(), '_use_floor_template', true) === '1')) {
+        // Add floor ID as data attribute to body
+        add_action('wp_body_open', function() {
+            $floor_id = get_the_ID();
+            echo '<script>document.body.setAttribute("data-floor-id", "' . esc_js($floor_id) . '");</script>';
+        });
+    }
+    return $classes;
+}
+add_filter('body_class', 'spiral_tower_add_floor_id_to_body');
+
 // Initialize the plugin
 $spiral_tower_plugin = new Spiral_Tower_Plugin();

@@ -1,5 +1,6 @@
 /**
- * Simple Portal Editor with Reliable Resize Functionality
+ * Portal Editor with Direct Save Approach
+ * This version doesn't rely on change tracking
  */
 (function() {
     // Check if we're on a floor page
@@ -8,16 +9,77 @@
     
     console.log('Portal Editor: Initializing on floor page');
     
-    // Create and append toggle button
-    function createToggleButton() {
-        const button = document.createElement('button');
-        button.id = 'portal-edit-toggle';
-        button.textContent = 'Edit Portals';
-        button.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 10000; padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;';
-        document.body.appendChild(button);
+    // Create UI elements
+    function createUI() {
+        // Create edit toggle button
+        const editButton = document.createElement('button');
+        editButton.id = 'portal-edit-toggle';
+        editButton.textContent = 'Edit Portals';
+        editButton.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 10000; padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;';
+        document.body.appendChild(editButton);
+        editButton.addEventListener('click', toggleEditMode);
         
-        button.addEventListener('click', toggleEditMode);
-        return button;
+        // Create save button (initially hidden)
+        const saveButton = document.createElement('button');
+        saveButton.id = 'portal-save-changes';
+        saveButton.textContent = 'Save Changes';
+        saveButton.style.cssText = 'position: fixed; top: 10px; right: 120px; z-index: 10000; padding: 8px 15px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;';
+        document.body.appendChild(saveButton);
+        saveButton.addEventListener('click', saveAllPortals);
+        
+        // Create notification container
+        const notificationContainer = document.createElement('div');
+        notificationContainer.id = 'portal-notifications';
+        notificationContainer.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 10001;';
+        document.body.appendChild(notificationContainer);
+        
+        return { editButton, saveButton, notificationContainer };
+    }
+    
+    // Create a notification
+    function showNotification(message, type = 'info') {
+        const container = document.getElementById('portal-notifications');
+        if (!container) return;
+        
+        const notification = document.createElement('div');
+        notification.className = `portal-notification ${type}`;
+        notification.textContent = message;
+        
+        // Style the notification
+        Object.assign(notification.style, {
+            padding: '10px 15px',
+            marginBottom: '10px',
+            borderRadius: '4px',
+            color: 'white',
+            fontWeight: 'bold',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+            opacity: '0',
+            transition: 'opacity 0.3s ease'
+        });
+        
+        // Set background color based on type
+        if (type === 'success') {
+            notification.style.backgroundColor = '#4CAF50';
+        } else if (type === 'error') {
+            notification.style.backgroundColor = '#F44336';
+        } else {
+            notification.style.backgroundColor = '#2196F3';
+        }
+        
+        container.appendChild(notification);
+        
+        // Fade in
+        setTimeout(() => {
+            notification.style.opacity = '1';
+        }, 10);
+        
+        // Auto-remove after delay
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 5000);
     }
     
     // Find all portals
@@ -30,7 +92,7 @@
         return Array.from(portals);
     }
     
-    // Create resize handles for a portal (explicitly creating DOM elements)
+    // Create resize handles for a portal
     function addResizeHandles(portal) {
         console.log('Adding resize handles to portal:', portal.id);
         
@@ -41,7 +103,7 @@
         createResizeHandle(portal, 'bottom-right');
     }
     
-    // Create a single resize handle with the correct position
+    // Create a single resize handle
     function createResizeHandle(portal, position) {
         const handle = document.createElement('div');
         handle.className = `resize-handle ${position}`;
@@ -84,7 +146,6 @@
         
         // Append handle to portal
         portal.appendChild(handle);
-        console.log(`Added ${position} handle to portal ${portal.id}`);
         
         return handle;
     }
@@ -99,12 +160,15 @@
     let editModeActive = false;
     function toggleEditMode() {
         editModeActive = !editModeActive;
-        const button = document.getElementById('portal-edit-toggle');
+        const editButton = document.getElementById('portal-edit-toggle');
+        const saveButton = document.getElementById('portal-save-changes');
         
         if (editModeActive) {
             console.log('Portal Editor: Enabling edit mode');
             document.body.classList.add('portal-edit-mode');
-            if (button) button.textContent = 'Exit Edit Mode';
+            
+            if (editButton) editButton.textContent = 'Exit Edit Mode';
+            if (saveButton) saveButton.style.display = 'block';
             
             // Add drag handlers and resize handles to portals
             portals.forEach(portal => {
@@ -121,10 +185,19 @@
                 // Add resize handles
                 addResizeHandles(portal);
             });
+            
+            showNotification('Portal edit mode enabled. Drag portals or resize with corner handles.', 'info');
         } else {
             console.log('Portal Editor: Disabling edit mode');
             document.body.classList.remove('portal-edit-mode');
-            if (button) button.textContent = 'Edit Portals';
+            
+            if (editButton) editButton.textContent = 'Edit Portals';
+            if (saveButton) saveButton.style.display = 'none';
+            
+            // Check if user wants to save
+            if (confirm('Do you want to save your changes?')) {
+                saveAllPortals();
+            }
             
             // Remove edit features from portals
             portals.forEach(portal => {
@@ -142,6 +215,25 @@
                 removeResizeHandles(portal);
             });
         }
+    }
+    
+    // Helper function to get portal ID
+    function getPortalId(portal) {
+        // Try to get from data attribute
+        let id = portal.getAttribute('data-portal-id');
+        if (id) return id;
+        
+        // Try to extract from ID attribute
+        if (portal.id) {
+            // If ID is in format "portal-123", extract just the numeric part
+            const matches = portal.id.match(/portal-(\d+)/);
+            if (matches && matches[1]) {
+                return matches[1];
+            }
+            return portal.id;
+        }
+        
+        return null;
     }
     
     // Drag functionality
@@ -241,8 +333,6 @@
     function startResize(e, portal, position) {
         if (!editModeActive) return;
         
-        console.log(`Starting resize of portal ${portal.id} from ${position}`);
-        
         e.preventDefault();
         e.stopPropagation();
         
@@ -272,8 +362,6 @@
         // Store the original position
         startResizeLeft = parseFloat(activePortal.style.left) || 50;
         startResizeTop = parseFloat(activePortal.style.top) || 50;
-        
-        console.log(`Initial size: ${startWidth}px x ${startHeight}px at position ${startResizeLeft}%, ${startResizeTop}%`);
         
         // Add resize listeners to document
         document.addEventListener('mousemove', doResize);
@@ -344,8 +432,6 @@
         activePortal.style.height = `${heightPercent}%`;
         activePortal.style.left = `${newLeft}%`;
         activePortal.style.top = `${newTop}%`;
-        
-        console.log(`Resizing to: ${widthPercent.toFixed(2)}% x ${heightPercent.toFixed(2)}% at ${newLeft.toFixed(2)}%, ${newTop.toFixed(2)}%`);
     }
     
     function stopResize() {
@@ -360,6 +446,157 @@
         // Remove event listeners
         document.removeEventListener('mousemove', doResize);
         document.removeEventListener('mouseup', stopResize);
+    }
+    
+    // Save ALL portal positions and sizes directly - no change tracking
+    function saveAllPortals() {
+        // Get data for all portals
+        const portalData = portals.map(portal => {
+            const id = getPortalId(portal);
+            if (!id) return null;
+            
+            // Get current position and size
+            const left = parseFloat(portal.style.left) || 50;
+            const top = parseFloat(portal.style.top) || 50;
+            const width = parseFloat(portal.style.width) || null;
+            const height = parseFloat(portal.style.height) || null;
+            
+            // Log values for debugging
+            console.log(`Portal ${id} values:`, {
+                left: `${left}%`,
+                top: `${top}%`,
+                width: width ? `${width}%` : null,
+                height: height ? `${height}%` : null
+            });
+            
+            return {
+                id: id,
+                position: {
+                    x: left,
+                    y: top
+                },
+                size: {
+                    width: width,
+                    height: height
+                },
+                use_custom_size: (width !== null && height !== null)
+            };
+        }).filter(portal => portal !== null);
+        
+        if (portalData.length === 0) {
+            showNotification('No portals to save', 'info');
+            return;
+        }
+        
+        console.log('Saving all portals:', portalData);
+        
+        // Update save button to show loading state
+        const saveButton = document.getElementById('portal-save-changes');
+        if (saveButton) {
+            saveButton.textContent = 'Saving...';
+            saveButton.disabled = true;
+        }
+        
+        // Create form data for WordPress AJAX
+        const formData = new FormData();
+        formData.append('action', 'save_portal_positions');
+        formData.append('floor_id', getCurrentFloorId());
+        formData.append('portals', JSON.stringify(portalData));
+        
+        // Find WordPress admin-ajax.php URL
+        const ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : '/wp-admin/admin-ajax.php';
+        
+        // Debug info
+        console.log('Saving to:', ajaxUrl);
+        console.log('Form data keys:', Array.from(formData.keys()));
+        
+        // Send AJAX request using standard WordPress approach
+        fetch(ajaxUrl, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.text().then(text => {
+                console.log('Raw response:', text);
+                try {
+                    // Try to parse as JSON
+                    return JSON.parse(text);
+                } catch (e) {
+                    // If not valid JSON, show the raw response
+                    throw new Error(`Invalid JSON response: ${text.substring(0, 100)}...`);
+                }
+            });
+        })
+        .then(data => {
+            console.log('Save response data:', data);
+            
+            if (data.success) {
+                showNotification(`Changes saved successfully! Updated ${portalData.length} portal(s).`, 'success');
+            } else {
+                throw new Error(data.data?.message || 'Error saving portal changes');
+            }
+        })
+        .catch(error => {
+            console.error('Save error:', error);
+            showNotification(`Error saving changes: ${error.message}`, 'error');
+        })
+        .finally(() => {
+            // Reset save button
+            if (saveButton) {
+                saveButton.textContent = 'Save Changes';
+                saveButton.disabled = false;
+            }
+        });
+    }
+    
+    // Get current floor ID from page
+    function getCurrentFloorId() {
+        // Try to get from URL with regex for both /floor/123/ and /floor/123/floor-name/ formats
+        const urlRegex = /\/floor\/(\d+)(?:\/|$)/;
+        const urlMatch = window.location.pathname.match(urlRegex);
+        if (urlMatch && urlMatch[1]) {
+            console.log('Found floor ID in URL:', urlMatch[1]);
+            return urlMatch[1];
+        }
+        
+        // Try to get from body class
+        const bodyClasses = document.body.className.split(' ');
+        for (const cls of bodyClasses) {
+            // Look for classes like 'floor-123'
+            const classMatch = cls.match(/floor-(\d+)/);
+            if (classMatch && classMatch[1]) {
+                console.log('Found floor ID in body class:', classMatch[1]);
+                return classMatch[1];
+            }
+        }
+        
+        // Try to get post ID from query string
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('post') || urlParams.get('post_id');
+        if (postId) {
+            console.log('Found floor ID in query string:', postId);
+            return postId;
+        }
+        
+        // Return current post ID as a fallback
+        const currentId = document.querySelector('body').getAttribute('data-post-id') || document.querySelector('article')?.id?.replace('post-', '');
+        if (currentId) {
+            console.log('Using current post ID as floor ID:', currentId);
+            return currentId;
+        }
+        
+        console.warn('Could not determine floor ID');
+        
+        // If all else fails, try to use any post ID we can find in the URL
+        const anyIdMatch = window.location.href.match(/\d+/);
+        if (anyIdMatch) {
+            console.log('Using ID from URL as floor ID:', anyIdMatch[0]);
+            return anyIdMatch[0];
+        }
+        
+        return '0';
     }
     
     // Utility to get scale from transform matrix
@@ -377,18 +614,9 @@
     }
     
     // Initialize
-    const button = createToggleButton();
+    const { editButton, saveButton } = createUI();
     const portals = findPortals();
     
     // Add a message to indicate success
-    const message = document.createElement('div');
-    message.textContent = 'Portal Editor Ready - Click "Edit Portals" to begin';
-    message.style.cssText = 'position: fixed; top: 50px; right: 10px; z-index: 10000; padding: 8px; background: rgba(0,0,0,0.7); color: white; border-radius: 4px; max-width: 200px;';
-    document.body.appendChild(message);
-    
-    setTimeout(() => {
-        message.style.opacity = '0';
-        message.style.transition = 'opacity 1s ease';
-        setTimeout(() => message.remove(), 1000);
-    }, 5000);
+    showNotification('Portal Editor Ready - Click "Edit Portals" to begin', 'info');
 })();
