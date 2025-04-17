@@ -108,6 +108,7 @@ if (typeof spiralTowerWpSettings !== 'undefined' && spiralTowerWpSettings.loggin
         'spiral-tower-transitions.js',
         'spiral-tower-scrollto-plugin.js', 
         'spiral-tower-scroll-arrows.js',
+        'spiral-tower-tooltips.js',  
         'spiral-tower-portal-editor.js',   
         'spiral-tower-core.js'             
     ];
