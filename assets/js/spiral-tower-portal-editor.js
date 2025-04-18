@@ -615,8 +615,5 @@
     
     // Initialize
     const { editButton, saveButton } = createUI();
-    const portals = findPortals();
-    
-    // Add a message to indicate success
-    showNotification('Portal Editor Ready - Click "Edit Portals" to begin', 'info');
+    const portals = findPortals();    
 })();

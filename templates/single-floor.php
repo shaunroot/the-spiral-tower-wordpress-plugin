@@ -72,15 +72,35 @@ $portals = get_posts(array(
 	'posts_per_page' => -1,
 	'meta_query' => array(
 		'relation' => 'AND',
+		
+		// Match _origin_type = 'floor' OR 'room'
 		array(
-			'key' => '_origin_type',
-			'value' => 'floor',
-			'compare' => '='
+			'relation' => 'OR',
+			array(
+				'key' => '_origin_type',
+				'value' => 'floor',
+				'compare' => '='
+			),
+			array(
+				'key' => '_origin_type',
+				'value' => 'room',
+				'compare' => '='
+			)
 		),
+
+		// Match _origin_floor_id = current ID OR _origin_room_id = current ID
 		array(
-			'key' => '_origin_floor_id',
-			'value' => get_the_ID(),
-			'compare' => '='
+			'relation' => 'OR',
+			array(
+				'key' => '_origin_floor_id',
+				'value' => get_the_ID(),
+				'compare' => '='
+			),
+			array(
+				'key' => '_origin_room_id',
+				'value' => get_the_ID(),
+				'compare' => '='
+			)
 		)
 	)
 ));
@@ -155,7 +175,7 @@ $portals = get_posts(array(
 
 	</div> <?php // end .spiral-tower-floor-wrapper ?>
 
-	<?php // --- Rest of your template (Title, Content Container, Toolbar, etc.) --- ?>
+	<?php // ------ ?>
 
 
 	<?php // ----- START: Your Content Structure ----- ?>
@@ -251,161 +271,8 @@ $portals = get_posts(array(
 	</div>
 	<!-- // END - BG scrolling -->
 
-
-	<div id="toolbar"> <?php // ----- START: Toolbar----- ?>
-
-		<?php // ----- START: Content Visibility Toggle Button HTML ----- ?>
-		<div id="button-content-toggle" class="tooltip-trigger" data-tooltip="Toggle Content Visibility">
-			<?php // --- SVG Icons for Content Toggle --- ?>
-			<svg id="content-hidden-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-				fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-				class="lucide lucide-eye-off" style="display: none;"> <?php // Hidden by default ?>
-				<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-				<path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-				<path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-				<line x1="2" x2="22" y1="2" y2="22" />
-			</svg>
-			<svg id="content-visible-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-				fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-				class="lucide lucide-search" style="display: inline-block;"> <?php // Default icon shown ?>
-				<circle cx="11" cy="11" r="8" />
-				<path d="m21 21-4.3-4.3" />
-			</svg>
-		</div>
-		<?php // ----- END: Content Visibility Toggle Button HTML ----- ?>
-
-
-		<?php // ----- START: Text Only Toggle Button HTML ----- ?>
-		<div id="button-text-toggle" class="tooltip-trigger" data-tooltip="Toggle Text Only Mode">
-			<?php // --- SVG Icons for Text Toggle --- ?>
-			<svg id="text-only-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-				fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-				class="icon-text-mode" style="display: inline-block;"> <?php // Default icon shown ?>
-				<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-				<polyline points="14 2 14 8 20 8" />
-				<line x1="16" x2="8" y1="13" y2="13" />
-				<line x1="16" x2="8" y1="17" y2="17" />
-				<line x1="10" x2="8" y1="9" y2="9" />
-			</svg>
-			<svg id="full-view-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-				fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-				class="icon-full-mode" style="display: none;"> <?php // Hidden by default ?>
-				<rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-				<circle cx="9" cy="9" r="2" />
-				<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-			</svg>
-		</div>
-		<?php // ----- END: Text Only Toggle Button HTML ----- ?>
-
-
-		<?php // ----- START: Edit Post Button (Conditional) ----- ?>
-		<?php
-		// Check if the current user can edit this specific post
-		if (current_user_can('edit_post', get_the_ID())):
-			$edit_post_url = get_edit_post_link(get_the_ID());
-			if ($edit_post_url): // Make sure we got a valid URL
-				?>
-				<a href="<?php echo esc_url($edit_post_url); ?>" id="button-edit-post" class="tooltip-trigger"
-					data-tooltip="Edit this Floor"> <?php // target="_blank" opens editor in new tab ?>
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-						stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-						class="lucide lucide-pencil">
-						<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-						<path d="m15 5 4 4" />
-					</svg>
-				</a>
-				<?php
-			endif; // end if $edit_post_url
-		endif; // end if current_user_can
-		?>
-		<?php // ----- END: Edit Post Button (Conditional) ----- ?>
-
-
-		<?php // ----- START: Create Portal Button ----- ?>
-		<?php
-		// Check if the current user can create portals
-		if (current_user_can('edit_posts')):
-			$current_post_id = get_the_ID();
-			$current_post_type = get_post_type($current_post_id);
-
-			// Set up the portal creation URL with the current page as the origin
-			$create_portal_url = admin_url('post-new.php?post_type=portal');
-
-			// Add parameters for current post as origin based on post type
-			if ($current_post_type === 'floor') {
-				$create_portal_url = add_query_arg(array(
-					'origin_type' => 'floor',
-					'origin_floor_id' => $current_post_id
-				), $create_portal_url);
-			} elseif ($current_post_type === 'room') {
-				$create_portal_url = add_query_arg(array(
-					'origin_type' => 'room',
-					'origin_room_id' => $current_post_id
-				), $create_portal_url);
-			}
-			?>
-			<a href="<?php echo esc_url($create_portal_url); ?>" id="button-create-portal" class="tooltip-trigger"
-				data-tooltip="Create Portal" target="_blank">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-					stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<circle cx="12" cy="12" r="10" />
-					<line x1="12" y1="8" x2="12" y2="16" />
-					<line x1="8" y1="12" x2="16" y2="12" />
-				</svg>
-			</a>
-		<?php endif; ?>
-		<?php // ----- END: Create Portal Button ----- ?>
-
-
-		<?php // ----- START: STAIRS ----- ?>
-		<a href="/stairs" id="button-stairs" class="tooltip-trigger" data-tooltip="Take the STAIRS!">
-			<img src="/wp-content/plugins/the-spiral-tower/dist/images/stairs.svg" alt="Stairs Icon" />
-		</a>
-		<?php // ----- END: STAIRS ----- ?>
-
-
-		<?php // ----- START: TWIST ----- ?>
-		<div id="toolbar-search-trigger" class="tooltip-trigger" data-tooltip="TWIST">
-			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
-				stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-				<path stroke="none" d="M0 0h24v24H0z" fill="none" />
-				<path d="M21 4l-18 0" />
-				<path d="M19 8l-14 0" />
-				<path d="M17 12l-10 0" />
-				<path d="M15 16l-6 0" />
-				<path d="M13 20l-2 0" />
-			</svg>
-		</div>
-		<div id="toolbar-search-form" style="display: none;">
-			<input type="text" id="toolbar-search-input" placeholder="Floor # or Keyword">
-			<button type="button" id="toolbar-search-submit">Go</button>
-		</div>
-		<?php // ----- END: TWIST ----- ?>
-
-
-		<?php // ----- START: Sound Toggle Button HTML ----- ?>
-		<?php if ($has_youtube || $youtube_audio_only): ?>
-			<div id="button-sound-toggle" class="tooltip-trigger" data-tooltip="Toggle volume">
-				<?php // --- SVG Icons for Sound --- ?>
-				<svg id="volume-off-icon" xmlns="http://www.w3.org/2000/svg" version="1.0" width="40" height="40"
-					viewBox="0 0 75 75" style="display: block;">
-					<path d="m39,14-17,15H6V48H22l17,15z" fill="#fff" stroke="#000" stroke-width="2" />
-					<path d="m49,26 20,24m0-24-20,24" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" />
-				</svg>
-				<svg id="volume-on-icon" xmlns="http://www.w3.org/2000/svg" version="1.0" width="40" height="40"
-					viewBox="0 0 75 75" style="display: none;">
-					<path d="M39.389,13.769 L22.235,28.606 L6,28.606 L6,47.699 L21.989,47.699 L39.389,62.75 L39.389,13.769z"
-						fill="#fff" stroke="#000" stroke-width="2" />
-					<path d="M48,27.6a19.5,19.5 0 0 1 0,21.4M55.1,20.5a30,30 0 0 1 0,35.6M61.6,14a38.8,38.8 0 0 1 0,48.6"
-						fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" />
-				</svg>
-			</div>
-		<?php endif; ?>
-		<?php // ----- END: Sound Toggle Button HTML ----- ?>
-
-	</div> <?php // ----- END: Toolbar----- ?>
-
-
+	<?php include 'toolbar.php'; ?>
+	
 	<?php // ----- START: Output Custom Interface Script --- ?>
 	<?php
 	$custom_script_outside = get_post_meta(get_the_ID(), '_floor_custom_script_outside', true);
@@ -430,9 +297,6 @@ $portals = get_posts(array(
 	?>
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
-			// --- Debug: Log that the script block started ---
-			console.log('Spiral Tower Search JS: DOMContentLoaded event fired.');
-
 			// Get elements
 			const searchTrigger = document.getElementById('toolbar-search-trigger');
 			const searchForm = document.getElementById('toolbar-search-form');
@@ -443,58 +307,36 @@ $portals = get_posts(array(
 
 			if (searchForm) { searchForm.style.display = 'none'; }
 
-			// --- Debug: Log found elements (or null if not found) ---
-			console.log('Spiral Tower Search JS: Trying to find elements...');
-			console.log('  > Trigger Element (#toolbar-search-trigger):', searchTrigger);
-			console.log('  > Form Element (#toolbar-search-form):', searchForm);
-			console.log('  > Input Element (#toolbar-search-input):', searchInput);
-			console.log('  > Submit Element (#toolbar-search-submit):', searchSubmit);
-
-
 			// --- Toggle Search Form Visibility ---
 			if (searchTrigger && searchForm && searchInput) { // Also check searchInput here
-				console.log('Spiral Tower Search JS: Trigger, Form, and Input elements found. Attaching click listener to trigger...');
 				searchTrigger.addEventListener('click', function () {
-					console.log('Spiral Tower Search JS: Search Trigger CLICKED!');
 					// Check if currently hidden (inline style is 'none' or empty)
 					const isCurrentlyHidden = searchForm.style.display === 'none' || searchForm.style.display === '';
-					console.log('Spiral Tower Search JS: Form currently hidden?', isCurrentlyHidden);
 
 					if (isCurrentlyHidden) {
 						// If hidden, show it using flex
 						searchForm.style.display = 'flex';
-						console.log('Spiral Tower Search JS: Setting form display to: flex');
 						if (searchInput) { // Check searchInput exists before focusing
 							searchInput.focus();
-							console.log('Spiral Tower Search JS: Focusing input field.');
 						}
 					} else {
 						// If not hidden (must be 'flex'), hide it
 						searchForm.style.display = 'none';
-						console.log('Spiral Tower Search JS: Setting form display to: none');
 					}
 				});
-				console.log('Spiral Tower Search JS: Click listener attached to trigger.');
 			} else {
 				// --- Debug: Log if essential elements for toggle are missing ---
-				console.error('Spiral Tower Search JS: Could not find Search Trigger OR Search Form OR Search Input element. Cannot attach toggle listener.');
+				// console.error('Spiral Tower Search JS: Could not find Search Trigger OR Search Form OR Search Input element. Cannot attach toggle listener.');
 			}
 
 			// --- Handle Search Submission ---
 			const performSearch = function () {
-				// --- Debug: Log search attempt ---
-				console.log('Spiral Tower Search JS: performSearch() called.');
-
 				const searchTerm = searchInput.value.trim();
-				// --- Debug: Log the search term ---
-				console.log('Spiral Tower Search JS: Search term entered:', searchTerm);
 
 				if (searchTerm === '') {
-					console.warn('Spiral Tower Search JS: Search term is empty, aborting.');
 					return;
 				}
 
-				console.log('Spiral Tower Search JS: Preparing AJAX request...');
 				searchSubmit.textContent = '...';
 				searchSubmit.disabled = true;
 
@@ -503,30 +345,24 @@ $portals = get_posts(array(
 				formData.append('nonce', ajaxNonce);
 				formData.append('search_term', searchTerm);
 
-				console.log('Spiral Tower Search JS: Sending AJAX request to:', ajaxUrl);
 				fetch(ajaxUrl, {
 					method: 'POST',
 					body: formData
 				})
 					.then(response => {
-						console.log('Spiral Tower Search JS: Received AJAX response.', response);
 						return response.json(); // Attempt to parse JSON
 					})
 					.then(data => {
-						console.log('Spiral Tower Search JS: Parsed AJAX response data:', data);
 						if (data.success && data.data.redirect_url) {
-							console.log('Spiral Tower Search JS: Search success! Redirecting to:', data.data.redirect_url);
 							window.location.href = data.data.redirect_url;
 						} else {
 							const errorMsg = data.data ? data.data.message : 'Unknown error or invalid response format.';
-							console.error('Spiral Tower Search JS: Search failed:', errorMsg);
 							alert('Search failed: ' + errorMsg);
 							searchSubmit.textContent = 'Go';
 							searchSubmit.disabled = false;
 						}
 					})
 					.catch(error => {
-						console.error('Spiral Tower Search JS: AJAX request fetch/parse error:', error);
 						alert('An error occurred during the search request.');
 						searchSubmit.textContent = 'Go';
 						searchSubmit.disabled = false;
@@ -535,18 +371,15 @@ $portals = get_posts(array(
 
 			// Listener for button click
 			if (searchSubmit && searchInput) { // Check input exists too
-				console.log('Spiral Tower Search JS: Attaching click listener to submit button.');
 				searchSubmit.addEventListener('click', performSearch);
 			} else {
-				console.error('Spiral Tower Search JS: Could not find Search Submit Button OR Search Input. Cannot attach submit listener.');
+				// console.error('Spiral Tower Search JS: Could not find Search Submit Button OR Search Input. Cannot attach submit listener.');
 			}
 
 			// Listener for Enter key in input field
 			if (searchInput) {
-				console.log('Spiral Tower Search JS: Attaching keypress listener to input field.');
 				searchInput.addEventListener('keypress', function (event) {
 					if (event.key === 'Enter') {
-						console.log('Spiral Tower Search JS: Enter key pressed in input.');
 						event.preventDefault();
 						performSearch();
 					}
@@ -564,17 +397,13 @@ $portals = get_posts(array(
 
 					// Hide ONLY if the click was NOT inside the form AND NOT on the trigger button
 					if (!isClickInsideForm && !isClickOnTrigger) {
-						console.log('Spiral Tower Search JS: Click detected outside search form/trigger. Hiding form via inline style.');
 						searchForm.style.display = 'none'; // Hide using inline style
 					}
 				}
 			});
 
-			console.log('Spiral Tower Search JS: Script execution finished.');
 		});
 	</script>
-
-
 
 </body>
 

@@ -12,7 +12,7 @@ window.SpiralTower = window.SpiralTower || {};
 // Configuration that needs to be accessible early.
 // Default values are set here.
 window.SpiralTower.config = {
-    TRANSITION_DURATION: 5.0,
+    TRANSITION_DURATION: 1.5,
     IMAGE_LOAD_TIMEOUT: 5000,
     SCROLL_SPEED: 1.8,
     IMAGE_SCROLL_SPEED_PERCENT: 0.18,
@@ -28,9 +28,9 @@ window.SpiralTower.config = {
             background: false,
             gizmos: false,      
             youtube: false,
-            transitions: false,
+            transitions: true,
             colorExtractor: false,
-            portalEditor: true,
+            portalEditor: false,
         }
     }
 };

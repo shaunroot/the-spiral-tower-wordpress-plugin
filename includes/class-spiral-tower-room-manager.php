@@ -619,55 +619,57 @@ class Spiral_Tower_Room_Manager
      */
     public function create_entrance_room($post_id, $post, $update)
     {
+        // This is dumb
+
         // Only run for newly created floors, not updates
-        if ($update) {
-            return;
-        }
+        // if ($update) {
+        //     return;
+        // }
 
-        // Check if this floor already has an entrance room
-        $existing_entrances = get_posts(array(
-            'post_type' => 'room',
-            'posts_per_page' => 1,
-            'meta_query' => array(
-                'relation' => 'AND',
-                array(
-                    'key' => '_room_floor_id',
-                    'value' => $post_id,
-                    'compare' => '='
-                ),
-                array(
-                    'key' => '_room_type',
-                    'value' => 'entrance',
-                    'compare' => '='
-                )
-            )
-        ));
+        // // Check if this floor already has an entrance room
+        // $existing_entrances = get_posts(array(
+        //     'post_type' => 'room',
+        //     'posts_per_page' => 1,
+        //     'meta_query' => array(
+        //         'relation' => 'AND',
+        //         array(
+        //             'key' => '_room_floor_id',
+        //             'value' => $post_id,
+        //             'compare' => '='
+        //         ),
+        //         array(
+        //             'key' => '_room_type',
+        //             'value' => 'entrance',
+        //             'compare' => '='
+        //         )
+        //     )
+        // ));
 
-        // If an entrance room already exists, don't create another one
-        if (!empty($existing_entrances)) {
-            return;
-        }
+        // // If an entrance room already exists, don't create another one
+        // if (!empty($existing_entrances)) {
+        //     return;
+        // }
 
-        // Get floor number for reference
-        $floor_number = get_post_meta($post_id, '_floor_number', true);
+        // // Get floor number for reference
+        // $floor_number = get_post_meta($post_id, '_floor_number', true);
 
-        // Create the entrance room
-        $entrance_room = array(
-            'post_title' => 'Entrance to Floor ' . $floor_number,
-            'post_content' => 'This is the entrance room for Floor ' . $floor_number . '.',
-            'post_status' => 'publish',
-            'post_type' => 'room',
-            'post_author' => $post->post_author,
-        );
+        // // Create the entrance room
+        // $entrance_room = array(
+        //     'post_title' => 'Entrance to Floor ' . $floor_number,
+        //     'post_content' => 'This is the entrance room for Floor ' . $floor_number . '.',
+        //     'post_status' => 'publish',
+        //     'post_type' => 'room',
+        //     'post_author' => $post->post_author,
+        // );
 
-        // Insert the post and get the ID
-        $room_id = wp_insert_post($entrance_room);
+        // // Insert the post and get the ID
+        // $room_id = wp_insert_post($entrance_room);
 
-        // Set room meta data
-        if ($room_id && !is_wp_error($room_id)) {
-            update_post_meta($room_id, '_room_floor_id', $post_id);
-            update_post_meta($room_id, '_room_type', 'entrance');
-        }
+        // // Set room meta data
+        // if ($room_id && !is_wp_error($room_id)) {
+        //     update_post_meta($room_id, '_room_floor_id', $post_id);
+        //     update_post_meta($room_id, '_room_type', 'entrance');
+        // }
     }
 
     /**
