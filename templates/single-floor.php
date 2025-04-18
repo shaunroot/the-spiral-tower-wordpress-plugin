@@ -321,6 +321,42 @@ $portals = get_posts(array(
 		<?php // ----- END: Edit Post Button (Conditional) ----- ?>
 
 
+		<?php // ----- START: Create Portal Button ----- ?>
+		<?php
+		// Check if the current user can create portals
+		if (current_user_can('edit_posts')):
+			$current_post_id = get_the_ID();
+			$current_post_type = get_post_type($current_post_id);
+
+			// Set up the portal creation URL with the current page as the origin
+			$create_portal_url = admin_url('post-new.php?post_type=portal');
+
+			// Add parameters for current post as origin based on post type
+			if ($current_post_type === 'floor') {
+				$create_portal_url = add_query_arg(array(
+					'origin_type' => 'floor',
+					'origin_floor_id' => $current_post_id
+				), $create_portal_url);
+			} elseif ($current_post_type === 'room') {
+				$create_portal_url = add_query_arg(array(
+					'origin_type' => 'room',
+					'origin_room_id' => $current_post_id
+				), $create_portal_url);
+			}
+			?>
+			<a href="<?php echo esc_url($create_portal_url); ?>" id="button-create-portal" class="tooltip-trigger"
+				data-tooltip="Create Portal" target="_blank">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+					stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<circle cx="12" cy="12" r="10" />
+					<line x1="12" y1="8" x2="12" y2="16" />
+					<line x1="8" y1="12" x2="16" y2="12" />
+				</svg>
+			</a>
+		<?php endif; ?>
+		<?php // ----- END: Create Portal Button ----- ?>
+
+
 		<?php // ----- START: STAIRS ----- ?>
 		<a href="/stairs" id="button-stairs" class="tooltip-trigger" data-tooltip="Take the STAIRS!">
 			<img src="/wp-content/plugins/the-spiral-tower/dist/images/stairs.svg" alt="Stairs Icon" />
@@ -388,7 +424,7 @@ $portals = get_posts(array(
 
 
 	<?php
-	// Prepare data for JavaScript (Keep this part)
+	// Prepare data for JavaScript
 	$ajax_url = admin_url('admin-ajax.php');
 	$ajax_nonce = wp_create_nonce('spiral_tower_floor_search_nonce');
 	?>

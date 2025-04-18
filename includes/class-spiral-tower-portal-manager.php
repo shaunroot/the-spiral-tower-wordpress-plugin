@@ -37,6 +37,40 @@ class Spiral_Tower_Portal_Manager
         // Save portals
         add_action('wp_ajax_save_portal_positions', array($this, 'save_portal_positions'));
 
+        // Add AJAX handler for getting permalink
+        add_action('wp_ajax_get_post_permalink', array($this, 'ajax_get_post_permalink'));
+    }
+
+    /**
+     * AJAX handler to get a post permalink
+     */
+    public function ajax_get_post_permalink()
+    {
+        // Check if user can edit posts
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error(array('message' => 'Permission denied'));
+            return;
+        }
+
+        // Get post ID from request
+        $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+
+        if (!$post_id) {
+            wp_send_json_error(array('message' => 'Invalid post ID'));
+            return;
+        }
+
+        // Get the permalink
+        $permalink = get_permalink($post_id);
+
+        if (!$permalink) {
+            wp_send_json_error(array('message' => 'Could not get permalink'));
+            return;
+        }
+
+        wp_send_json_success(array(
+            'permalink' => $permalink
+        ));
     }
 
     /**
@@ -187,10 +221,53 @@ class Spiral_Tower_Portal_Manager
             #custom_size_fields {
                 margin-top: 10px;
             }
+
+            .header-link-container {
+                font-size: 0.8em;
+                font-weight: normal;
+                margin-left: 8px;
+            }
+
+            .header-link {
+                text-decoration: none;
+                display: inline-flex;
+                align-items: center;
+            }
+
+            .header-link .dashicons {
+                font-size: 16px;
+                width: 16px;
+                height: 16px;
+                margin-right: 3px;
+            }
         </style>
 
         <div class="portal-settings-section">
-            <h3>Origin</h3>
+            <h3 class="section-header">
+                Origin
+                <span id="origin-link-container" class="header-link-container">
+                    <?php
+                    // Static PHP fallback for the origin link
+                    if ($origin_type === 'floor' && $origin_floor_id) {
+                        $origin_url = get_permalink($origin_floor_id);
+                        if ($origin_url) {
+                            echo '<a href="' . esc_url($origin_url) . '" class="header-link" target="_blank">';
+                            echo '<span class="dashicons dashicons-external"></span>';
+                            echo 'View Floor';
+                            echo '</a>';
+                        }
+                    } elseif ($origin_type === 'room' && $origin_room_id) {
+                        $origin_url = get_permalink($origin_room_id);
+                        if ($origin_url) {
+                            echo '<a href="' . esc_url($origin_url) . '" class="header-link" target="_blank">';
+                            echo '<span class="dashicons dashicons-external"></span>';
+                            echo 'View Room';
+                            echo '</a>';
+                        }
+                    }
+                    ?>
+                </span>
+            </h3>
             <div class="portal-settings-grid">
                 <div class="portal-settings-field">
                     <label for="origin_type">Origin Type:</label>
@@ -247,7 +324,36 @@ class Spiral_Tower_Portal_Manager
         </div>
 
         <div class="portal-settings-section">
-            <h3>Destination</h3>
+            <h3 class="section-header">
+                Destination
+                <span id="destination-link-container" class="header-link-container">
+                    <?php
+                    // Static PHP fallback for the destination link
+                    if ($destination_type === 'floor' && $destination_floor_id) {
+                        $destination_url = get_permalink($destination_floor_id);
+                        if ($destination_url) {
+                            echo '<a href="' . esc_url($destination_url) . '" class="header-link" target="_blank">';
+                            echo '<span class="dashicons dashicons-external"></span>';
+                            echo 'View Floor';
+                            echo '</a>';
+                        }
+                    } elseif ($destination_type === 'room' && $destination_room_id) {
+                        $destination_url = get_permalink($destination_room_id);
+                        if ($destination_url) {
+                            echo '<a href="' . esc_url($destination_url) . '" class="header-link" target="_blank">';
+                            echo '<span class="dashicons dashicons-external"></span>';
+                            echo 'View Room';
+                            echo '</a>';
+                        }
+                    } elseif ($destination_type === 'external_url' && $destination_external_url) {
+                        echo '<a href="' . esc_url($destination_external_url) . '" class="header-link" target="_blank">';
+                        echo '<span class="dashicons dashicons-external"></span>';
+                        echo 'Visit URL';
+                        echo '</a>';
+                    }
+                    ?>
+                </span>
+            </h3>
             <div class="portal-settings-grid">
                 <div class="portal-settings-field">
                     <label for="destination_type">Destination Type:</label>
@@ -341,7 +447,7 @@ class Spiral_Tower_Portal_Manager
 
                 <div class="portal-settings-field">
                     <label>
-                        <input type="checkbox" name="use_custom_size" value="1" <?php checked($use_custom_size, true); ?> />
+                        <input type="checkbox" name="use_custom_size" id="use_custom_size" value="1" <?php checked($use_custom_size, true); ?> />
                         Set custom size
                     </label>
                 </div>
@@ -379,10 +485,28 @@ class Spiral_Tower_Portal_Manager
 
         </div>
         <script type="text/javascript">
-            jQuery(document).ready(function ($) {
 
-                // --- Custom Size Toggle ---
-                $('input[name="use_custom_size"]').on('change', function () {
+            jQuery(document).ready(function ($) {
+                // Auto-populate fields from URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const originType = urlParams.get('origin_type');
+                const originFloorId = urlParams.get('origin_floor_id');
+                const originRoomId = urlParams.get('origin_room_id');
+
+                // Auto-select origin type if provided
+                if (originType && (originType === 'floor' || originType === 'room')) {
+                    $('#origin_type').val(originType).trigger('change');
+
+                    // Auto-select specific floor or room
+                    if (originType === 'floor' && originFloorId) {
+                        $('#origin_floor_id').val(originFloorId);
+                    } else if (originType === 'room' && originRoomId) {
+                        $('#origin_room_id').val(originRoomId);
+                    }
+                }
+
+                // Custom Size Toggle
+                $('#use_custom_size').on('change', function () {
                     if ($(this).is(':checked')) {
                         $('#custom_size_fields').show();
                     } else {
@@ -390,16 +514,16 @@ class Spiral_Tower_Portal_Manager
                     }
                 });
 
-                // --- Custom Image Toggle ---
+                // Custom Image Toggle
                 $('#portal_type').on('change', function () {
                     if ($(this).val() === 'custom') {
                         $('#custom_image_field').show();
                     } else {
                         $('#custom_image_field').hide();
                     }
-                }).trigger('change'); // Trigger on page load
+                }).trigger('change');
 
-                // --- Media Uploader ---
+                // Media Uploader
                 var mediaUploader;
                 $('#custom_image_button').on('click', function (e) {
                     e.preventDefault();
@@ -420,13 +544,14 @@ class Spiral_Tower_Portal_Manager
                     });
                     mediaUploader.open();
                 });
+
                 $('#custom_image_remove').on('click', function () {
                     $('#custom_image').val('');
                     $('#custom_image_preview').html('');
                     $(this).hide();
                 });
 
-                // --- Origin Field Toggle ---
+                // Origin Field Toggle
                 $('#origin_type').on('change', function () {
                     if ($(this).val() === 'floor') {
                         $('.origin-floor-field').show();
@@ -435,28 +560,118 @@ class Spiral_Tower_Portal_Manager
                         $('.origin-floor-field').hide();
                         $('.origin-room-field').show();
                     }
-                }).trigger('change'); // Trigger on page load
+                    updateOriginLink();
+                }).trigger('change');
 
-                // --- Destination Field Toggle ---
+                // Destination Field Toggle
                 $('#destination_type').on('change', function () {
                     var selectedType = $(this).val();
-                    // Hide all destination-specific fields first
                     $('.destination-floor-field').hide();
                     $('.destination-room-field').hide();
-                    $('.destination-external-url-field').hide(); // Hide new field
+                    $('.destination-external-url-field').hide();
 
-                    // Show the relevant field
                     if (selectedType === 'floor') {
                         $('.destination-floor-field').show();
                     } else if (selectedType === 'room') {
                         $('.destination-room-field').show();
-                    } else if (selectedType === 'external_url') { // Show new field
+                    } else if (selectedType === 'external_url') {
                         $('.destination-external-url-field').show();
                     }
-                }).trigger('change'); // Trigger on page load
+                    updateDestinationLink();
+                }).trigger('change');
 
+                // Function to update the origin link
+                function updateOriginLink() {
+                    var originType = $('#origin_type').val();
+                    var originId = null;
+
+                    if (originType === 'floor') {
+                        originId = $('#origin_floor_id').val();
+                    } else if (originType === 'room') {
+                        originId = $('#origin_room_id').val();
+                    }
+
+                    var $container = $('#origin-link-container');
+                    $container.empty();
+
+                    if (originId) {
+                        // Use admin AJAX to get the permalink
+                        $.ajax({
+                            url: ajaxurl,
+                            method: 'POST',
+                            data: {
+                                action: 'get_post_permalink',
+                                post_id: originId
+                            },
+                            success: function (response) {
+                                if (response.success && response.data.permalink) {
+                                    var link = '<a href="' + response.data.permalink + '" class="header-link" target="_blank">' +
+                                        '<span class="dashicons dashicons-external"></span>' +
+                                        'View ' + originType.charAt(0).toUpperCase() + originType.slice(1) +
+                                        '</a>';
+                                    $container.html(link);
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // Function to update the destination link
+                function updateDestinationLink() {
+                    var destinationType = $('#destination_type').val();
+                    var destinationId = null;
+
+                    if (destinationType === 'floor') {
+                        destinationId = $('#destination_floor_id').val();
+                    } else if (destinationType === 'room') {
+                        destinationId = $('#destination_room_id').val();
+                    } else if (destinationType === 'external_url') {
+                        var externalUrl = $('#destination_external_url').val();
+                        if (externalUrl) {
+                            var link = '<a href="' + externalUrl + '" class="header-link" target="_blank">' +
+                                '<span class="dashicons dashicons-external"></span>' +
+                                'Visit URL' +
+                                '</a>';
+                            $('#destination-link-container').html(link);
+                        } else {
+                            $('#destination-link-container').empty();
+                        }
+                        return;
+                    }
+
+                    var $container = $('#destination-link-container');
+                    $container.empty();
+
+                    if (destinationId) {
+                        // Use admin AJAX to get the permalink
+                        $.ajax({
+                            url: ajaxurl,
+                            method: 'POST',
+                            data: {
+                                action: 'get_post_permalink',
+                                post_id: destinationId
+                            },
+                            success: function (response) {
+                                if (response.success && response.data.permalink) {
+                                    var link = '<a href="' + response.data.permalink + '" class="header-link" target="_blank">' +
+                                        '<span class="dashicons dashicons-external"></span>' +
+                                        'View ' + destinationType.charAt(0).toUpperCase() + destinationType.slice(1) +
+                                        '</a>';
+                                    $container.html(link);
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // Set up event listeners for form field changes
+                $('#origin_floor_id, #origin_room_id').on('change', updateOriginLink);
+                $('#destination_floor_id, #destination_room_id').on('change', updateDestinationLink);
+                $('#destination_external_url').on('change input', updateDestinationLink);
             });
         </script>
+
+
         <?php
     }
 
@@ -738,7 +953,7 @@ class Spiral_Tower_Portal_Manager
         $columns['portal_origin'] = 'portal_origin';
         $columns['portal_destination'] = 'portal_destination';
         // To make these *actually* sortable, you'd need to hook into 'pre_get_posts'
-        // and modify the query vars based on 'orderby' and 'order'.
+// and modify the query vars based on 'orderby' and 'order'.
         return $columns;
     }
 
@@ -801,7 +1016,7 @@ class Spiral_Tower_Portal_Manager
     public function save_portal_positions()
     {
         // Check nonce for security (optional, can be implemented later)
-        // check_ajax_referer('portal_editor_nonce', 'security');
+// check_ajax_referer('portal_editor_nonce', 'security');
 
         // Get floor ID
         $floor_id = isset($_POST['floor_id']) ? intval($_POST['floor_id']) : 0;
@@ -907,4 +1122,4 @@ class Spiral_Tower_Portal_Manager
         }
     }
 
-} // End Class
+} // End Class        
