@@ -31,11 +31,11 @@ class Spiral_Tower_Room_Manager
         // Floor author specific features for rooms
         add_filter('user_has_cap', array($this, 'restrict_room_editing'), 10, 3);
         add_action('pre_get_posts', array($this, 'filter_rooms_for_authors'));
-        
+
         // Custom permalink structure for rooms
         add_action('init', array($this, 'add_room_rewrite_rules'));
         add_filter('post_type_link', array($this, 'room_custom_permalink'), 10, 2);
-        
+
         // Make rooms use floor template
         add_filter('template_include', array($this, 'use_floor_template_for_rooms'));
     }
@@ -95,7 +95,22 @@ class Spiral_Tower_Room_Manager
             'index.php?post_type=room&name=$matches[3]',
             'top'
         );
-        
+        // Room URL structure: /floor/[floorNumber]/[floorName]/room/[roomName]
+        add_rewrite_rule(
+            'floor/([0-9]+)/([^/]+)/room/([^/]+)/?$',
+            'index.php?post_type=room&name=$matches[3]',
+            'top'
+        );        
+
+        // If we need to handle room pagination or feeds:
+        add_rewrite_rule(
+            'floor/([0-9]+)/([^/]+)/room/([^/]+)/page/?([0-9]{1,})/?$',
+            'index.php?post_type=room&name=$matches[3]&paged=$matches[4]',
+            'top'
+        );
+
+
+
         // If we need to handle room pagination or feeds:
         add_rewrite_rule(
             'floor/([0-9]+)/([^/]+)/room/([^/]+)/page/?([0-9]{1,})/?$',
@@ -112,32 +127,39 @@ class Spiral_Tower_Room_Manager
         if ($post->post_type !== 'room') {
             return $permalink;
         }
-        
+
         // Get the floor ID for this room
         $floor_id = get_post_meta($post->ID, '_room_floor_id', true);
-        
+
         if (!$floor_id) {
             return $permalink; // Return default if no floor assigned
         }
-        
+
         // Get the floor post
         $floor = get_post($floor_id);
-        
+
         if (!$floor) {
             return $permalink; // Return default if floor doesn't exist
         }
-        
+
         // Get the floor number
         $floor_number = get_post_meta($floor_id, '_floor_number', true);
-        
-        if (empty($floor_number) || empty($post->post_name) || empty($floor->post_name)) {
+
+        // IMPORTANT CHANGE: Check for NULL or empty string, but allow 0 as valid
+        if ($floor_number === '' || $floor_number === null) {
+            return $permalink; // Return default if floor number doesn't exist
+        }
+
+        if (empty($post->post_name) || empty($floor->post_name)) {
             return $permalink; // Return default if data is incomplete
         }
-        
+
         // Return custom URL structure
         return home_url('/floor/' . $floor_number . '/' . $floor->post_name . '/room/' . $post->post_name . '/');
     }
-    
+
+
+
     /**
      * Make rooms use the floor template
      */
@@ -146,7 +168,7 @@ class Spiral_Tower_Room_Manager
         if (is_singular('room')) {
             // Get the template path from the plugin
             $plugin_template_path = SPIRAL_TOWER_PLUGIN_DIR . 'templates/single-floor.php';
-            
+
             if (file_exists($plugin_template_path)) {
                 // Aggressively remove theme actions (same as in floor template)
                 remove_all_actions('wp_head');
@@ -158,13 +180,13 @@ class Spiral_Tower_Room_Manager
                 add_action('wp_head', 'wp_print_head_scripts', 9);
                 add_action('wp_head', 'wp_site_icon', 99);
                 add_action('wp_head', '_wp_render_title_tag', 1);
-                
+
                 add_action('wp_footer', 'wp_print_footer_scripts', 20);
-                
+
                 return $plugin_template_path;
             }
         }
-        
+
         return $template;
     }
 
@@ -218,7 +240,7 @@ class Spiral_Tower_Room_Manager
             'side',
             'high'
         );
-        
+
         // Add custom script meta boxes (same as floors)
         add_meta_box(
             'room_custom_script_inside_metabox',
@@ -250,16 +272,18 @@ class Spiral_Tower_Room_Manager
         $value = get_post_meta($post->ID, '_room_custom_script_inside', true);
         ?>
         <div>
-             <label for="room_custom_script_inside_field" style="display:block; margin-bottom: 5px;">
+            <label for="room_custom_script_inside_field" style="display:block; margin-bottom: 5px;">
                 <?php _e('Enter any custom HTML, &lt;style&gt; tags, or &lt;script&gt; tags you want to output inside the room content.', 'spiral-tower'); ?>
             </label>
-            <textarea style="width: 100%; min-height: 250px; font-family: monospace; background-color: #f0f0f1; color: #1e1e1e; border: 1px solid #949494; padding: 10px;"
-                      id="room_custom_script_inside_field"
-                      name="room_custom_script_inside_field"
-                      placeholder="<?php esc_attr_e('<script>...</script> or <style>...</style> etc.', 'spiral-tower'); ?>"><?php
-                echo esc_textarea($value);
-            ?></textarea>
-             <p><em><strong style="color: #d63638;"><?php _e('Warning:', 'spiral-tower'); ?></strong> <?php _e('Code entered here will be output directly inside the room content. Ensure it is valid and trust the source.', 'spiral-tower'); ?></em></p>
+            <textarea
+                style="width: 100%; min-height: 250px; font-family: monospace; background-color: #f0f0f1; color: #1e1e1e; border: 1px solid #949494; padding: 10px;"
+                id="room_custom_script_inside_field" name="room_custom_script_inside_field"
+                placeholder="<?php esc_attr_e('<script>...</script> or <style>...</style> etc.', 'spiral-tower'); ?>"><?php
+                   echo esc_textarea($value);
+                   ?></textarea>
+            <p><em><strong style="color: #d63638;"><?php _e('Warning:', 'spiral-tower'); ?></strong>
+                    <?php _e('Code entered here will be output directly inside the room content. Ensure it is valid and trust the source.', 'spiral-tower'); ?></em>
+            </p>
         </div>
         <?php
     }
@@ -272,16 +296,18 @@ class Spiral_Tower_Room_Manager
         $value = get_post_meta($post->ID, '_room_custom_script_outside', true);
         ?>
         <div>
-             <label for="room_custom_script_outside_field" style="display:block; margin-bottom: 5px;">
+            <label for="room_custom_script_outside_field" style="display:block; margin-bottom: 5px;">
                 <?php _e('Enter any custom HTML, &lt;style&gt; tags, or &lt;script&gt; tags you want to output in the room interface (outside the room content).', 'spiral-tower'); ?>
             </label>
-            <textarea style="width: 100%; min-height: 250px; font-family: monospace; background-color: #f0f0f1; color: #1e1e1e; border: 1px solid #949494; padding: 10px;"
-                      id="room_custom_script_outside_field"
-                      name="room_custom_script_outside_field"
-                      placeholder="<?php esc_attr_e('<script>...</script> or <style>...</style> etc.', 'spiral-tower'); ?>"><?php
-                echo esc_textarea($value);
-            ?></textarea>
-             <p><em><strong style="color: #d63638;"><?php _e('Warning:', 'spiral-tower'); ?></strong> <?php _e('Code entered here will be output directly in the room interface. Ensure it is valid and trust the source.', 'spiral-tower'); ?></em></p>
+            <textarea
+                style="width: 100%; min-height: 250px; font-family: monospace; background-color: #f0f0f1; color: #1e1e1e; border: 1px solid #949494; padding: 10px;"
+                id="room_custom_script_outside_field" name="room_custom_script_outside_field"
+                placeholder="<?php esc_attr_e('<script>...</script> or <style>...</style> etc.', 'spiral-tower'); ?>"><?php
+                   echo esc_textarea($value);
+                   ?></textarea>
+            <p><em><strong style="color: #d63638;"><?php _e('Warning:', 'spiral-tower'); ?></strong>
+                    <?php _e('Code entered here will be output directly in the room interface. Ensure it is valid and trust the source.', 'spiral-tower'); ?></em>
+            </p>
         </div>
         <?php
     }
@@ -461,7 +487,7 @@ class Spiral_Tower_Room_Manager
             if (isset($_POST['content_background_color'])) {
                 update_post_meta($post_id, '_content_background_color', sanitize_text_field($_POST['content_background_color']));
             }
-            
+
             if (isset($_POST['floor_number_color'])) {
                 update_post_meta($post_id, '_floor_number_color', sanitize_text_field($_POST['floor_number_color']));
             }
@@ -482,7 +508,7 @@ class Spiral_Tower_Room_Manager
                 update_post_meta($post_id, '_room_type', $room_type);
             }
         }
-        
+
         // Save custom scripts
         if (isset($_POST['room_meta_nonce']) && wp_verify_nonce($_POST['room_meta_nonce'], 'room_meta_nonce_action')) {
             // Save inside script
@@ -494,7 +520,7 @@ class Spiral_Tower_Room_Manager
                     delete_post_meta($post_id, '_room_custom_script_inside');
                 }
             }
-            
+
             // Save outside script
             if (isset($_POST['room_custom_script_outside_field'])) {
                 $outside_script = trim($_POST['room_custom_script_outside_field']);
@@ -619,8 +645,6 @@ class Spiral_Tower_Room_Manager
      */
     public function create_entrance_room($post_id, $post, $update)
     {
-        // This is dumb
-
         // Only run for newly created floors, not updates
         // if ($update) {
         //     return;

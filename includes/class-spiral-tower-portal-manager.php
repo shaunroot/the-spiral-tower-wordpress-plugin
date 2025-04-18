@@ -31,6 +31,9 @@ class Spiral_Tower_Portal_Manager
         add_action('manage_portal_posts_custom_column', array($this, 'display_portal_type_column'), 10, 2);
         add_filter('manage_edit-portal_sortable_columns', array($this, 'make_portal_type_column_sortable'));
 
+        // Add portal redirect functionality
+        add_action('template_redirect', array($this, 'redirect_portal_view'));
+
         // Portal listing on floor display
         add_action('spiral_tower_after_floor_content', array($this, 'display_floor_portals'));
 
@@ -251,7 +254,7 @@ class Spiral_Tower_Portal_Manager
                     if ($origin_type === 'floor' && $origin_floor_id) {
                         $origin_url = get_permalink($origin_floor_id);
                         if ($origin_url) {
-                            echo '<a href="' . esc_url($origin_url) . '" class="header-link" target="_blank">';
+                            echo '<a href="' . esc_url($origin_url) . '" class="header-link">';
                             echo '<span class="dashicons dashicons-external"></span>';
                             echo 'View Floor';
                             echo '</a>';
@@ -259,7 +262,7 @@ class Spiral_Tower_Portal_Manager
                     } elseif ($origin_type === 'room' && $origin_room_id) {
                         $origin_url = get_permalink($origin_room_id);
                         if ($origin_url) {
-                            echo '<a href="' . esc_url($origin_url) . '" class="header-link" target="_blank">';
+                            echo '<a href="' . esc_url($origin_url) . '" class="header-link">';
                             echo '<span class="dashicons dashicons-external"></span>';
                             echo 'View Room';
                             echo '</a>';
@@ -802,6 +805,41 @@ class Spiral_Tower_Portal_Manager
         }
     }
 
+    /**
+     * Redirect portal direct access to its origin
+     */
+    public function redirect_portal_view()
+    {
+        // Only run on frontend, not in admin
+        if (is_admin()) {
+            return;
+        }
+
+        // Check if we're viewing a single portal
+        if (is_singular('portal')) {
+            global $post;
+
+            // Get portal origin data
+            $origin_type = get_post_meta($post->ID, '_origin_type', true);
+            $origin_floor_id = get_post_meta($post->ID, '_origin_floor_id', true);
+            $origin_room_id = get_post_meta($post->ID, '_origin_room_id', true);
+
+            // Determine redirect URL based on origin type
+            $redirect_url = '';
+
+            if ($origin_type === 'floor' && $origin_floor_id) {
+                $redirect_url = get_permalink($origin_floor_id);
+            } elseif ($origin_type === 'room' && $origin_room_id) {
+                $redirect_url = get_permalink($origin_room_id);
+            }
+
+            // If we have a redirect URL, perform the redirect
+            if (!empty($redirect_url)) {
+                wp_redirect($redirect_url, 302); // Using 302 (temporary) redirect
+                exit;
+            }
+        }
+    }
 
     /**
      * Add Portal data to REST API
@@ -1006,7 +1044,7 @@ class Spiral_Tower_Portal_Manager
             include $template_path;
         } else {
             // Optional: Add an admin notice or log if the template is missing
-            error_log('Spiral Tower Plugin: Portal template not found at ' . $template_path);
+            // error_log('Spiral Tower Plugin: Portal template not found at ' . $template_path);
         }
     }
 
@@ -1099,12 +1137,6 @@ class Spiral_Tower_Portal_Manager
             }
 
             $updated_count++;
-        }
-
-        // Log changes for debugging
-        error_log('Portal Editor: Updated ' . $updated_count . ' portals. Floor ID: ' . $floor_id);
-        if (!empty($errors)) {
-            error_log('Portal Editor Errors: ' . print_r($errors, true));
         }
 
         // Return results

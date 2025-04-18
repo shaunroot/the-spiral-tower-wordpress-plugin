@@ -1,6 +1,6 @@
 /**
  * Portal Editor with Direct Save Approach
- * This version doesn't rely on change tracking
+ * This version doesn't rely on change tracking and uses the existing toolbar button
  */
 (function() {
     // Check if we're on a floor page
@@ -9,15 +9,14 @@
     
     console.log('Portal Editor: Initializing on floor page');
     
-    // Create UI elements
     function createUI() {
-        // Create edit toggle button
-        const editButton = document.createElement('button');
-        editButton.id = 'portal-edit-toggle';
-        editButton.textContent = 'Edit Portals';
-        editButton.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 10000; padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;';
-        document.body.appendChild(editButton);
-        editButton.addEventListener('click', toggleEditMode);
+        // Find the existing toolbar edit button
+        const editButton = document.getElementById('toolbar-edit-portals');
+        
+        if (!editButton) {
+            console.error('Portal Editor: Could not find existing edit button with ID "toolbar-edit-portals"');
+            return { editButton: null, saveButton: null, notificationContainer: null };
+        }
         
         // Create save button (initially hidden)
         const saveButton = document.createElement('button');
@@ -33,10 +32,14 @@
         notificationContainer.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 10001;';
         document.body.appendChild(notificationContainer);
         
+        // Add click event to the existing button
+        if (editButton) {
+            editButton.addEventListener('click', toggleEditMode);
+        }
+        
         return { editButton, saveButton, notificationContainer };
     }
     
-    // Create a notification
     function showNotification(message, type = 'info') {
         const container = document.getElementById('portal-notifications');
         if (!container) return;
@@ -48,7 +51,7 @@
         // Style the notification
         Object.assign(notification.style, {
             padding: '10px 15px',
-            marginBottom: '10px',
+            marginBottom: '75px',
             borderRadius: '4px',
             color: 'white',
             fontWeight: 'bold',
@@ -160,14 +163,14 @@
     let editModeActive = false;
     function toggleEditMode() {
         editModeActive = !editModeActive;
-        const editButton = document.getElementById('portal-edit-toggle');
+        const editButton = document.getElementById('toolbar-edit-portals');
         const saveButton = document.getElementById('portal-save-changes');
         
         if (editModeActive) {
             console.log('Portal Editor: Enabling edit mode');
             document.body.classList.add('portal-edit-mode');
             
-            if (editButton) editButton.textContent = 'Exit Edit Mode';
+            // if (editButton) editButton.textContent = 'Exit Edit Mode';
             if (saveButton) saveButton.style.display = 'block';
             
             // Add drag handlers and resize handles to portals
@@ -191,7 +194,7 @@
             console.log('Portal Editor: Disabling edit mode');
             document.body.classList.remove('portal-edit-mode');
             
-            if (editButton) editButton.textContent = 'Edit Portals';
+            // if (editButton) editButton.textContent = 'Edit Portals';
             if (saveButton) saveButton.style.display = 'none';
             
             // Check if user wants to save

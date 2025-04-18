@@ -96,6 +96,25 @@
         overflow: hidden;
     }
 
+    .portal-text {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        
+        overflow: hidden;
+        text-align: center;
+        
+        /* Allow text to wrap to multiple lines */
+        white-space: normal;
+        
+        /* Optional: limit to certain number of lines */
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Show only 2 lines */
+        -webkit-box-orient: vertical;
+        
+        padding: 5px;
+      }    
+
     .portal-icon-TEMP-DISABLED {
         width: 60px;
         height: 60px;

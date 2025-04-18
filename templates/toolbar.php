@@ -74,8 +74,7 @@
         // Define the URL for the portal editing page (standard WP list table)
         $edit_portals_url = admin_url('edit.php?post_type=portal'); // Assumes 'portal' CPT slug
         ?>
-        <a href="<?php echo esc_url($edit_portals_url); ?>" id="button-edit-portals" class="tooltip-trigger"
-            data-tooltip="Edit Portals">
+        <div id="toolbar-edit-portals" class="tooltip-trigger" data-tooltip="Edit Portals">
             <?php // --- SVG Icon for Edit Portals (Lucide List) --- ?>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -84,7 +83,7 @@
                 <line x1="8" y1="12" x2="16" y2="12" />
                 <line x1="8" y1="15" x2="16" y2="15" />
             </svg>
-        </a>
+        </div>
     <?php endif; ?>
     <?php // ----- END: Edit Portals Button ----- ?>
 
