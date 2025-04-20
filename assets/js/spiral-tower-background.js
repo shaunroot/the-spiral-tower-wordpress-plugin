@@ -1,8 +1,6 @@
 /**
- * Spiral Tower - Background Scaling Module v6.1 (Integration Ready)
- * Correctly sizes/scales the wrapper via transform. Relies on an external
- * system (e.g., spiral-tower-core.js) to call the exposed init() function.
- * IGNORES GIZMOS for now.
+ * Spiral Tower - Background Scaling Module v6.2 (with Position Support)
+ * Correctly sizes/scales the wrapper via transform. Now supports custom starting positions.
  */
 
 // Ensure the global SpiralTower object exists
@@ -24,6 +22,11 @@ SpiralTower.background = (function () {
         resizeTimer: null,
         lastWidth: 0,
         lastHeight: 0,
+        initialPositionApplied: false, // Track if we've applied the initial position
+        startPosition: {
+            x: 'center', // default
+            y: 'center'  // default
+        },
         config: {
             resizeDelay: 50,
             debug: true // Force debug logging ON
@@ -32,13 +35,57 @@ SpiralTower.background = (function () {
 
     // --- Logging ---
     function log(level, message, ...optionalParams) {
-        const prefix = `[SpiralTower.background v6.1 - ${level.toUpperCase()}]`;
+        const prefix = `[SpiralTower.background v6.2 - ${level.toUpperCase()}]`;
         if (level === 'error') {
             console.error(prefix, message, ...optionalParams);
         } else if (level === 'warn') {
             console.warn(prefix, message, ...optionalParams);
         } else if (state.config.debug) {
-            logger.log(prefix, message, ...optionalParams);
+            logger.log('background', message, ...optionalParams);
+        }
+    }
+
+    /**
+     * Read background position settings from document body attributes
+     */
+    function readInitialPosition() {
+        const body = document.body;
+        
+        // Read position values
+        state.startPosition.x = body.getAttribute('data-bg-position-x') || 'center';
+        state.startPosition.y = body.getAttribute('data-bg-position-y') || 'center';
+        
+        log('info', `Initial position set to: X=${state.startPosition.x}, Y=${state.startPosition.y}`);
+        return true;
+    }
+
+    /**
+     * Calculates the offset percentage based on position keyword
+     * @param {string} position - 'left', 'center', 'right' or 'top', 'center', 'bottom'
+     * @param {string} axis - 'x' or 'y'
+     * @returns {number} - Percentage from -50 to 50 (for -50% to 50%)
+     */
+    function calculatePositionOffset(position, axis) {
+        // First check if position is a number (percentage)
+        if (!isNaN(parseFloat(position))) {
+            // If it's already a number, use it directly (clamped between -50 and 50)
+            return Math.max(-50, Math.min(50, parseFloat(position)));
+        }
+
+        if (axis === 'x') {
+            switch (position) {
+                case 'left': return -50;   // align with left edge
+                case 'right': return 50;   // align with right edge
+                case 'center': 
+                default: return 0;         // center (default)
+            }
+        } else { // axis === 'y'
+            switch (position) {
+                case 'top': return -50;    // align with top edge
+                case 'bottom': return 50;  // align with bottom edge
+                case 'center':
+                default: return 0;         // center (default)
+            }
         }
     }
 
@@ -65,7 +112,7 @@ SpiralTower.background = (function () {
              log('error', "Invalid Content dimensions in state.", `W: ${state.contentWidth}, H: ${state.contentHeight}`);
              state.wrapper.style.visibility = 'hidden'; return false;
         }
-         log('info', `Using Content Dimensions: ${state.contentWidth}x${state.contentHeight}`);
+        log('info', `Using Content Dimensions: ${state.contentWidth}x${state.contentHeight}`);
         const scaleX = viewportWidth / state.contentWidth;
         const scaleY = viewportHeight / state.contentHeight;
         const scale = Math.max(scaleX, scaleY);
@@ -74,16 +121,36 @@ SpiralTower.background = (function () {
              log('error', `Invalid scale calculated (${scale}). Aborting.`);
              state.wrapper.style.visibility = 'hidden'; return false;
         }
+        
+        // Calculate position offsets based on initial position settings
+        let xOffsetPercent = 0;
+        let yOffsetPercent = 0;
+        
+        // Only apply position offsets on first initialization
+        if (!state.initialPositionApplied) {
+            xOffsetPercent = calculatePositionOffset(state.startPosition.x, 'x');
+            yOffsetPercent = calculatePositionOffset(state.startPosition.y, 'y');
+            state.initialPositionApplied = true;
+            log('info', `Applying initial position offsets: X=${xOffsetPercent}%, Y=${yOffsetPercent}%`);
+        }
+        
+        // Calculate pixel values based on viewport size
+        const xOffsetPixels = (xOffsetPercent / 100) * viewportWidth;
+        const yOffsetPixels = (yOffsetPercent / 100) * viewportHeight;
+        
         try {
             state.wrapper.style.position = 'fixed'; // Ensure fixed positioning is set
             state.wrapper.style.width = `${state.contentWidth}px`;
             state.wrapper.style.height = `${state.contentHeight}px`;
             state.wrapper.style.top = '50%';
             state.wrapper.style.left = '50%';
-            const transformValue = `translate(-50%, -50%) scale(${scale})`;
+            
+            // Apply transform with position offsets
+            const transformValue = `translate(calc(-50% + ${xOffsetPixels}px), calc(-50% + ${yOffsetPixels}px)) scale(${scale})`;
             state.wrapper.style.transform = transformValue;
             state.wrapper.style.visibility = 'visible'; // SUCCESS! Make visible.
             log('info', `Applied Styles: W=${state.wrapper.style.width}, H=${state.wrapper.style.height}, Transform=${transformValue}, Visibility=visible`);
+            
             setTimeout(() => { // Async verification log
                 if(state.wrapper) { const cs = window.getComputedStyle(state.wrapper); log('info', `VERIFY COMPUTED Style (async): W=${cs.width}, H=${cs.height}, Transform=${cs.transform}, Visibility=${cs.visibility}`); }
              }, 0);
@@ -110,15 +177,15 @@ SpiralTower.background = (function () {
         }
     }
 
-     function handleLoad() {
-         // Fallback load handler - Keep this as is from v6
-         log('info', "Window 'load' event fired. Re-running scale/position...");
-         scaleAndPositionWrapper();
-         setTimeout(() => {
-             log('info', "Running delayed post-load check...");
-             scaleAndPositionWrapper();
-         }, 200);
-     }
+    function handleLoad() {
+        // Fallback load handler - Keep this as is from v6
+        log('info', "Window 'load' event fired. Re-running scale/position...");
+        scaleAndPositionWrapper();
+        setTimeout(() => {
+            log('info', "Running delayed post-load check...");
+            scaleAndPositionWrapper();
+        }, 200);
+    }
 
     /**
      * Reads content type and dimensions from document body attributes
@@ -173,7 +240,7 @@ SpiralTower.background = (function () {
             log('warn', "Initialization attempted again, but already initialized.");
             return Promise.resolve(); // Indicate immediate success (or already done)
         }
-        log('info', "Initializing Background module v6.1...");
+        log('info', "Initializing Background module v6.2...");
 
         state.wrapper = container.querySelector('.spiral-tower-floor-wrapper');
         if (!state.wrapper) {
@@ -181,22 +248,26 @@ SpiralTower.background = (function () {
             return Promise.reject("Wrapper element not found"); // Signal failure
         }
         log('info', "Wrapper element found:", state.wrapper);
-         // Ensure basic fixed positioning is set early
-         state.wrapper.style.position = 'fixed';
-         state.wrapper.style.visibility = 'hidden'; // Start hidden
+        
+        // Ensure basic fixed positioning is set early
+        state.wrapper.style.position = 'fixed';
+        state.wrapper.style.visibility = 'hidden'; // Start hidden
 
-        // 2. Read Content Dimensions
+        // Read initial position settings
+        readInitialPosition();
+
+        // Read Content Dimensions
         readContentDimensions();
 
-        // 3. Initial Scaling Attempt
+        // Initial Scaling Attempt
         log('info', "Performing initial scale and position...");
         const initialSuccess = scaleAndPositionWrapper(); // Call the core logic
         if (!initialSuccess) {
-             log('error', "Initial scaling failed during init. Wrapper may be hidden/incorrect.");
-             // Still continue to set up listeners
+            log('error', "Initial scaling failed during init. Wrapper may be hidden/incorrect.");
+            // Still continue to set up listeners
         }
 
-        // 4. Setup Listeners (only once)
+        // Setup Listeners (only once)
         window.removeEventListener('resize', handleResize); // Cleanup just in case
         window.addEventListener('resize', handleResize);
         window.removeEventListener('load', handleLoad); // Cleanup just in case
@@ -234,6 +305,13 @@ SpiralTower.background = (function () {
             return scaleAndPositionWrapper();
         },
         
+        resetPosition: function() {
+            log('info', "resetPosition called - resetting to initial position");
+            // Reset position to allow recalculating from the data attributes
+            state.initialPositionApplied = false;
+            return this.forceUpdate();
+        },
+        
         reinit: function(container = document) {
             log('info', "reinit called - resetting state and re-initializing");
             
@@ -243,9 +321,17 @@ SpiralTower.background = (function () {
             state.contentWidth = 0;
             state.contentHeight = 0;
             state.contentType = null;
+            state.initialPositionApplied = false; // Reset position flag
             
             // Run full initialization again
             return init(container);
         }
     };
 })();
+
+// Initialize on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.SpiralTower && window.SpiralTower.background) {
+        window.SpiralTower.background.init();
+    }
+});

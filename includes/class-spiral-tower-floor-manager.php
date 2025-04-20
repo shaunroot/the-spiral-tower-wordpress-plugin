@@ -293,6 +293,9 @@ class Spiral_Tower_Floor_Manager
         $content_color = get_post_meta($post->ID, '_content_color', true);
         $content_bg_color = get_post_meta($post->ID, '_content_background_color', true);
         $floor_number_color = get_post_meta($post->ID, '_floor_number_color', true);
+        $bg_position_x = get_post_meta($post->ID, '_starting_background_position_x', true) ?: 'center';
+        $bg_position_y = get_post_meta($post->ID, '_starting_background_position_y', true) ?: 'center';
+
 
         // --- Floor Number ---
         echo '<p>';
@@ -316,10 +319,6 @@ class Spiral_Tower_Floor_Manager
         echo '</label>';
         echo '</p>';
 
-        // Separator - just visual
-        echo '<hr>';
-
-        // --- Other existing fields ---
         echo '<p>';
         echo '<label for="background_youtube_url">Background YouTube URL:</label>';
         echo '<input type="text" id="background_youtube_url" name="background_youtube_url" value="' . esc_attr($background_youtube_url) . '" style="width:100%">';
@@ -355,6 +354,26 @@ class Spiral_Tower_Floor_Manager
         echo '<p>';
         echo '<label for="floor_number_color">Floor Number Color:</label>';
         echo '<input type="text" id="floor_number_color" name="floor_number_color" value="' . esc_attr($floor_number_color) . '" style="width:100%">';
+        echo '</p>';
+
+        // --- Background Position X Dropdown --- 
+        echo '<p>';
+        echo '<label for="starting_background_position_x">Starting Background Position X:</label><br>';
+        echo '<select id="starting_background_position_x" name="starting_background_position_x" style="width:100%">';
+        echo '<option value="left" ' . selected($bg_position_x, 'left', false) . '>Left</option>';
+        echo '<option value="center" ' . selected($bg_position_x, 'center', false) . '>Center</option>';
+        echo '<option value="right" ' . selected($bg_position_x, 'right', false) . '>Right</option>';
+        echo '</select>';
+        echo '</p>';
+
+        // --- Background Position Y Dropdown --- 
+        echo '<p>';
+        echo '<label for="starting_background_position_y">Starting Background Position Y:</label><br>';
+        echo '<select id="starting_background_position_y" name="starting_background_position_y" style="width:100%">';
+        echo '<option value="top" ' . selected($bg_position_y, 'top', false) . '>Top</option>';
+        echo '<option value="center" ' . selected($bg_position_y, 'center', false) . '>Center</option>';
+        echo '<option value="bottom" ' . selected($bg_position_y, 'bottom', false) . '>Bottom</option>';
+        echo '</select>';
         echo '</p>';
     }
 
@@ -472,6 +491,8 @@ class Spiral_Tower_Floor_Manager
             '_content_color' => isset($_POST['content_color']) ? sanitize_text_field($_POST['content_color']) : null, // Basic sanitize
             '_content_background_color' => isset($_POST['content_background_color']) ? sanitize_text_field($_POST['content_background_color']) : null, // Basic sanitize
             '_floor_number_color' => isset($_POST['floor_number_color']) ? sanitize_text_field($_POST['floor_number_color']) : null, // Basic sanitize
+            '_starting_background_position_x' => isset($_POST['starting_background_position_x']) ? sanitize_text_field($_POST['starting_background_position_x']) : null,
+            '_starting_background_position_y' => isset($_POST['starting_background_position_y']) ? sanitize_text_field($_POST['starting_background_position_y']) : null,                
         ];
 
         foreach ($fields_to_save as $meta_key => $value) {

@@ -38,6 +38,8 @@ if (has_post_thumbnail()) {
 	$featured_image_meta = wp_get_attachment_metadata($featured_image_id);
 	$image_width = isset($featured_image_meta['width']) ? $featured_image_meta['width'] : 0;
 	$image_height = isset($featured_image_meta['height']) ? $featured_image_meta['height'] : 0;
+	$bg_position_x = get_post_meta(get_the_ID(), '_starting_background_position_x', true) ?: 'center';
+	$bg_position_y = get_post_meta(get_the_ID(), '_starting_background_position_y', true) ?: 'center';	
 }
 
 // --- Process YouTube ---
@@ -120,12 +122,13 @@ $portals = get_posts(array(
 	data-title-bg-color="<?php echo esc_attr($title_bg_color); ?>"
 	data-content-color="<?php echo esc_attr($content_color); ?>"
 	data-content-bg-color="<?php echo esc_attr($content_bg_color); ?>"
-	data-floor-number-color="<?php echo esc_attr($floor_number_color); ?>" data-barba="wrapper" <?php // Set data attributes based on the VISUAL background type
-	   if ($visual_bg_type === 'image'): ?> data-bg-type="image"
+	data-floor-number-color="<?php echo esc_attr($floor_number_color); ?>" data-barba="wrapper"
+	<?php // Set data attributes based on the VISUAL background type
+	if ($visual_bg_type === 'image'): ?> data-bg-type="image"
 		data-img-width="<?php echo esc_attr($image_width); ?>" data-img-height="<?php echo esc_attr($image_height); ?>"
-	<?php elseif ($visual_bg_type === 'video'): ?> data-bg-type="video" <?php endif; // If visual_bg_type is null, no data-bg-type is set ?>>
-
-
+	<?php elseif ($visual_bg_type === 'video'): ?> data-bg-type="video" <?php endif; ?>
+	data-bg-position-x="<?php echo esc_attr($bg_position_x); ?>"
+	data-bg-position-y="<?php echo esc_attr($bg_position_y); ?>">
 	<div class="spiral-tower-floor-wrapper" data-barba="container"
 		data-barba-namespace="floor-<?php echo get_the_ID(); ?>">
 

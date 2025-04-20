@@ -78,10 +78,10 @@ function spiral_tower_ajax_floor_search()
     // 2. Get and sanitize search term
     $search_term = isset($_POST['search_term']) ? sanitize_text_field(wp_unslash($_POST['search_term'])) : '';
 
-    if (empty($search_term)) {
-        wp_send_json_error(array('message' => 'Search term cannot be empty.'));
-        return;
-    }
+    // if (empty($search_term)) {
+    //     wp_send_json_error(array('message' => 'Search term cannot be empty.'));
+    //     return;
+    // }
 
     $redirect_url = null;
 

@@ -100,7 +100,7 @@ class Spiral_Tower_Room_Manager
             'floor/([0-9]+)/([^/]+)/room/([^/]+)/?$',
             'index.php?post_type=room&name=$matches[3]',
             'top'
-        );        
+        );
 
         // If we need to handle room pagination or feeds:
         add_rewrite_rule(
@@ -331,6 +331,8 @@ class Spiral_Tower_Room_Manager
         $content_color = get_post_meta($post->ID, '_content_color', true);
         $content_bg_color = get_post_meta($post->ID, '_content_background_color', true);
         $floor_number_color = get_post_meta($post->ID, '_floor_number_color', true);
+        $bg_position_x = get_post_meta($post->ID, '_starting_background_position_x', true) ?: 'center';
+        $bg_position_y = get_post_meta($post->ID, '_starting_background_position_y', true) ?: 'center';
 
         // Get current user
         $user = wp_get_current_user();
@@ -410,6 +412,26 @@ class Spiral_Tower_Room_Manager
         echo '<label for="floor_number_color">Floor Number Color:</label>';
         echo '<input type="text" id="floor_number_color" name="floor_number_color" value="' . esc_attr($floor_number_color) . '" style="width:100%">';
         echo '</p>';
+
+        // --- Background Position X Dropdown ---
+        echo '<p>';
+        echo '<label for="starting_background_position_x">Starting Background Position X:</label><br>';
+        echo '<select id="starting_background_position_x" name="starting_background_position_x" style="width:100%">';
+        echo '<option value="left" ' . selected($bg_position_x, 'left', false) . '>Left</option>';
+        echo '<option value="center" ' . selected($bg_position_x, 'center', false) . '>Center</option>';
+        echo '<option value="right" ' . selected($bg_position_x, 'right', false) . '>Right</option>';
+        echo '</select>';
+        echo '</p>';
+
+        // --- Background Position Y Dropdown ---
+        echo '<p>';
+        echo '<label for="starting_background_position_y">Starting Background Position Y:</label><br>';
+        echo '<select id="starting_background_position_y" name="starting_background_position_y" style="width:100%">';
+        echo '<option value="top" ' . selected($bg_position_y, 'top', false) . '>Top</option>';
+        echo '<option value="center" ' . selected($bg_position_y, 'center', false) . '>Center</option>';
+        echo '<option value="bottom" ' . selected($bg_position_y, 'bottom', false) . '>Bottom</option>';
+        echo '</select>';
+        echo '</p>';
     }
 
     /**
@@ -445,7 +467,7 @@ class Spiral_Tower_Room_Manager
         echo '</div>';
 
         // Display a note about entrance rooms
-        echo '<p class="description">Note: Only one entrance room is allowed per floor. Creating a new entrance will replace the old one.</p>';
+        echo '<p class="description">Note: room type settings are not used for anything yet. Come up with some ideas!</p>';
     }
 
     /**
@@ -491,6 +513,14 @@ class Spiral_Tower_Room_Manager
             if (isset($_POST['floor_number_color'])) {
                 update_post_meta($post_id, '_floor_number_color', sanitize_text_field($_POST['floor_number_color']));
             }
+
+            if (isset($_POST['starting_background_position_x'])) {
+                update_post_meta($post_id, '_starting_background_position_x', sanitize_text_field($_POST['starting_background_position_x']));
+            }
+            
+            if (isset($_POST['starting_background_position_y'])) {
+                update_post_meta($post_id, '_starting_background_position_y', sanitize_text_field($_POST['starting_background_position_y']));
+            }            
         }
 
         // Save Room Type

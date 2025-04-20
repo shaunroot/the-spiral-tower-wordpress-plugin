@@ -808,3 +808,131 @@
         }
     };
 })();
+
+
+/**
+ * Spiral Tower - Initial Position Scroller (Fixed Approach)
+ * Applies initial background position after modules load
+ */
+(function() {
+    // Debug function with consistent tag
+    function debug(message, data) {
+        console.log("[SpiralTower/InitialPosition] " + message, data || '');
+    }
+
+    function applyInitialPosition() {
+        debug("Starting fixed position application");
+        
+        // Check if required modules are loaded
+        if (!window.SpiralTower || 
+            !window.SpiralTower.background || 
+            !window.SpiralTower.scrollArrows) {
+            debug("Required modules not fully loaded, retrying...");
+            setTimeout(applyInitialPosition, 100);
+            return;
+        }
+        
+        // Get position data from body attributes
+        const body = document.body;
+        const posX = body.getAttribute('data-bg-position-x') || 'center';
+        const posY = body.getAttribute('data-bg-position-y') || 'center';
+        debug("Position attributes:", { posX, posY });
+        
+        // Get wrapper element
+        const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
+        if (!wrapper) {
+            debug("Wrapper element not found, retrying...");
+            setTimeout(applyInitialPosition, 100);
+            return;
+        }
+        
+        // Force update to ensure bounds are calculated
+        window.SpiralTower.scrollArrows.forceUpdate();
+        
+        // Get updated state after force update
+        const state = window.SpiralTower.scrollArrows.getState();
+        debug("Scroll arrows state:", state);
+        
+        // Calculate offsets based on position keywords
+        let offsetX = 0;
+        let offsetY = 0;
+        
+        // For X position
+        if (state.scrollDirection === 'horizontal' || state.scrollDirection === 'both') {
+            if (posX === 'left') {
+                // For left position, use the maximum bound (which is actually the right)
+                offsetX = state.bounds.x.max;
+            } else if (posX === 'right') {
+                // For right position, use the minimum bound (which is actually the left)
+                offsetX = state.bounds.x.min;
+            } else if (posX === 'center') {
+                // For center position, use 0 (already centered)
+                offsetX = 0;
+            } else if (!isNaN(parseFloat(posX))) {
+                // If numeric, use directly
+                offsetX = parseFloat(posX);
+            }
+        }
+        
+        // For Y position - NOTE: The bounds seem inverted based on your feedback
+        if (state.scrollDirection === 'vertical' || state.scrollDirection === 'both') {
+            if (posY === 'top') {
+                // For top position, use the maximum bound (which should be the bottom)
+                offsetY = state.bounds.y.max;
+            } else if (posY === 'bottom') {
+                // For bottom position, use the minimum bound (which should be the top)
+                offsetY = state.bounds.y.min;
+            } else if (posY === 'center') {
+                // For center position, use 0 (already centered)
+                offsetY = 0;
+            } else if (!isNaN(parseFloat(posY))) {
+                // If numeric, use directly
+                offsetY = parseFloat(posY);
+            }
+        }
+        
+        debug("Calculated offsets:", { offsetX, offsetY });
+        
+        // Apply the calculated offsets using scrollArrows
+        window.SpiralTower.scrollArrows.scrollTo(offsetX, offsetY, false);
+        
+        // Verify the result
+        setTimeout(function() {
+            const finalTransform = window.getComputedStyle(wrapper).transform;
+            debug("Final transform after scrollTo:", finalTransform);
+            
+            // Check if current position is different from what we wanted
+            const currentState = window.SpiralTower.scrollArrows.getState();
+            debug("Current scroll arrows state after positioning:", currentState);
+            
+            // If we're not where we want to be, try inverting the logic
+            if (posY === 'bottom' && currentState.offset.y !== offsetY) {
+                debug("Position didn't match expected, trying inverted Y bounds...");
+                // Try the opposite bound for bottom
+                const invertedOffsetY = state.bounds.y.max;
+                debug("Using inverted Y offset:", invertedOffsetY);
+                window.SpiralTower.scrollArrows.scrollTo(offsetX, invertedOffsetY, false);
+            }
+        }, 100);
+    }
+    
+    // Use a sequence of attempts with increasing delays
+    function attemptApplicationSequence() {
+        // Try several times with increasing delays
+        setTimeout(applyInitialPosition, 300);  // First attempt
+        setTimeout(applyInitialPosition, 800);  // Second attempt
+        setTimeout(applyInitialPosition, 1500); // Third attempt
+    }
+    
+    // Listen for when Spiral Tower modules are loaded
+    document.addEventListener('spiralTowerModulesLoaded', attemptApplicationSequence);
+    
+    // Also try on window load
+    window.addEventListener('load', attemptApplicationSequence);
+    
+    // If document is already complete, start attempts now
+    if (document.readyState === 'complete') {
+        debug("Document already loaded, starting application sequence");
+        attemptApplicationSequence();
+    }
+})();
