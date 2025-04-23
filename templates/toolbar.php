@@ -124,15 +124,27 @@
     <?php // ----- END: Create Portal Button ----- ?>
 
 
+    <?php // ----- START: GUEST BOOK BUTTON ----- ?>
+    <div id="button-guestbook" class="tooltip-trigger" data-tooltip="Guest Book">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        </svg>
+    </div>
+    <?php // ----- END: GUEST BOOK BUTTON ----- ?>
+
+
     <?php // ----- START: STAIRS ----- ?>
-    <a href="/stairs" id="button-stairs" class="tooltip-trigger" data-tooltip="Take the STAIRS!">
+    <a href="/stairs" id="button-stairs" class="tooltip-trigger"
+        data-tooltip="Take the Spiral Tower All Inclusive Rail System!">
         <img src="/wp-content/plugins/the-spiral-tower/dist/images/stairs.svg" alt="Stairs Icon" />
     </a>
     <?php // ----- END: STAIRS ----- ?>
 
 
     <?php // ----- START: TWIST ----- ?>
-    <div id="toolbar-search-trigger" class="tooltip-trigger" data-tooltip="TWIST">
+    <div id="toolbar-search-trigger" class="tooltip-trigger" data-tooltip="Teleportation Wizard In Spiral Tower">
         <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 139.6 135.1">
             <!-- Generator: Adobe Illustrator 29.1.0, SVG Export Plug-In . SVG Version: 2.1.0 Build 142)  -->
             <defs>

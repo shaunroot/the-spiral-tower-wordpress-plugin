@@ -12,7 +12,7 @@
         scrollStep: 100,         // Pixels to move per click
         continuousStep: 8,      // Pixels per frame when holding
         animationDuration: 1.5,  // Duration of smooth scrolling in seconds
-        boundsBuffer: 10,        // Buffer to prevent seeing edge (increased to avoid black space)
+        boundsBuffer: 40,        // Buffer to prevent seeing edge (increased to avoid black space)
         logEnabled: false,        // Enable debug logging -- TODO replace this with normal debugger
         initRetryDelay: 100,     // Milliseconds to wait before retrying initialization
         maxInitRetries: 50,      // Maximum number of retries

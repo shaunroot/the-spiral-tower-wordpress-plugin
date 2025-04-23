@@ -53,10 +53,11 @@ if (!defined('ABSPATH')) {
         continue;
     }
 
+    $portal_icon = '<div class="portal-icon portal-text">' . esc_html($destination_title) . '</div>';
 
     switch ($portal_type) {
         case 'text':
-            $portal_icon = '<div class="portal-icon portal-text">' . esc_html($destination_title) . '</div>';
+            
             break;
         case 'gateway':
             $portal_icon = '<div class="portal-icon portal-text"> Gateway to' . esc_html($destination_title) . '</div>';
@@ -68,7 +69,7 @@ if (!defined('ABSPATH')) {
             $portal_icon = '<div class="portal-icon portal-text">Door to' . esc_html($destination_title) . '</div>';
             break;
         case 'invisible':
-            $portal_icon = '';
+            $portal_icon = '<div class="portal-icon portal-text">' . esc_html($destination_title) . '</div>';
             break;
         case 'custom':
             $portal_icon = '<div class="portal-icon portal-text">' . esc_html($destination_title) . '</div>';
