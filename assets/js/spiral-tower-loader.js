@@ -3,6 +3,7 @@
  * This script should be loaded first.
  * It sets up the namespace, defines configuration, creates the logger,
  * and then loads the other module scripts sequentially.
+ * spiral-tower-loader.js
  */
 
 // Create global namespace for the plugin
@@ -110,6 +111,7 @@ if (typeof spiralTowerWpSettings !== 'undefined' && spiralTowerWpSettings.loggin
         'spiral-tower-scroll-arrows.js',
         'spiral-tower-tooltips.js',  
         'spiral-tower-portal-editor.js',   
+        'spiral-tower-image-generator.js', 
         'spiral-tower-core.js'             
     ];
 

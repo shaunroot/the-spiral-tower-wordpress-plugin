@@ -53,7 +53,6 @@ if (!defined('ABSPATH')) {
         continue;
     }
 
-    $portal_icon = '<div class="portal-icon portal-text">' . esc_html($destination_title) . '</div>';
 
     switch ($portal_type) {
         case 'text':
