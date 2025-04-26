@@ -79,7 +79,7 @@ SpiralTower.core = (function () {
             body.classList.add('text-only-mode');
             if (textToggleButton) {
                 textToggleButton.classList.add('active');
-                textToggleButton.dataset.tooltip = "Disable Text Only Mode";
+                textToggleButton.dataset.tooltip = "Enable Image Mode";
             }
             if (textIcon) textIcon.style.display = 'none';
             if (fullViewIcon) fullViewIcon.style.display = 'inline-block';

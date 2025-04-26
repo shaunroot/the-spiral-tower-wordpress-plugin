@@ -65,6 +65,10 @@ class Spiral_Tower_Plugin
         // Register custom template for floors and applicable pages
         add_filter('template_include', array($this, 'floor_template'));
 
+        add_filter('big_image_size_threshold', function() {
+            return 10000;
+        });       
+
         // Enqueue custom styles and scripts for the floor template
         add_action('wp_enqueue_scripts', array($this, 'enqueue_floor_assets')); // Renamed method for clarity
 

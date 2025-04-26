@@ -239,7 +239,7 @@
   color: #fff;
   border-radius: 5px;
   font-family: var(--body-font);
-  font-size: 0.9rem;
+  font-size: 2rem;
   padding: 5px;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -1145,6 +1145,8 @@ body.text-only-mode .spiral-tower-floor-container {
   background: rgba(0, 0, 0, 0.6);
   overflow: visible;
   opacity: 0.8;
+  /* Add this to your CSS */
+  /* Optional hover effect */
 }
 #toolbar > a,
 #toolbar > div {
@@ -1181,6 +1183,21 @@ body.text-only-mode .spiral-tower-floor-container {
   fill: white;
   opacity: 0.8;
   pointer-events: none;
+}
+#toolbar #toolbar-edit-portals.active-edit-mode {
+  background-color: rgba(76, 175, 80, 0.2);
+  /* Light green background */
+  border-radius: 50%;
+  /* Makes it circular */
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+  /* Subtle glow effect */
+}
+#toolbar #toolbar-edit-portals:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+#portal-notifications, .portal-notification {
+  pointer-events: none !important;
 }
 #toolbar #button-sound-toggle {
   display: none;

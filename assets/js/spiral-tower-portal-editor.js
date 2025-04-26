@@ -1,6 +1,6 @@
 /**
  * Portal Editor with Direct Save Approach
- * This version doesn't rely on change tracking and uses the existing toolbar button
+ * This version relies on toolbar button for editing and saving
  */
 (function() {
     // Check if we're on a floor page
@@ -15,16 +15,8 @@
         
         if (!editButton) {
             console.error('Portal Editor: Could not find existing edit button with ID "toolbar-edit-portals"');
-            return { editButton: null, saveButton: null, notificationContainer: null };
+            return { editButton: null, notificationContainer: null };
         }
-        
-        // Create save button (initially hidden)
-        const saveButton = document.createElement('button');
-        saveButton.id = 'portal-save-changes';
-        saveButton.textContent = 'Save Changes';
-        saveButton.style.cssText = 'position: fixed; top: 10px; right: 120px; z-index: 10000; padding: 8px 15px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;';
-        document.body.appendChild(saveButton);
-        saveButton.addEventListener('click', saveAllPortals);
         
         // Create notification container
         const notificationContainer = document.createElement('div');
@@ -32,12 +24,29 @@
         notificationContainer.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 10001;';
         document.body.appendChild(notificationContainer);
         
+        // Add styles for the active edit mode button
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            #toolbar-edit-portals.active-edit-mode {
+                background-color: rgba(76, 175, 80, 0.2); /* Light green background */
+                border-radius: 50%; /* Makes it circular */
+                box-shadow: 0 0 5px rgba(76, 175, 80, 0.5); /* Subtle glow effect */
+            }
+            
+            /* Optional hover effect */
+            #toolbar-edit-portals:hover {
+                transform: scale(1.1);
+                transition: transform 0.2s ease;
+            }
+        `;
+        document.head.appendChild(styleElement);
+        
         // Add click event to the existing button
         if (editButton) {
             editButton.addEventListener('click', toggleEditMode);
         }
         
-        return { editButton, saveButton, notificationContainer };
+        return { editButton, notificationContainer };
     }
     
     function showNotification(message, type = 'info') {
@@ -164,14 +173,22 @@
     function toggleEditMode() {
         editModeActive = !editModeActive;
         const editButton = document.getElementById('toolbar-edit-portals');
-        const saveButton = document.getElementById('portal-save-changes');
         
         if (editModeActive) {
             console.log('Portal Editor: Enabling edit mode');
             document.body.classList.add('portal-edit-mode');
             
-            // if (editButton) editButton.textContent = 'Exit Edit Mode';
-            if (saveButton) saveButton.style.display = 'block';
+            // Change edit button appearance to "Save Portals" in green
+            if (editButton) {
+                editButton.classList.add('active-edit-mode');
+                editButton.setAttribute('data-tooltip', 'Save Portals');
+                
+                // Change SVG color to green
+                const svg = editButton.querySelector('svg');
+                if (svg) {
+                    svg.setAttribute('stroke', '#4CAF50'); // Green color
+                }
+            }
             
             // Add drag handlers and resize handles to portals
             portals.forEach(portal => {
@@ -192,32 +209,47 @@
             showNotification('Portal edit mode enabled. Drag portals or resize with corner handles.', 'info');
         } else {
             console.log('Portal Editor: Disabling edit mode');
-            document.body.classList.remove('portal-edit-mode');
             
-            // if (editButton) editButton.textContent = 'Edit Portals';
-            if (saveButton) saveButton.style.display = 'none';
+            // Save changes when clicking the button in edit mode
+            saveAllPortals();
             
-            // Check if user wants to save
-            if (confirm('Do you want to save your changes?')) {
-                saveAllPortals();
-            }
-            
-            // Remove edit features from portals
-            portals.forEach(portal => {
-                portal.removeEventListener('mousedown', startDrag);
-                portal.style.border = '';
-                portal.style.cursor = '';
-                
-                // Re-enable portal links
-                const links = portal.querySelectorAll('a');
-                links.forEach(link => {
-                    link.style.pointerEvents = '';
-                });
-                
-                // Remove resize handles
-                removeResizeHandles(portal);
-            });
+            // The actual UI reset will happen after successful save in the saveAllPortals function
         }
+    }
+    
+    // Helper function to reset UI after saving
+    function resetUIAfterSave() {
+        editModeActive = false;
+        document.body.classList.remove('portal-edit-mode');
+        
+        // Restore edit button appearance to original state
+        const editButton = document.getElementById('toolbar-edit-portals');
+        if (editButton) {
+            editButton.classList.remove('active-edit-mode');
+            editButton.setAttribute('data-tooltip', 'Edit Portals');
+            
+            // Change SVG color back to white
+            const svg = editButton.querySelector('svg');
+            if (svg) {
+                svg.setAttribute('stroke', 'white');
+            }
+        }
+        
+        // Remove edit features from portals
+        portals.forEach(portal => {
+            portal.removeEventListener('mousedown', startDrag);
+            portal.style.border = '';
+            portal.style.cursor = '';
+            
+            // Re-enable portal links
+            const links = portal.querySelectorAll('a');
+            links.forEach(link => {
+                link.style.pointerEvents = '';
+            });
+            
+            // Remove resize handles
+            removeResizeHandles(portal);
+        });
     }
     
     // Helper function to get portal ID
@@ -327,123 +359,128 @@
     }
     
     // Resize functionality
-    let activePortal = null;
+    let resizePortal = null;
     let resizePosition = null;
-    let startResizeX, startResizeY;
-    let startWidth, startHeight;
-    let startResizeLeft, startResizeTop;
-    
+
+    // Starting mouse and element positions
+    let startMouseX, startMouseY;
+    let startLeft, startTop, startWidth, startHeight;
+
     function startResize(e, portal, position) {
         if (!editModeActive) return;
         
         e.preventDefault();
         e.stopPropagation();
         
-        activePortal = portal;
+        resizePortal = portal;
         resizePosition = position;
         
         // Highlight the portal being resized
-        activePortal.style.border = '2px solid blue';
+        resizePortal.style.border = '2px solid blue';
         
-        // Store starting mouse position
-        startResizeX = e.clientX;
-        startResizeY = e.clientY;
+        // Store starting values
+        startMouseX = e.clientX;
+        startMouseY = e.clientY;
+        startLeft = parseFloat(portal.style.left || '50');
+        startTop = parseFloat(portal.style.top || '50');
+        startWidth = parseFloat(portal.style.width || '10');
+        startHeight = parseFloat(portal.style.height || '10');
         
-        // Get current portal dimensions and position
-        const rect = activePortal.getBoundingClientRect();
-        const style = window.getComputedStyle(activePortal);
-        
-        // Get wrapper for scale calculation
-        const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
-        const wrapperRect = wrapper.getBoundingClientRect();
-        const wrapperScale = getScale(wrapper);
-        
-        // Store the original width and height
-        startWidth = rect.width / wrapperScale;
-        startHeight = rect.height / wrapperScale;
-        
-        // Store the original position
-        startResizeLeft = parseFloat(activePortal.style.left) || 50;
-        startResizeTop = parseFloat(activePortal.style.top) || 50;
-        
-        // Add resize listeners to document
         document.addEventListener('mousemove', doResize);
         document.addEventListener('mouseup', stopResize);
     }
-    
+
     function doResize(e) {
-        if (!activePortal || !resizePosition) return;
+        if (!resizePortal) return;
         
         e.preventDefault();
         
-        // Get wrapper for calculations
+        // Get wrapper dimensions
         const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
         if (!wrapper) return;
         
-        const wrapperRect = wrapper.getBoundingClientRect();
-        const wrapperScale = getScale(wrapper);
+        // Calculate mouse movement in percentage
+        const deltaX = (e.clientX - startMouseX) / wrapper.offsetWidth * 100;
+        const deltaY = (e.clientY - startMouseY) / wrapper.offsetHeight * 100;
         
-        // Calculate mouse movement delta
-        const deltaX = (e.clientX - startResizeX) / wrapperScale;
-        const deltaY = (e.clientY - startResizeY) / wrapperScale;
-        
-        // Calculate new width, height, and position based on resize handle position
-        let newWidth = startWidth;
-        let newHeight = startHeight;
-        let newLeft = startResizeLeft;
-        let newTop = startResizeTop;
+        // Minimum size
+        const MIN_SIZE = 5;
         
         if (resizePosition === 'bottom-right') {
-            // Bottom-right: Increase width and height
-            newWidth = Math.max(20, startWidth + deltaX);
-            newHeight = Math.max(20, startHeight + deltaY);
-        } else if (resizePosition === 'top-left') {
-            // Top-left: Change position and size
-            newWidth = Math.max(20, startWidth - deltaX);
-            newHeight = Math.max(20, startHeight - deltaY);
+            // Bottom-right: just change width and height
+            resizePortal.style.width = Math.max(MIN_SIZE, startWidth + deltaX) + '%';
+            resizePortal.style.height = Math.max(MIN_SIZE, startHeight + deltaY) + '%';
+        } 
+        else if (resizePosition === 'top-left') {
+            // Calculate new dimensions
+            const newWidth = Math.max(MIN_SIZE, startWidth - deltaX);
+            const newHeight = Math.max(MIN_SIZE, startHeight - deltaY);
             
-            // Adjust position to keep opposite corner fixed
-            const deltaLeftPercent = (deltaX / wrapperRect.width) * 100;
-            const deltaTopPercent = (deltaY / wrapperRect.height) * 100;
+            // Calculate how much position should change based on size change
+            const leftDelta = startWidth - newWidth;
+            const topDelta = startHeight - newHeight;
             
-            newLeft = startResizeLeft - deltaLeftPercent / 2;
-            newTop = startResizeTop - deltaTopPercent / 2;
-        } else if (resizePosition === 'top-right') {
-            // Top-right: Change height, width, and y-position
-            newWidth = Math.max(20, startWidth + deltaX);
-            newHeight = Math.max(20, startHeight - deltaY);
+            // Update position and dimensions
+            resizePortal.style.left = (startLeft + leftDelta) + '%';
+            resizePortal.style.top = (startTop + topDelta) + '%';
+            resizePortal.style.width = newWidth + '%';
+            resizePortal.style.height = newHeight + '%';
+        } 
+        else if (resizePosition === 'top-right') {
+            // Calculate new height
+            const newHeight = Math.max(MIN_SIZE, startHeight - deltaY);
             
-            // Adjust y-position only
-            const deltaTopPercent = (deltaY / wrapperRect.height) * 100;
-            newTop = startResizeTop - deltaTopPercent / 2;
-        } else if (resizePosition === 'bottom-left') {
-            // Bottom-left: Change width, height, and x-position
-            newWidth = Math.max(20, startWidth - deltaX);
-            newHeight = Math.max(20, startHeight + deltaY);
+            // Calculate top position change
+            const topDelta = startHeight - newHeight;
             
-            // Adjust x-position only
-            const deltaLeftPercent = (deltaX / wrapperRect.width) * 100;
-            newLeft = startResizeLeft - deltaLeftPercent / 2;
+            // Update only affected properties
+            resizePortal.style.width = Math.max(MIN_SIZE, startWidth + deltaX) + '%';
+            resizePortal.style.top = (startTop + topDelta) + '%';
+            resizePortal.style.height = newHeight + '%';
+        } 
+        else if (resizePosition === 'bottom-left') {
+            // Calculate new width
+            const newWidth = Math.max(MIN_SIZE, startWidth - deltaX);
+            
+            // Calculate left position change
+            const leftDelta = startWidth - newWidth;
+            
+            // Update only affected properties
+            resizePortal.style.left = (startLeft + leftDelta) + '%';
+            resizePortal.style.width = newWidth + '%';
+            resizePortal.style.height = Math.max(MIN_SIZE, startHeight + deltaY) + '%';
         }
+    }
+
+    function stopResize() {
+        if (!resizePortal) return;
         
-        // Convert pixel dimensions to percentages
-        const widthPercent = (newWidth / wrapperRect.width) * 100;
-        const heightPercent = (newHeight / wrapperRect.height) * 100;
+        resizePortal.style.border = '2px dashed yellow';
+        resizePortal = null;
+        resizePosition = null;
         
-        // Apply the new dimensions and position
-        activePortal.style.width = `${widthPercent}%`;
-        activePortal.style.height = `${heightPercent}%`;
-        activePortal.style.left = `${newLeft}%`;
-        activePortal.style.top = `${newTop}%`;
+        document.removeEventListener('mousemove', doResize);
+        document.removeEventListener('mouseup', stopResize);
     }
     
     function stopResize() {
-        if (!activePortal) return;
+        if (!resizePortal) return;
         
-        activePortal.style.border = '2px dashed yellow';
+        resizePortal.style.border = '2px dashed yellow';
+        resizePortal = null;
+        resizePosition = null;
+        
+        document.removeEventListener('mousemove', doResize);
+        document.removeEventListener('mouseup', stopResize);
+    }
+    
+    function stopResize() {
+        if (!resizePortal) return;
+        
+        resizePortal.style.border = '2px dashed yellow';
         
         // Reset variables
-        activePortal = null;
+        resizePortal = null;
         resizePosition = null;
         
         // Remove event listeners
@@ -488,16 +525,20 @@
         
         if (portalData.length === 0) {
             showNotification('No portals to save', 'info');
+            resetUIAfterSave();
             return;
         }
         
         console.log('Saving all portals:', portalData);
         
-        // Update save button to show loading state
-        const saveButton = document.getElementById('portal-save-changes');
-        if (saveButton) {
-            saveButton.textContent = 'Saving...';
-            saveButton.disabled = true;
+        // Update the edit button to show saving state
+        const editButton = document.getElementById('toolbar-edit-portals');
+        if (editButton) {
+            editButton.setAttribute('data-tooltip', 'Saving...');
+            const svg = editButton.querySelector('svg');
+            if (svg) {
+                svg.setAttribute('stroke', '#FFA500'); // Orange color for saving state
+            }
         }
         
         // Create form data for WordPress AJAX
@@ -537,6 +578,7 @@
             
             if (data.success) {
                 showNotification(`Changes saved successfully! Updated ${portalData.length} portal(s).`, 'success');
+                resetUIAfterSave();
             } else {
                 throw new Error(data.data?.message || 'Error saving portal changes');
             }
@@ -544,12 +586,13 @@
         .catch(error => {
             console.error('Save error:', error);
             showNotification(`Error saving changes: ${error.message}`, 'error');
-        })
-        .finally(() => {
-            // Reset save button
-            if (saveButton) {
-                saveButton.textContent = 'Save Changes';
-                saveButton.disabled = false;
+            
+            // Reset button appearance even on error
+            if (editButton) {
+                const svg = editButton.querySelector('svg');
+                if (svg) {
+                    svg.setAttribute('stroke', '#4CAF50'); // Back to green
+                }
             }
         });
     }
@@ -617,6 +660,6 @@
     }
     
     // Initialize
-    const { editButton, saveButton } = createUI();
+    const { editButton } = createUI();
     const portals = findPortals();    
 })();

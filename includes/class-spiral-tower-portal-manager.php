@@ -1053,18 +1053,6 @@ class Spiral_Tower_Portal_Manager
      */
     public function save_portal_positions()
     {
-        // Check nonce for security (optional, can be implemented later)
-// check_ajax_referer('portal_editor_nonce', 'security');
-
-        // Get floor ID
-        $floor_id = isset($_POST['floor_id']) ? intval($_POST['floor_id']) : 0;
-
-        // Check if user can edit this floor
-        if (!current_user_can('edit_post', $floor_id)) {
-            wp_send_json_error(array('message' => 'You do not have permission to edit this floor'));
-            return;
-        }
-
         // Get portal data
         $portal_data = isset($_POST['portals']) ? json_decode(stripslashes($_POST['portals']), true) : array();
 
@@ -1088,6 +1076,12 @@ class Spiral_Tower_Portal_Manager
             // Verify this portal exists and is a valid portal post type
             if (get_post_type($portal_id) !== 'portal') {
                 $errors[] = "Invalid portal ID: $portal_id";
+                continue;
+            }
+
+            // Check if user can edit this portal
+            if (!current_user_can('edit_post', $portal_id)) {
+                $errors[] = "You do not have permission to edit portal ID: $portal_id";
                 continue;
             }
 

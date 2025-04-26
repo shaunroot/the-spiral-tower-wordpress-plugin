@@ -408,7 +408,7 @@ body .container {
 
 .spiral-tower-floor-container.content-hidden {
   opacity: 0;
-  visibility: hidden !important; 
+  visibility: hidden !important;
   // wtf?
 }
 
@@ -554,6 +554,22 @@ body.text-only-mode .spiral-tower-floor-container {
     pointer-events: none;
   }
 
+  /* Add this to your CSS */
+  #toolbar-edit-portals.active-edit-mode {
+    background-color: rgba(76, 175, 80, 0.2);
+    /* Light green background */
+    border-radius: 50%;
+    /* Makes it circular */
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    /* Subtle glow effect */
+  }
+
+  /* Optional hover effect */
+  #toolbar-edit-portals:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+  }
+
   #button-sound-toggle {
     // Keep original logic for showing/hiding via JS
     // Start hidden - JS will show it when player is ready
@@ -562,12 +578,16 @@ body.text-only-mode .spiral-tower-floor-container {
     visibility: hidden;
     transition: opacity 0.3s ease;
 
-    // Keep SVG styles for volume on/off
+    // Keep SVG styles for volume on/off 
     #volume-off-icon,
     #volume-on-icon {
-      /* ... svg styles ... */
+      /* ... svg styles ... */ 
     }
   }
+}
+
+#portal-notifications, .portal-notification {
+  pointer-events: none !important; 
 }
 
 // Tooltip Styles 
@@ -652,7 +672,7 @@ body.text-only-mode .spiral-tower-floor-container {
     /* --- Sizing & Layout --- */
     flex-grow: 1;
     flex-shrink: 1;
-    width: auto; 
+    width: auto;
     height: 32px;
     box-sizing: border-box;
 
@@ -1009,7 +1029,7 @@ body.text-only-mode .spiral-tower-scroll-arrows {
   position: relative;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(139, 107, 74, 0.4);
-  
+
   h2 {
     margin: 0;
     font-family: 'Bilbo', cursive;
@@ -1039,7 +1059,7 @@ body.text-only-mode .spiral-tower-scroll-arrows {
   #reply-title {
     display: none !important;
   }
-  
+
   .logged-in-as {
     display: none;
   }
@@ -1047,7 +1067,7 @@ body.text-only-mode .spiral-tower-scroll-arrows {
 
 .guestbook-entries {
   margin-bottom: 30px;
-  
+
   h3 {
     display: none !important;
   }
@@ -1065,7 +1085,7 @@ body.text-only-mode .spiral-tower-scroll-arrows {
   background-color: rgba(255, 255, 255, 0.5);
   border-left: 3px solid #8b6b4a;
   border-radius: 4px;
-  
+
   .comment-author {
     font-weight: bold;
     color: #5a3921;
@@ -1073,13 +1093,13 @@ body.text-only-mode .spiral-tower-scroll-arrows {
     font-family: 'Bilbo', cursive;
     font-size: 1.4em;
   }
-  
+
   .comment-date {
     font-size: 0.9em;
     color: #777;
     margin-bottom: 10px;
   }
-  
+
   .comment-content p {
     margin: 0 0 10px 0;
     color: #333;
@@ -1103,7 +1123,7 @@ body.text-only-mode .spiral-tower-scroll-arrows {
   padding: 20px;
   background-color: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
-  
+
   .comment-notes {
     font-style: italic;
     margin-bottom: 10px;
@@ -1111,11 +1131,11 @@ body.text-only-mode .spiral-tower-scroll-arrows {
     font-family: 'Bilbo', cursive;
     font-size: 1.3em;
   }
-  
+
   #commentform {
     margin-bottom: 0;
   }
-  
+
   .comment-form-comment label {
     display: block;
     margin-bottom: 5px;
@@ -1124,7 +1144,7 @@ body.text-only-mode .spiral-tower-scroll-arrows {
     font-family: 'Bilbo', cursive;
     font-size: 1.4em;
   }
-  
+
   #comment {
     width: 100%;
     height: 100px;
@@ -1137,12 +1157,12 @@ body.text-only-mode .spiral-tower-scroll-arrows {
     font-family: 'Bilbo', cursive;
     font-size: 1.3em;
   }
-  
+
   .form-submit {
     text-align: right;
     margin-top: 15px;
   }
-  
+
   #submit {
     background-color: #8b6b4a;
     color: #fff;
@@ -1160,7 +1180,7 @@ body.text-only-mode .spiral-tower-scroll-arrows {
 .comment-form-email,
 .comment-form-url {
   margin-bottom: 10px;
-  
+
   label {
     display: block;
     margin-bottom: 5px;
@@ -1169,7 +1189,7 @@ body.text-only-mode .spiral-tower-scroll-arrows {
     font-family: 'Bilbo', cursive;
     font-size: 1.4em;
   }
-  
+
   input {
     width: 100%;
     padding: 8px;
