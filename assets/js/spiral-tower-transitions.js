@@ -16,6 +16,7 @@ SpiralTower.transitions = (function () {
     let isAnimating = false;
     let lastEntranceType = null; // Track last entrance type to avoid repetition
     let lastExitType = null;     // Track last exit type to avoid repetition
+    let isBackNavigation = false;
 
     // Animation durations (in seconds)
     const durations = {
@@ -833,33 +834,114 @@ SpiralTower.transitions = (function () {
 
     // Run entrance animations when page loads
     function runEntranceAnimations() {
-        // Select a random entrance transition
-        const transitionType = selectRandomTransition(lastEntranceType);
-        lastEntranceType = transitionType;
+        // Check if we have elements that need to be reset from a faded-out state
+        // This is particularly important for back navigation
+        if (isBackNavigation) {
+            // Force reset any potentially faded-out elements
+            const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
+            const title = document.querySelector('.spiral-tower-floor-title');
+            const content = document.querySelector('.spiral-tower-floor-content');
+            const container = document.querySelector('.spiral-tower-floor-container');
 
-        logger.log(MODULE_NAME, `Running entrance animations with type: ${transitionType}`);
-        isAnimating = true;
-
-        // Get the main elements
-        const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
-        const title = document.querySelector('.spiral-tower-floor-title');
-
-        // Create timeline for entrance animations
-        const tl = gsap.timeline({
-            onComplete: () => {
-                isAnimating = false;
-                logger.log(MODULE_NAME, "Entrance animations complete");
+            // Reset wrapper visibility immediately
+            if (wrapper) {
+                gsap.set(wrapper, { opacity: 1, visibility: 'visible', filter: 'none' });
             }
-        });
 
-        // Make sure the spiral-tower-floor-container is visible for content animations
-        const container = document.querySelector('.spiral-tower-floor-container');
-        if (container) {
-            gsap.set(container, { visibility: 'visible', display: 'block' });
+            // Reset title immediately
+            if (title) {
+                gsap.set(title, {
+                    opacity: 1,
+                    y: 0,
+                    x: 0,
+                    scale: 1,
+                    rotation: 0,
+                    rotationX: 0,
+                    clipPath: 'none',
+                    transformOrigin: 'center center',
+                    filter: 'none'
+                });
+
+                // Reset any letter animations if they exist
+                const letters = title.querySelectorAll('.letter');
+                if (letters.length > 0) {
+                    gsap.set(letters, { opacity: 1, y: 0 });
+                }
+            }
+
+            // Reset content immediately
+            if (content) {
+                gsap.set(content, {
+                    opacity: 1,
+                    y: 0,
+                    x: 0,
+                    filter: 'none',
+                    rotationX: 0,
+                    clipPath: 'none',
+                    transformOrigin: 'center center',
+                    textShadow: 'none'
+                });
+
+                // Reset any paragraph animations if they exist
+                const paragraphs = content.querySelectorAll('p, h2, h3, ul, ol, blockquote');
+                if (paragraphs.length > 0) {
+                    gsap.set(paragraphs, { opacity: 1, y: 0 });
+                }
+
+                // Reset any text effects
+                const contentText = content.querySelectorAll('p, h2, h3, div');
+                if (contentText.length > 0) {
+                    gsap.set(contentText, { textShadow: 'none' });
+                }
+            }
+
+            // Make sure container is visible
+            if (container) {
+                gsap.set(container, { visibility: 'visible', display: 'block' });
+            }
+
+            logger.log(MODULE_NAME, "Back navigation detected - reset elements to visible state");
+
+            // Let the animations run after a short delay to ensure elements are fully reset
+            setTimeout(() => {
+                // Now proceed with normal entrance animation
+                runNormalEntranceAnimation();
+            }, 50);
+        } else {
+            // Normal page load - proceed with standard animations
+            runNormalEntranceAnimation();
         }
 
-        // Apply the selected transition type
-        transitionTypes[transitionType].enter(wrapper, title, tl);
+        // Extract the standard animation logic to a separate function
+        function runNormalEntranceAnimation() {
+            // Select a random entrance transition
+            const transitionType = selectRandomTransition(lastEntranceType);
+            lastEntranceType = transitionType;
+
+            logger.log(MODULE_NAME, `Running entrance animations with type: ${transitionType}`);
+            isAnimating = true;
+
+            // Get the main elements
+            const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
+            const title = document.querySelector('.spiral-tower-floor-title');
+
+            // Create timeline for entrance animations
+            const tl = gsap.timeline({
+                onComplete: () => {
+                    isAnimating = false;
+                    logger.log(MODULE_NAME, "Entrance animations complete");
+                }
+            });
+
+            // Make sure the spiral-tower-floor-container is visible for content animations
+            const container = document.querySelector('.spiral-tower-floor-container');
+            if (container) {
+                gsap.set(container, { visibility: 'visible', display: 'block' });
+            }
+
+            // Apply the selected transition type
+            transitionTypes[transitionType].enter(wrapper, title, tl);
+        }
     }
 
     // Run exit animations before navigating to a new page
@@ -880,6 +962,15 @@ SpiralTower.transitions = (function () {
             onComplete: () => {
                 isAnimating = false;
                 logger.log(MODULE_NAME, "Exit animations complete");
+
+                // Store the animation state in sessionStorage
+                try {
+                    sessionStorage.setItem('spiralTower_lastExitTime', Date.now());
+                    sessionStorage.setItem('spiralTower_lastExitType', transitionType);
+                } catch (err) {
+                    logger.warn(MODULE_NAME, "Could not store animation state in sessionStorage", err);
+                }
+
                 // Call the callback function to continue navigation
                 if (typeof callback === 'function') {
                     callback();
@@ -927,6 +1018,16 @@ SpiralTower.transitions = (function () {
         });
     }
 
+    window.addEventListener('pageshow', function (event) {
+        // Check if the page is being restored from the bfcache (back-forward cache)
+        if (event.persisted) {
+            isBackNavigation = true;
+            logger.log(MODULE_NAME, "Page restored from back-forward cache, running entrance animations");
+            // Force-run entrance animations
+            runEntranceAnimations();
+        }
+    });
+
     // Initialize the module
     function init() {
         if (initialized) {
@@ -939,13 +1040,66 @@ SpiralTower.transitions = (function () {
         // Set up link interception for smooth page transitions
         setupLinkInterception();
 
-        // Run entrance animations
+        // Check for back/forward navigation through multiple methods
+        let backDetected = false;
+
+        // Method 1: Check performance navigation type (works in most browsers)
+        if (window.performance && window.performance.navigation) {
+            backDetected = window.performance.navigation.type === 2; // TYPE_BACK_FORWARD = 2
+        }
+
+        // Method 2: Check Navigation Timing API (newer browsers)
+        if (!backDetected && window.performance && window.performance.getEntriesByType) {
+            const navEntries = window.performance.getEntriesByType('navigation');
+            if (navEntries.length > 0) {
+                backDetected = navEntries[0].type === 'back_forward';
+            }
+        }
+
+        // Method 3: Check sessionStorage for evidence of previous exit
+        if (!backDetected) {
+            try {
+                const lastExitTime = sessionStorage.getItem('spiralTower_lastExitTime');
+                if (lastExitTime) {
+                    // If we exited within the last 60 seconds, this is likely a back navigation
+                    const timeSinceExit = Date.now() - parseInt(lastExitTime);
+                    if (timeSinceExit < 60000) { // 60 seconds
+                        backDetected = true;
+                        logger.log(MODULE_NAME, "Back navigation detected via session storage (exit was " +
+                            Math.round(timeSinceExit / 1000) + " seconds ago)");
+                    }
+                }
+            } catch (err) {
+                logger.warn(MODULE_NAME, "Could not access sessionStorage", err);
+            }
+        }
+
+        // Record the back navigation state
+        isBackNavigation = backDetected;
+
+        if (isBackNavigation) {
+            logger.log(MODULE_NAME, "Back navigation detected, forcing entrance animations");
+
+            // If we have a stored exit type, use a complementary entrance type
+            try {
+                const storedExitType = sessionStorage.getItem('spiralTower_lastExitType');
+                if (storedExitType) {
+                    lastEntranceType = storedExitType;
+                    logger.log(MODULE_NAME, `Using stored exit type for entrance: ${storedExitType}`);
+                }
+            } catch (err) {
+                logger.warn(MODULE_NAME, "Could not access stored exit type", err);
+            }
+        }
+
+        // Always run entrance animations
         runEntranceAnimations();
 
         initialized = true;
         logger.log(MODULE_NAME, "Transitions module initialized with " + transitionKeys.length + " transition types");
         return Promise.resolve();
     }
+
 
     // Public API
     return {

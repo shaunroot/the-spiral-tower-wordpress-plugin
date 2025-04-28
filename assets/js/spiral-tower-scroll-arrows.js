@@ -817,7 +817,7 @@
 (function() {
     // Debug function with consistent tag
     function debug(message, data) {
-        console.log("[SpiralTower/InitialPosition] " + message, data || '');
+       // console.log("[SpiralTower/InitialPosition] " + message, data || '');
     }
 
     function applyInitialPosition() {

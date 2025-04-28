@@ -1196,9 +1196,6 @@ body.text-only-mode .spiral-tower-floor-container {
   transform: scale(1.1);
   transition: transform 0.2s ease;
 }
-#portal-notifications, .portal-notification {
-  pointer-events: none !important;
-}
 #toolbar #button-sound-toggle {
   display: none;
   opacity: 0;
@@ -1208,6 +1205,10 @@ body.text-only-mode .spiral-tower-floor-container {
 #toolbar #button-sound-toggle #volume-off-icon,
 #toolbar #button-sound-toggle #volume-on-icon {
   /* ... svg styles ... */
+}
+
+#portal-notifications, .portal-notification {
+  pointer-events: none !important;
 }
 
 .tooltip-trigger {
