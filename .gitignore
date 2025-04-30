@@ -5,4 +5,4 @@ node_modules/
 *.log
 *.zip" > .gitignore
 reconnect.bat
-.\dist\images\the-void.mp4
+dist/images/the-void.mp4

@@ -79,7 +79,7 @@ class Spiral_Tower_Plugin
         add_action('init', array($this, 'setup_stairs_page'));
         add_action('init', array($this, 'setup_void_page'));
 
-        add_action('template_redirect', array($this, 'redirect_404_to_void'), 1); 
+        add_action('template_redirect', array($this, 'redirect_404_to_void'), 1);
         add_filter('template_include', array($this, 'handle_404_template'), 99);
     }
 
@@ -393,9 +393,10 @@ class Spiral_Tower_Plugin
         // Check if we're on the stairs page
         $current_url = $_SERVER['REQUEST_URI'];
         $is_stairs_page = (rtrim($current_url, '/') === '/stairs' || $current_url === '/stairs/');
+        $is_void_page = (rtrim($current_url, '/') === '/the-void' || $current_url === '/the-void/' || is_404());
 
         // Check if it's a floor, room, or a page using the floor template
-        if (is_singular('floor') || is_singular('room') || $is_stairs_page) {
+        if (is_singular('floor') || is_singular('room') || $is_stairs_page || $is_void_page) {
             $load_assets = true;
         } elseif (is_page($post_id)) {
             $use_floor_meta = get_post_meta($post_id, '_use_floor_template', true);
@@ -405,8 +406,7 @@ class Spiral_Tower_Plugin
         }
 
         // Only load assets if it's a floor, room, or page using the template
-        if ($load_assets && $post_id) { // Added $post_id check
-
+        if ($load_assets) {
             // --- STYLES ---
             wp_enqueue_style('spiral-tower-google-fonts-preconnect', 'https://fonts.googleapis.com', array(), null);
             wp_enqueue_style('spiral-tower-google-fonts-preconnect-crossorigin', 'https://fonts.gstatic.com', array(), null);
@@ -414,67 +414,67 @@ class Spiral_Tower_Plugin
             wp_enqueue_style('spiral-tower-google-fonts', 'https://fonts.googleapis.com/css2?family=Bilbo&family=Metamorphous&family=Winky+Sans:ital,wght@0,300..900;1,300..900&display=swap', array(), null);
             wp_enqueue_style('spiral-tower-floor-style', SPIRAL_TOWER_PLUGIN_URL . 'dist/css/floor-template.css', array('spiral-tower-google-fonts'), '1.0.1'); // Assumes CSS is in dist/css
 
-
             // --- SCRIPTS ---
+            // Only load other scripts if not on void page
+            if (!$is_void_page) {
+                // GSAP (from CDN)
+                wp_enqueue_script('gsap', 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js', array(), null, true);
 
-            // GSAP (from CDN)
-            wp_enqueue_script('gsap', 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js', array(), null, true);
+                // GSAP ScrollTo Plugin (from CDN)
+                wp_enqueue_script('gsap-scrollto', 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js', array('gsap'), null, true);
 
-            // GSAP ScrollTo Plugin (from CDN)
-            wp_enqueue_script('gsap-scrollto', 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js', array('gsap'), null, true);
+                // imagesLoaded (from CDN)
+                wp_enqueue_script('imagesloaded', 'https://unpkg.com/imagesloaded@5/imagesloaded.pkgd.min.js', array(), null, true);
 
+                // JS Module Loader
+                $script_path = SPIRAL_TOWER_PLUGIN_URL . 'assets/js/spiral-tower-loader.js';
+                wp_enqueue_script(
+                    'spiral-tower-loader', // *** Use a consistent, unique handle ***
+                    $script_path,
+                    array('gsap', 'gsap-scrollto', 'imagesloaded'), // *** Add ALL dependencies ***
+                    '1.0.1', // Bump version on changes
+                    true // Load in footer
+                );
 
-            // imagesLoaded (from CDN)
-            wp_enqueue_script('imagesloaded', 'https://unpkg.com/imagesloaded@5/imagesloaded.pkgd.min.js', array(), null, true);
+                // --- Robustly Get YouTube ID for Localization ---
+                $youtube_id = '';
+                $current_post_id = get_the_ID();
 
+                // Determine the post type to get the appropriate meta
+                $current_post_type = get_post_type($current_post_id);
 
-            // JS Module Loader
-            $script_path = SPIRAL_TOWER_PLUGIN_URL . 'assets/js/spiral-tower-loader.js';
-            wp_enqueue_script(
-                'spiral-tower-loader', // *** Use a consistent, unique handle ***
-                $script_path,
-                array('gsap', 'gsap-scrollto', 'imagesloaded'), // *** Add ALL dependencies ***
-                '1.0.1', // Bump version on changes
-                true // Load in footer
-            );
-
-            // --- Robustly Get YouTube ID for Localization ---
-            $youtube_id = '';
-            $current_post_id = get_the_ID(); // Use get_the_ID() which is safer here than get_queried_object_id() inside wp_enqueue_scripts sometimes
-
-            // Determine the post type to get the appropriate meta
-            $current_post_type = get_post_type($current_post_id);
-
-            // Check if we got a valid ID and if it's the correct context (floor, room, or page using template)
-            if (
-                $current_post_id &&
-                ($current_post_type === 'floor' ||
-                    $current_post_type === 'room' ||
-                    ($current_post_type === 'page' && get_post_meta($current_post_id, '_use_floor_template', true) === '1'))
-            ) {
-                $background_youtube_url = get_post_meta($current_post_id, '_background_youtube_url', true);
-                if (!empty($background_youtube_url)) {
-                    // Your existing regex logic to extract the ID
-                    if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $background_youtube_url, $match)) {
-                        $youtube_id = $match[1];
-                    } elseif (preg_match('/^[a-zA-Z0-9_-]{11}$/', $background_youtube_url)) {
-                        $youtube_id = $background_youtube_url;
+                // Check if we got a valid ID and if it's the correct context
+                if (
+                    $current_post_id &&
+                    ($current_post_type === 'floor' ||
+                        $current_post_type === 'room' ||
+                        ($current_post_type === 'page' && get_post_meta($current_post_id, '_use_floor_template', true) === '1'))
+                ) {
+                    $background_youtube_url = get_post_meta($current_post_id, '_background_youtube_url', true);
+                    if (!empty($background_youtube_url)) {
+                        // Your existing regex logic to extract the ID
+                        if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $background_youtube_url, $match)) {
+                            $youtube_id = $match[1];
+                        } elseif (preg_match('/^[a-zA-Z0-9_-]{11}$/', $background_youtube_url)) {
+                            $youtube_id = $background_youtube_url;
+                        }
                     }
                 }
-            } // End check for valid context and ID
 
-            // Pass data to the main script
-            wp_localize_script(
-                'spiral-tower-loader',  // Change to loader script
-                'spiralTowerData',
-                array(
-                    'youtubeId' => $youtube_id,
-                    'postType' => $current_post_type,
-                    // Add other data as needed
-                )
-            );
-        } // End $load_assets check
+                // Pass data to the main script
+                wp_localize_script(
+                    'spiral-tower-loader',
+                    'spiralTowerData',
+                    array(
+                        'youtubeId' => $youtube_id,
+                        'postType' => $current_post_type,
+                        // Add other data as needed
+                    )
+                );
+            }
+        }
     }
+
 
     /**
      * Register the void 404 template directory
@@ -497,7 +497,15 @@ class Spiral_Tower_Plugin
         // If this is a 404 error, use our custom template
         if (is_404()) {
             $custom_404_template = SPIRAL_TOWER_PLUGIN_DIR . 'templates/the-void.php';
+
             if (file_exists($custom_404_template)) {
+                // This ensures our CSS is loaded
+                wp_enqueue_style('spiral-tower-google-fonts-preconnect', 'https://fonts.googleapis.com', array(), null);
+                wp_enqueue_style('spiral-tower-google-fonts-preconnect-crossorigin', 'https://fonts.gstatic.com', array(), null);
+                wp_style_add_data('spiral-tower-google-fonts-preconnect-crossorigin', 'crossorigin', 'anonymous');
+                wp_enqueue_style('spiral-tower-google-fonts', 'https://fonts.googleapis.com/css2?family=Bilbo&family=Metamorphous&family=Winky+Sans:ital,wght@0,300..900;1,300..900&display=swap', array(), null);
+                wp_enqueue_style('spiral-tower-floor-style', SPIRAL_TOWER_PLUGIN_URL . 'dist/css/floor-template.css', array('spiral-tower-google-fonts'), '1.0.1');
+
                 return $custom_404_template;
             }
         }
