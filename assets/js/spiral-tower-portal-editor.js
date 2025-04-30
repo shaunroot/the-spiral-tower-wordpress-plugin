@@ -378,7 +378,7 @@
 
     function startResize(e, portal, position) {
         if (!editModeActive) return;
-
+       
         e.preventDefault();
         e.stopPropagation();
 

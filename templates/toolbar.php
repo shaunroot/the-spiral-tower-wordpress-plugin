@@ -1,3 +1,5 @@
+<?php $current_post_type = get_post_type($current_post_id); ?>
+
 <div id="toolbar"> <?php // ----- START: Toolbar----- ?>
 
     <?php // ----- START: Content Visibility Toggle Button HTML ----- ?>
@@ -46,13 +48,14 @@
 
     <?php // ----- START: Edit Post Button (Conditional) ----- ?>
     <?php
+
     // Check if the current user can edit this specific post
     if (current_user_can('edit_post', get_the_ID())):
         $edit_post_url = get_edit_post_link(get_the_ID());
         if ($edit_post_url): // Make sure we got a valid URL
             ?>
             <a href="<?php echo esc_url($edit_post_url); ?>" id="button-edit-post" class="tooltip-trigger"
-                data-tooltip="Edit this Floor"> <?php // target="_blank" opens editor in new tab ?>
+                data-tooltip="Edit this <?php echo $current_post_type ?>"> <?php // target="_blank" opens editor in new tab ?>
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil">
                     <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
@@ -92,8 +95,7 @@
     <?php
     // Check if the current user can create portals
     if (current_user_can('edit_posts')):
-        $current_post_id = get_the_ID();
-        $current_post_type = get_post_type($current_post_id);
+        $current_post_id = get_the_ID();       
 
         // Set up the portal creation URL with the current page as the origin
         $create_portal_url = admin_url('post-new.php?post_type=portal');

@@ -60,27 +60,28 @@ $can_edit_floor = current_user_can('edit_post', get_the_ID());
         }
 
         // Set default dimensions based on portal type
-        $default_width = '64px';
-        $default_height = '64px';
-        switch ($portal_type) {
-            case 'door':
-                $default_width = '80px';
-                $default_height = '120px';
-                break;
-            case 'gateway':
-                $default_width = '100px';
-                $default_height = '120px';
-                break;
-            case 'vortex':
-                $default_width = '140px';
-                $default_height = '140px';
-                break;
-            case 'text':
-            default:
-                $default_width = '64px';
-                $default_height = '64px';
-                break;
-        }
+        $default_width = '5%';
+        $default_height = '5%';
+
+        // switch ($portal_type) {
+        //     case 'door':
+        //         $default_width = '80px';
+        //         $default_height = '120px';
+        //         break;
+        //     case 'gateway':
+        //         $default_width = '100px';
+        //         $default_height = '120px';
+        //         break;
+        //     case 'vortex':
+        //         $default_width = '140px';
+        //         $default_height = '140px';
+        //         break;
+        //     case 'text':
+        //     default:
+        //         $default_width = '5%';
+        //         $default_height = '5%';
+        //         break;
+        // }
 
         // Create the portal style attribute
         $style_attr = sprintf(

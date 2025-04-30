@@ -43,6 +43,7 @@ class Spiral_Tower_Floor_Manager
         add_action('wp_dashboard_setup', array($this, 'add_floor_author_dashboard_widget'));
         add_filter('get_edit_post_link', array($this, 'add_edit_link_for_floor_authors'), 10, 2);
         add_action('admin_bar_menu', array($this, 'custom_toolbar_for_floor_authors'), 999);
+        add_action('template_redirect', array($this, 'check_void_floor'));
 
         // Custom permalink structure
         add_action('init', array($this, 'add_floor_rewrite_rules'));
@@ -356,6 +357,18 @@ class Spiral_Tower_Floor_Manager
         echo '<input type="text" id="floor_number_color" name="floor_number_color" value="' . esc_attr($floor_number_color) . '" style="width:100%">';
         echo '</p>';
 
+        $send_to_void = get_post_meta($post->ID, '_floor_send_to_void', true) === '1';
+
+        // After your existing fields, add the new checkbox
+        echo '<hr>';
+        echo '<p>';
+        echo '<label>';
+        echo '<input type="checkbox" name="floor_send_to_void" value="1" ' . checked($send_to_void, true, false) . ' /> ';
+        echo __('Send to the void', 'spiral-tower');
+        echo '</label>';
+        echo '<br><small>' . __('If checked, visitors will be redirected to a 404 page when attempting to view this floor.', 'spiral-tower') . '</small>';
+        echo '</p>';
+
         // --- Background Position X Dropdown --- 
         echo '<p>';
         echo '<label for="starting_background_position_x">Starting Background Position X:</label><br>';
@@ -492,7 +505,7 @@ class Spiral_Tower_Floor_Manager
             '_content_background_color' => isset($_POST['content_background_color']) ? sanitize_text_field($_POST['content_background_color']) : null, // Basic sanitize
             '_floor_number_color' => isset($_POST['floor_number_color']) ? sanitize_text_field($_POST['floor_number_color']) : null, // Basic sanitize
             '_starting_background_position_x' => isset($_POST['starting_background_position_x']) ? sanitize_text_field($_POST['starting_background_position_x']) : null,
-            '_starting_background_position_y' => isset($_POST['starting_background_position_y']) ? sanitize_text_field($_POST['starting_background_position_y']) : null,                
+            '_starting_background_position_y' => isset($_POST['starting_background_position_y']) ? sanitize_text_field($_POST['starting_background_position_y']) : null,
         ];
 
         foreach ($fields_to_save as $meta_key => $value) {
@@ -510,13 +523,14 @@ class Spiral_Tower_Floor_Manager
         $audio_only = isset($_POST['youtube_audio_only']) ? '1' : '0';
         update_post_meta($post_id, '_youtube_audio_only', $audio_only);
 
-        // *** NEW *** Save 'No public transport' checkbox
         $no_public_transport_value = isset($_POST['floor_no_public_transport']) ? '1' : '0';
         update_post_meta($post_id, '_floor_no_public_transport', $no_public_transport_value);
 
-        // *** NEW *** Save 'Hidden' checkbox
         $hidden_value = isset($_POST['floor_hidden']) ? '1' : '0';
         update_post_meta($post_id, '_floor_hidden', $hidden_value);
+
+        $send_to_void_value = isset($_POST['floor_send_to_void']) ? '1' : '0';
+        update_post_meta($post_id, '_floor_send_to_void', $send_to_void_value);
 
 
         // --- SAVE CUSTOM SCRIPT FIELDS (Keep existing logic) ---
@@ -594,6 +608,24 @@ class Spiral_Tower_Floor_Manager
             },
             'permission_callback' => '__return_true' // Public access
         ]);
+    }
+
+    /**
+     * Check if a floor should redirect to the void
+     */
+    public function check_void_floor()
+    {
+        // Only run on the front-end for singular floor views
+        if (is_singular('floor')) {
+            $floor_id = get_the_ID();
+            $send_to_void = get_post_meta($floor_id, '_floor_send_to_void', true);
+
+            if ($send_to_void === '1') {
+                // Redirect to the void page instead of showing 404
+                wp_redirect(home_url('/the-void/'), 302); // 302 = temporary redirect
+                exit;
+            }
+        }
     }
 
     /**

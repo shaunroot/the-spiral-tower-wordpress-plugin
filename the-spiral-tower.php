@@ -65,9 +65,9 @@ class Spiral_Tower_Plugin
         // Register custom template for floors and applicable pages
         add_filter('template_include', array($this, 'floor_template'));
 
-        add_filter('big_image_size_threshold', function() {
+        add_filter('big_image_size_threshold', function () {
             return 10000;
-        });       
+        });
 
         // Enqueue custom styles and scripts for the floor template
         add_action('wp_enqueue_scripts', array($this, 'enqueue_floor_assets')); // Renamed method for clarity
@@ -76,8 +76,11 @@ class Spiral_Tower_Plugin
         add_action('add_meta_boxes', array($this, 'add_floor_template_metabox'));
         add_action('save_post', array($this, 'save_floor_template_meta'));
 
-        // Add hook for the stairs page
         add_action('init', array($this, 'setup_stairs_page'));
+        add_action('init', array($this, 'setup_void_page'));
+
+        add_action('template_redirect', array($this, 'redirect_404_to_void'), 1); 
+        add_filter('template_include', array($this, 'handle_404_template'), 99);
     }
 
     /**
@@ -93,6 +96,60 @@ class Spiral_Tower_Plugin
             // Set the meta to use our floor template if it's not already set
             if (get_post_meta($stairs_page->ID, '_use_floor_template', true) !== '1') {
                 update_post_meta($stairs_page->ID, '_use_floor_template', '1');
+            }
+        }
+    }
+
+    /**
+     * Setup the void page
+     */
+    public function setup_void_page()
+    {
+        // Check if the void page already exists
+        $void_page = get_page_by_path('the-void');
+
+        // If the page doesn't exist, create it
+        if (!$void_page) {
+            $void_page_args = array(
+                'post_title' => 'The Void',
+                'post_name' => 'the-void',
+                'post_status' => 'publish',
+                'post_type' => 'page',
+                'post_content' => 'This floor exists beyond normal space and time.',
+                'post_author' => 1, // Default admin user
+                'comment_status' => 'closed'
+            );
+
+            // Insert the page
+            $void_page_id = wp_insert_post($void_page_args);
+
+            // Set the page to use floor template
+            if ($void_page_id) {
+                update_post_meta($void_page_id, '_use_floor_template', '1');
+            }
+        } else {
+            // If the page exists, make sure it uses the floor template
+            if (get_post_meta($void_page->ID, '_use_floor_template', true) !== '1') {
+                update_post_meta($void_page->ID, '_use_floor_template', '1');
+            }
+        }
+    }
+
+    /**
+     * Redirect all 404 errors to the-void page
+     */
+    public function redirect_404_to_void()
+    {
+        // Only run this on the front-end when a 404 error occurs
+        if (!is_admin() && is_404()) {
+            // Don't redirect if we're already on the-void page to prevent loops
+            $current_url = $_SERVER['REQUEST_URI'];
+            $void_url = '/the-void/';
+
+            // Check if we're already on the void page
+            if (rtrim($current_url, '/') !== rtrim($void_url, '/')) {
+                wp_redirect(home_url($void_url), 302); // 302 = temporary redirect
+                exit;
             }
         }
     }
@@ -276,7 +333,16 @@ class Spiral_Tower_Plugin
             return $template; // Bail if no ID
         }
 
-        // Check if we're on the stairs page
+        // Check if we're on the Void page
+        $current_url = $_SERVER['REQUEST_URI'];
+        if (rtrim($current_url, '/') === '/the-void' || $current_url === '/the-void/') {
+            $void_template = SPIRAL_TOWER_PLUGIN_DIR . 'templates/the-void.php';
+            if (file_exists($void_template)) {
+                return $void_template;
+            }
+        }
+
+        // Check if we're on the STAIRS page
         $current_url = $_SERVER['REQUEST_URI'];
         if (rtrim($current_url, '/') === '/stairs' || $current_url === '/stairs/') {
             // For the stairs page, use single.php from the theme
@@ -410,6 +476,35 @@ class Spiral_Tower_Plugin
         } // End $load_assets check
     }
 
+    /**
+     * Register the void 404 template directory
+     * Add to Spiral_Tower_Plugin class
+     */
+    public function register_void_template()
+    {
+        // Create the template directory if it doesn't exist
+        $template_dir = SPIRAL_TOWER_PLUGIN_DIR . 'templates/';
+        if (!file_exists($template_dir)) {
+            mkdir($template_dir, 0755, true);
+        }
+    }
+
+    /**
+     * Handle 404 errors with our custom template
+     */
+    public function handle_404_template($template)
+    {
+        // If this is a 404 error, use our custom template
+        if (is_404()) {
+            $custom_404_template = SPIRAL_TOWER_PLUGIN_DIR . 'templates/the-void.php';
+            if (file_exists($custom_404_template)) {
+                return $custom_404_template;
+            }
+        }
+        return $template;
+    }
+
+
     public function add_floor_body_class($classes)
     {
         if (is_singular('floor')) {
@@ -471,8 +566,10 @@ class Spiral_Tower_Plugin
         // Create floor author role
         $this->floor_manager->create_floor_author_role();
 
-        // Setup the stairs page
+
         $this->setup_stairs_page();
+        $this->register_void_template();
+        $this->setup_void_page();
 
         // Flush rewrite rules ONCE on activation
         flush_rewrite_rules();
