@@ -96,6 +96,8 @@
             z-index: 5;
             text-align: center;
             will-change: transform, opacity;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+            cursor: pointer; /* Add cursor pointer to indicate clickability */
         }
         
         a {
@@ -104,6 +106,11 @@
             font-weight: bold;
         }
     </style>
+    <?php 
+    // Prepare data for JavaScript search functionality
+    $ajax_url = admin_url('admin-ajax.php');
+    $ajax_nonce = wp_create_nonce('spiral_tower_floor_search_nonce');
+    ?>
 </head>
 
 <body <?php body_class("spiral-void-page"); ?>>
@@ -136,6 +143,32 @@
             // Get references to elements
             const textContainer = document.getElementById('textContainer');
             const emojiContainer = document.getElementById('emojiContainer');
+            
+            // Setup search functionality
+            const ajaxUrl = '<?php echo esc_url($ajax_url); ?>';
+            const ajaxNonce = '<?php echo esc_js($ajax_nonce); ?>';
+            
+            // Function to perform search for "."
+            function performDotSearch() {
+                const formData = new FormData();
+                formData.append('action', 'spiral_tower_floor_search');
+                formData.append('nonce', ajaxNonce);
+                formData.append('search_term', '.');
+                
+                fetch(ajaxUrl, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data.redirect_url) {
+                        window.location.href = data.data.redirect_url;
+                    }
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                });
+            }
             
             // Setup text
             if (textContainer) {
@@ -183,8 +216,8 @@
             }
             
             // Setup emojis animation
-            const emojis = ['😵', '🌀', '👁️', '💫', '🌌', '🕳️', '🔮', '👽', '🤯', '🌊', '🔥', '⚡', '🎇', '✨', '🌈', '🪐'];
-            
+            const emojis = ['√-1', '💀', '👁️', '💩', '🌌', '🕳️', '☄️', '▓', 'ʥ', '𝞹', '🔥', 'ѯ', '🎇', '✨', 'ᴁ', '🪐'];
+          
             // Track active emoji elements
             let activeEmojis = [];
             const MAX_EMOJIS = 4;
@@ -200,6 +233,18 @@
                 const emojiElement = document.createElement('div');
                 emojiElement.className = 'emoji-container';
                 emojiElement.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                
+                // Add click handler for search
+                emojiElement.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    performDotSearch();
+                });
+                
+                // Add glow effect
+                emojiElement.style.filter = 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))';
+                
+                // Add to DOM
                 document.body.appendChild(emojiElement);
                 
                 // Add to tracking array
@@ -207,16 +252,19 @@
                 
                 // Manual animation - no reliance on CSS animations
                 let startTime = null;
-                const duration = 4000; // 4 seconds
+                const duration = 8000; // 8 seconds (50% slower than original 4s)
                 
                 // Generate random direction
                 const angle = Math.random() * Math.PI * 2;
                 const distance = window.innerWidth > window.innerHeight ? 
                                 window.innerWidth * 1.5 : window.innerHeight * 1.5;
                 
+                // Generate random rotation speed (-20 to 20 degrees per second)
+                const rotationSpeed = -20 + Math.random() * 40;
+                
                 // Initial setup - start with 0.01% scale and 0 opacity
                 emojiElement.style.transition = 'none';
-                emojiElement.style.transform = 'translate(-50%, -50%) scale(0.0001)';
+                emojiElement.style.transform = 'translate(-50%, -50%) scale(0.0001) rotate(0deg)';
                 emojiElement.style.opacity = '0';
                 
                 // Force reflow
@@ -235,27 +283,33 @@
                     const endX = Math.cos(angle) * distance * easedProgress;
                     const endY = Math.sin(angle) * distance * easedProgress;
                     
+                    // Calculate current rotation (linear)
+                    const currentRotation = rotationSpeed * progress * 8; // 8 seconds worth of rotation
+                    
                     // Scale and opacity curves
                     const growCurve = progress < 0.6 ? progress / 0.6 : 1;
                     const fadeInCurve = progress < 0.3 ? progress / 0.3 : 1; // Faster fade in
                     
                     // Calculate values with adjusted ranges
-                    const currentScale = 0.0001 + growCurve * 5; // Scale from 0.0001 to ~5
-                    const endScale = currentScale * 0.25; // End at 1/4 of max size
+                    const baseScale = 0.0001 + growCurve * 2; // Smaller max size (was 5)
                     
-                    // Scale decreases in final phase
+                    // Scale decreases in final phase - end at 1/8 of max size (was 1/4)
                     const finalScale = progress > 0.7 ? 
-                        currentScale - ((progress - 0.7) / 0.3) * (currentScale - endScale) : 
-                        currentScale;
+                        baseScale - ((progress - 0.7) / 0.3) * (baseScale - baseScale * 0.125) : 
+                        baseScale;
                     
                     // Opacity maxes at 0.8 then fades out
                     const opacityCurve = progress < 0.3 ? 
                         fadeInCurve * 0.8 : // Fade in to 0.8
                         0.8 - ((progress - 0.3) / 0.7) * 0.8; // Fade out from 0.8 to 0
                     
-                    // Apply styles
-                    emojiElement.style.transform = `translate(calc(-50% + ${endX}px), calc(-50% + ${endY}px)) scale(${finalScale})`;
+                    // Apply styles with rotation
+                    emojiElement.style.transform = `translate(calc(-50% + ${endX}px), calc(-50% + ${endY}px)) scale(${finalScale}) rotate(${currentRotation}deg)`;
                     emojiElement.style.opacity = `${opacityCurve}`;
+                    
+                    // Adjust glow based on opacity
+                    const glowIntensity = opacityCurve * 10; // Stronger glow at peak opacity
+                    emojiElement.style.filter = `drop-shadow(0 0 ${glowIntensity}px rgba(255, 255, 255, 0.8))`;
                     
                     // Continue animation or clean up
                     if (progress < 1) {
