@@ -29,7 +29,7 @@ window.SpiralTower.config = {
             background: false,
             gizmos: false,      
             youtube: false,
-            transitions: false,
+            transitions: true,
             colorExtractor: false,
             portalEditor: false,
         }

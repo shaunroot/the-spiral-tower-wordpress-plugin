@@ -136,7 +136,7 @@
             const textPhrases = [
                 "Uh oh.",
                 "You took a majorly wrong turn.",
-                "It doesn't feel so much like falling as it does watching the time and space fly by you.",
+                "It doesn't feel so much like falling as it does watching time and space fly by you.",
                 "You better grab onto something."
             ];
             
