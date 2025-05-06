@@ -41,7 +41,7 @@ const spiralTowerDisk = () => ({
         }
       ],
       exits: [
-        {dir: ['north', 'foyer'], id: 'foyer'},
+        { dir: ['north', 'foyer'], id: 'foyer' },
       ],
     },
     {
@@ -70,6 +70,8 @@ const spiralTowerDisk = () => ({
             const hasCoin = getItemInInventory('gold coin');
 
             if (!hasCoin && !room.coinTaken) {
+              println(`You see a particularly shiny **GOLD COIN** among the other coins at the bottom of the fountain.`);
+
               room.items.push({
                 name: ['gold coin', 'coin'],
                 desc: `A perfectly preserved gold coin. One side bears the image of the Spiral Tower, the other the face of a bearded wizard who must be Archmage Zephyrian.`,
@@ -167,7 +169,7 @@ const spiralTowerDisk = () => ({
             The last page has space for a new entry. There's a **QUILL** resting in an inkwell beside the book.`);
 
             if (!disk.inventory.some(item => item.name.includes('letter'))) {
-              println(`As you turn the pages, you notice something caught between the book and the pedestal—the corner of a yellowed piece of parchment is just barely visible.`);
+              println(`As you turn the pages, you notice something caught between the book and the pedestal—the corner of a yellowed **LETTER** is just barely visible.`);
             }
           }
         },
@@ -243,14 +245,15 @@ const spiralTowerDisk = () => ({
       id: 'element_hall',
       name: 'Elemental Hall',
       desc: `The stairway opens onto a circular chamber with four doors, each bearing a different elemental symbol: a flickering **FLAME**, a crashing **WAVE**, a swirling **CLOUD**, and a verdant **LEAF**.
-      
+  
       In the center of the room stands a circular stone **DAIS** with four small indentations arranged in a diamond pattern.
-      
+        
       The **STAIRS** continue upward, and also lead back **DOWN** to the foyer.`,
       items: [
         {
           name: ['dais', 'stone dais', 'platform'],
           desc: `The stone dais is about waist-high and perfectly circular. Its surface contains four shallow, symbol-shaped indentations: a flame, a wave, a cloud, and a leaf. They seem designed to hold correspondingly shaped objects.`,
+          // In the Element Hall's dais onUse function, change this:
           onUse() {
             const hasAllTokens = disk.inventory.some(item => item.name.includes('fire token')) &&
               disk.inventory.some(item => item.name.includes('water token')) &&
@@ -259,11 +262,11 @@ const spiralTowerDisk = () => ({
 
             if (hasAllTokens) {
               println(`You place each elemental token in its corresponding indentation. As the final token clicks into place, they all begin to glow brightly. The dais slowly rotates, and a fifth doorway shimmers into existence on the wall—a doorway marked with all four elemental symbols combined.
-              
-              The doorway leads **WEST** to a previously hidden chamber.`);
+    
+              The doorway leads **NORTHWEST** to a previously hidden chamber.`);
 
               const room = getRoom('element_hall');
-              room.exits.push({ dir: 'west', id: 'moonlight_chamber' });
+              room.exits.push({ dir: 'northwest', id: 'moonlight_chamber' });
 
               // Remove tokens from inventory
               disk.inventory = disk.inventory.filter(item =>
@@ -320,7 +323,7 @@ const spiralTowerDisk = () => ({
       name: 'Chamber of Dancing Flames',
       desc: `This room is illuminated entirely by flames that dance around the walls in hypnotic patterns, remarkably giving off heat but no smoke. The floor is tiled with red and orange mosaic that seems to shift like embers.
       
-      In the center of the room, a perpetual **BONFIRE** burns within a ring of black stones. Above it hovers a glowing red **CRYSTAL**.
+      In the center of the room, a perpetual **BONFIRE** burns within a ring of black stones. Above it hovers a glowing red **CRYSTAL**. The crystal focuses its light to an **ICE WAND** on an ornate stand.
       
       The temperature is intense but not unbearable. The door back to the Elemental Hall lies to the **SOUTH**.`,
       items: [
@@ -361,6 +364,35 @@ const spiralTowerDisk = () => ({
               println(`The crystal is too high and too hot to reach directly. Perhaps you need something to counteract the heat.`);
             }
           }
+        },
+        {
+          name: ['ice wand', 'silver wand', 'frost wand'],
+          desc: `A slender silver wand with frost patterns etched along its length sits in a heat-resistant holder near the edge of the room, seemingly placed there to control the flames if needed.`,
+          isTakeable: true,
+          onTake() {
+            println(`You take the ice wand. It feels surprisingly cold despite the heat of the chamber.`);
+          },
+          onUse() {
+            if (disk.roomId === 'fire_chamber') {
+              println(`You point the ice wand at the bonfire. A beam of frost shoots forth, temporarily dampening the flames. In that moment, the red crystal drops a few inches, and you quickly snatch a small **FIRE TOKEN** that was hidden within it.`);
+
+              if (!disk.inventory.some(item => item.name.includes('fire token'))) {
+                disk.inventory.push({
+                  name: ['fire token', 'flame token', 'red token'],
+                  desc: `A small token made of a warm, ruby-like material carved in the shape of a flame. It pulses slightly with inner heat.`,
+                  onUse() {
+                    if (disk.roomId === 'element_hall') {
+                      println(`You could place this on the dais with any other elemental tokens you've found.`);
+                    } else {
+                      println(`You roll the fire token between your fingers. It's pleasantly warm to the touch.`);
+                    }
+                  }
+                });
+              }
+            } else {
+              println(`You wave the ice wand gently. The air around you cools momentarily, and a few snowflakes materialize before melting away.`);
+            }
+          }
         }
       ],
       exits: [
@@ -380,7 +412,7 @@ const spiralTowerDisk = () => ({
       items: [
         {
           name: ['pool', 'water pool', 'deep pool'],
-          desc: `The circular pool is about ten feet across and appears to be very deep—you can't see the bottom. The water is impossibly clear yet deeply blue, and occasionally shimmers with bioluminescent particles.`,
+          desc: `The circular pool is about ten feet across and appears to be very deep—you can't see the bottom. The water is impossibly clear yet deeply blue, and occasionally shimmers with bioluminescent particles. There is a **FISHING ROD** beneath the water.`,
           onUse() {
             println(`You dip your hand into the pool. The water is cool and invigorating. As you withdraw your hand, the droplets falling from your fingers seem to linger in the air slightly longer than they should, as if time moves differently in this chamber.`);
           }
@@ -415,6 +447,36 @@ const spiralTowerDisk = () => ({
               });
             } else {
               println(`The crystal is too far from the edge to reach. You might need something that can extend your reach.`);
+            }
+          }
+        },
+        // Add to the Water Chamber's items array:
+        {
+          name: ['fishing rod', 'rod', 'fishing pole'],
+          desc: `A delicate fishing rod made of an unusual blue-green material leans against the wall near the pool, as if someone left it behind.`,
+          isTakeable: true,
+          onTake() {
+            println(`You take the fishing rod. The line is nearly invisible, like a strand of pure water.`);
+          },
+          onUse() {
+            if (disk.roomId === 'water_chamber') {
+              println(`You cast the fishing line toward the blue crystal. With careful aim, you manage to hook something near it—a small **WATER TOKEN** that was hidden beneath. You reel it in successfully!`);
+
+              if (!disk.inventory.some(item => item.name.includes('water token'))) {
+                disk.inventory.push({
+                  name: ['water token', 'wave token', 'blue token'],
+                  desc: `A small token made of a cool, sapphire-like material carved in the shape of a cresting wave. It feels slightly damp to the touch.`,
+                  onUse() {
+                    if (disk.roomId === 'element_hall') {
+                      println(`You could place this on the dais with any other elemental tokens you've found.`);
+                    } else {
+                      println(`You roll the water token between your fingers. It's pleasantly cool to the touch.`);
+                    }
+                  }
+                });
+              }
+            } else {
+              println(`You flick the fishing rod. The line extends much further than seems possible before retracting back when you will it.`);
             }
           }
         }
@@ -479,12 +541,12 @@ const spiralTowerDisk = () => ({
     {
       id: 'earth_chamber',
       name: 'Chamber of Living Earth',
-      desc: `This chamber feels like stepping into an underground grotto. The walls are lined with glittering geodes and crystal formations. Bioluminescent mushrooms provide soft, green illumination.
+      desc: `This chamber feels like stepping into an underground grotto. The walls are lined with glittering geodes and crystal formations. Bioluminescent **MUSHROOMS** provide soft, green illumination.
       
       The floor is covered with rich soil from which small plants and flowers sprout, growing visibly before your eyes and then returning to the earth in an endless cycle.
-      
+            
       At the center stands a twisted **TREE** that appears to be made of living crystal. A green **CRYSTAL** is embedded in its trunk.
-      
+            
       The door back to the Elemental Hall lies to the **EAST**.`,
       items: [
         {
@@ -553,7 +615,7 @@ const spiralTowerDisk = () => ({
       name: 'The Moonlight Chamber',
       desc: `This circular chamber seems to exist in perpetual night. The domed ceiling is a perfect replica of a starry sky, with constellations slowly shifting across its surface. A large **LUNAR MIRROR** dominates one wall, reflecting a full moon that isn't actually present in the room.
       
-      Silver-blue light bathes everything in an ethereal glow. A stone **BASIN** sits directly under the center of the dome, catching moonlight that somehow streams down from the artificial sky.
+      Silver-blue light bathes everything in an ethereal glow. A stone **BASIN** sits directly under the center of the dome, catching moonlight that somehow streams down from the artificial sky. You see a piece of crystal circled with ornate silve inscriptions. The only word you recognize is the word truth. Could this be the fabled **TRUTH MONOCLE**?
       
       The chamber has a peaceful, timeless quality. It feels like a place between worlds.
       
@@ -574,6 +636,22 @@ const spiralTowerDisk = () => ({
               println(`The basin has a circular indentation that might fit the gold coin you have.`);
             } else {
               println(`The basin collects moonlight like water. The circular indentation at its center seems to be waiting for something specific to be placed there.`);
+            }
+          }
+        },
+        {
+          name: ['truth monocle', 'monocle', 'crystal lens'],
+          desc: `A small crystal monocle rests on the edge of the basin, glinting in the silver-blue light. It seems designed to reveal hidden truths.`,
+          isTakeable: true,
+          onTake() {
+            println(`You pick up the crystal monocle. When you look through it, the world seems to shift slightly, as if you're seeing past surface illusions.`);
+          },
+          onUse() {
+            if (disk.roomId === 'illusion_gallery') {
+              println(`You hold the truth monocle to your eye and survey the Illusion Gallery. The confusing reflections and false doorways immediately become obvious—you can clearly see which paths are real and which are illusions. The way to the upward staircase is now evident.`);
+              disk.illusionPathFound = true;
+            } else {
+              println(`You look through the truth monocle. The world appears largely the same, but with subtle differences—colors are more vivid, edges more defined, and you sense you would be able to see through any deliberate deceptions.`);
             }
           }
         }
@@ -752,7 +830,25 @@ const spiralTowerDisk = () => ({
                 desc: `A feather that appears to be made of metal with the colors of fire—red fading to gold at the tip. Despite its metallic composition, it's incredibly light and occasionally emits tiny sparks.`,
                 onUse() {
                   if (disk.roomId === 'air_chamber') {
-                    println(`You hold out the phoenix feather toward the white crystal. The feather glows brightly, and suddenly the air currents in the room seem to respond to your will. You might be able to direct them to retrieve something from the crystal.`);
+                    println(`You hold out the phoenix feather toward the white crystal. The feather glows brightly, and suddenly the air currents in the room bend to your will! You direct a gust of wind toward the crystal, dislodging a small **AIR TOKEN** that was hidden within it. The token floats directly to your outstretched hand.`);
+
+                    // Add the air token to inventory
+                    if (!disk.inventory.some(item => item.name.includes('air token'))) {
+                      disk.inventory.push({
+                        name: ['air token', 'cloud token', 'white token'],
+                        desc: `A small token made of a lightweight, opal-like material carved in the shape of a swirling cloud. It feels almost weightless.`,
+                        onUse() {
+                          if (disk.roomId === 'element_hall') {
+                            println(`You place the air token in its corresponding indentation on the dais.`);
+                          } else if (disk.roomId === 'chasm_bridge') {
+                            println(`You hold up the air token. It glows softly, and the violent winds in the chasm calm momentarily, allowing you to cross safely.`);
+                            goDir('north');
+                          } else {
+                            println(`You release the air token from your palm, and it hovers an inch above your hand before settling back down.`);
+                          }
+                        }
+                      });
+                    }
                   } else if (disk.roomId === 'chasm_bridge') {
                     println(`You hold up the phoenix feather. It bursts into flame but doesn't burn up. The feather creates a path of light across the chasm that you can walk on.`);
                     goDir('north');
@@ -807,22 +903,25 @@ const spiralTowerDisk = () => ({
           name: ['tools', 'gardening tools', 'implements'],
           desc: `A comprehensive collection of gardening tools hangs from hooks on the wall. Many appear ordinary at first glance—trowels, pruning shears, watering cans—but closer inspection reveals magical modifications: a watering can that produces different types of water for different plants, self-sharpening shears, and a trowel that adjusts its size based on the job at hand.`,
           onUse() {
-            println(`You examine the tools on the wall. Most seem designed for specialized magical gardening tasks, but a simple **GARDEN SPADE** catches your eye. It looks ordinary but sturdy, useful for basic digging.`);
+            if (disk.roomId === 'earth_chamber') {
+              println(`You carefully dig at the base of the crystal tree with the garden spade. The soil is surprisingly loose, and you unearth a small **EARTH TOKEN** that was buried among the roots. You pick up the token and add it to your inventory.`);
 
-            if (!disk.inventory.some(item => item.name.includes('garden spade'))) {
-              println(`You decide to borrow the spade for now.`);
-
-              disk.inventory.push({
-                name: ['garden spade', 'spade', 'small shovel'],
-                desc: `A simple but well-crafted garden spade with a wooden handle and a metal blade. Perfect for digging in soil.`,
-                onUse() {
-                  if (disk.roomId === 'earth_chamber') {
-                    println(`You carefully dig at the base of the crystal tree with the garden spade. The soil is surprisingly loose, and after a few moments of digging, you find something interesting.`);
-                  } else {
-                    println(`You make a few experimental digging motions with the spade. It's a good tool, but there's nothing to dig here.`);
+              // Add the Earth Token to inventory if not already there
+              if (!disk.inventory.some(item => item.name.includes('earth token'))) {
+                disk.inventory.push({
+                  name: ['earth token', 'leaf token', 'green token'],
+                  desc: `A small token made of a deep emerald-like material carved in the shape of a leaf. It feels pleasantly heavy and cool in your palm.`,
+                  onUse() {
+                    if (disk.roomId === 'element_hall') {
+                      println(`You place the earth token in its corresponding indentation on the dais.`);
+                    } else {
+                      println(`You roll the earth token between your fingers. It has a pleasant weight to it, reminiscent of rich soil.`);
+                    }
                   }
-                }
-              });
+                });
+              }
+            } else {
+              println(`You make a few experimental digging motions with the trowel. It's well-crafted, but there's nothing to dig here.`);
             }
           }
         },
@@ -930,9 +1029,18 @@ const spiralTowerDisk = () => ({
         { dir: 'up', id: 'observatory_approach', block: `You try to find the path upward, but the illusions confuse your sense of direction. You keep ending up back where you started. There must be a way to see through these illusions.` },
       ],
       onEnter() {
-        if (disk.illusionPathFound) {
-          const exit = getExit('up', getRoom('illusion_gallery').exits);
-          delete exit.block;
+        // Add this code to properly update the Illusion Gallery exit
+        const illusionGallery = getRoom('illusion_gallery');
+        if (illusionGallery) {
+          // Set the illusionPathFound flag to true
+          disk.illusionPathFound = true;
+
+          // Find the 'up' exit and remove its block
+          const upExit = illusionGallery.exits.find(exit => exit.dir === 'up');
+          if (upExit && upExit.block) {
+            delete upExit.block;
+            println(`You can now clearly see the path to the upward staircase. The illusions part before you, revealing the true way forward.`);
+          }
         }
       }
     },
@@ -1001,7 +1109,7 @@ const spiralTowerDisk = () => ({
       
       The **DREAM WEAVER**, a tall figure with opalescent skin and eyes like distant stars, sits cross-legged on a floating cushion, weaving threads of dreams into patterns.
       
-      The portal back to the Observatory Approach shimmers on one wall, and another portal leads somewhere else entirely.`,
+      The **PORTAL** back to the Observatory Approach shimmers on one wall, and **VOID** that appears to lead nowhere else entirely.`,
       items: [
         {
           name: ['dreamcatcher', 'giant dreamcatcher', 'dream web'],
@@ -1022,11 +1130,7 @@ const spiralTowerDisk = () => ({
             
             "I cannot guide you directly, but I can offer this."
             
-            The Weaver's long fingers pluck a thread from the air and weave it into a small circle, which solidifies into a crystal **MONOCLE**.
-            
-            "This will help you see truth through illusion. Use it wisely."
-            
-            The monocle floats toward you.`);
+            The Weaver's long fingers pluck a thread from the air and weave it into a small circle, which solidifies into pizza. He throws it on the floor.`);
 
             if (!disk.inventory.some(item => item.name.includes('truth monocle'))) {
               disk.inventory.push({
@@ -1050,7 +1154,7 @@ const spiralTowerDisk = () => ({
       ],
       exits: [
         { dir: 'portal', id: 'observatory_approach' },
-        { dir: ['other portal', 'second portal', 'new portal'], id: 'mirage_desert' },
+        { dir: 'void', id: 'mirage_desert' },
       ]
     },
     {
@@ -1096,9 +1200,17 @@ const spiralTowerDisk = () => ({
         { dir: 'northeast', id: 'true_oasis', block: `You start walking northeast, but the shifting mirages and multiple contradictory shadows make it impossible to maintain your direction. You find yourself walking in circles, always returning to your starting point. There must be a way to see through these illusions.` },
       ],
       onEnter() {
-        if (disk.desertPathFound) {
-          const exit = getExit('northeast', getRoom('mirage_desert').exits);
-          delete exit.block;
+        const mirageDesert = getRoom('mirage_desert');
+        if (mirageDesert) {
+          // Set the desertPathFound flag to true
+          disk.desertPathFound = true;
+          
+          // Find the 'northeast' exit and remove its block
+          const neExit = mirageDesert.exits.find(exit => exit.dir === 'northeast');
+          if (neExit && neExit.block) {
+            delete neExit.block;
+            println(`Through the truth monocle, the mirages in the desert fade away, revealing the true path to the oasis. You can now clearly see the way NORTHEAST to the True Oasis.`);
+          }
         }
       }
     },
@@ -1167,6 +1279,7 @@ const spiralTowerDisk = () => ({
         { dir: 'north', id: 'chasm_bridge' },
       ]
     },
+
     {
       id: 'chasm_bridge',
       name: 'The Phantom Bridge',
@@ -1175,6 +1288,8 @@ const spiralTowerDisk = () => ({
       Violent **WINDS** howl through the chasm, strong enough to throw a person off balance. There's no physical bridge in sight, though there are stone platforms on both sides where one might have stood.
       
       A **PEDESTAL** with curious indentations stands on your side of the chasm. Ancient runes carved into it glow faintly with magical energy.
+      
+      Near the edge, several **CRYSTALS** of different colors are embedded in the stone, pulsing with inner light in a rhythmic pattern.
       
       The only exits are **SOUTH** back to the oasis, or **NORTH** across the chasm—if you can find a way to cross it.`,
       items: [
@@ -1187,9 +1302,16 @@ const spiralTowerDisk = () => ({
         },
         {
           name: ['pedestal', 'stone pedestal', 'rune stand'],
-          desc: `A waist-high pedestal of dark stone stands at the edge of the chasm. Its top surface contains several shallow indentations of different shapes, including what looks like the outline of a feather and a cloud. Runes around the edge glow with a pale blue light.`,
+          desc: `A waist-high pedestal of dark stone stands at the edge of the chasm. Its top surface contains several shallow indentations and a circular crystal lens in the center. Runes around the edge glow with a pale blue light.`,
           onUse() {
-            println(`You examine the pedestal carefully. The runes appear to reference air and flight, and the indentations seem designed to hold specific objects. Perhaps placing the right items here would activate some mechanism to help cross the chasm.`);
+            println(`You examine the pedestal carefully. The runes appear to reference perception and reality. As you place your hands on its surface, the pedestal hums softly, and the crystal lens in its center begins to glow more brightly.
+            
+            You notice that when viewed through the lens, the violent winds seem to slow, revealing patterns within their chaotic movement.`);
+            
+            if (!disk.chasmPedestalActivated) {
+              disk.chasmPedestalActivated = true;
+              println(`You've activated the pedestal. It seems to be linked somehow to the pulsing crystals along the edge of the chasm.`);
+            }
           }
         },
         {
@@ -1198,13 +1320,51 @@ const spiralTowerDisk = () => ({
           onUse() {
             println(`You peer carefully over the edge of the chasm. The depth is dizzying, with swirling mists obscuring any view of the bottom. Occasionally, strange lights flash within the mists, suggesting that something unusual exists down there. The gap is clearly too wide to jump, and the winds too violent for any conventional crossing method.`);
           }
+        },
+        {
+          name: ['crystals', 'colored crystals', 'glowing stones'],
+          desc: `Four crystals are embedded in the stone near the edge of the chasm—one red, one blue, one white, and one green. They pulse with inner light in what seems like a random pattern, but you sense there might be some order to it.`,
+          onUse() {
+            if (!disk.chasmPedestalActivated) {
+              println(`The crystals pulse with magical energy, but don't seem to respond to your touch. Perhaps they're linked to something else in the room.`);
+              return;
+            }
+            
+            if (!disk.crystalSequenceSolved) {
+              println(`As you touch the crystals, you notice they respond to your interaction. The pedestal's lens reveals a pattern in the winds—they shift in a specific sequence: white, green, red, blue.
+              
+              When you touch the crystals in that same sequence, they all light up simultaneously and remain brightly lit. The violent winds suddenly calm, forming a visible path of solidified air across the chasm!`);
+              
+              disk.crystalSequenceSolved = true;
+              
+              // Remove the block from the north exit
+              const exit = getExit('north', getRoom('chasm_bridge').exits);
+              if (exit) {
+                delete exit.block;
+              }
+              
+              println(`You can now cross safely to the northern side of the chasm.`);
+            } else {
+              println(`The crystals are already activated, maintaining the bridge of solidified air across the chasm. You can now cross safely to the north.`);
+            }
+          }
         }
       ],
       exits: [
         { dir: 'south', id: 'true_oasis' },
         { dir: 'north', id: 'time_vault', block: `You look across the yawning chasm. There's no bridge or obvious way to cross, and the violent winds would make any attempt at jumping suicidal. You'll need to find a way to get across safely.` },
-      ]
-    },
+      ],
+      onEnter() {
+        if (disk.crystalSequenceSolved) {
+          const exit = getExit('north', getRoom('chasm_bridge').exits);
+          if (exit) {
+            delete exit.block;
+          }
+          println(`The bridge of solidified air remains in place, allowing safe passage across the chasm.`);
+        }
+      }
+    },   
+
     {
       id: 'time_vault',
       name: 'The Time Vault',
@@ -1360,14 +1520,8 @@ const spiralTowerDisk = () => ({
                 He gestures to the walls, which briefly become transparent, showing the tower's full spiral structure from an impossible external viewpoint. "It has been my home, my laboratory, and my legacy for over a millennium."`
               },
               {
-                option: `Ask about **ZEPHYRIAN** himself.`,
-                line: `The Archmage's eyes—containing swirling galaxies—grow distant, as if seeing across vast spans of time.
-                
-                "I was once like you," he says quietly. "A seeker of knowledge, a student of magic. I built this tower when I was younger—though 'young' for me was still several centuries ago." He smiles. "As my power grew, I found myself increasingly separated from the world. The tower became my sanctuary and my prison.
-                
-                "When I discovered the Infinity Nexus, I realized my journey was taking me beyond the constraints of a single reality. I've spent recent centuries exploring other dimensions, only returning occasionally to ensure the tower remains and continues its purpose."
-                
-                He looks at you with sudden clarity. "You remind me of myself, in some ways. Perhaps that's why the tower allowed you to reach this far."`
+                option: `Ask about a **REWARD**.`,
+                line: `"Ah, the least interesting of the options, but I supposed you have earned it. Send this code to u/root88 on Reddit to receive your reward: "master-of-the-tower-and-pride-of-zephyrian"`
               },
               {
                 option: `Ask about the **NEXUS**.`,
@@ -1556,7 +1710,22 @@ const spiralTowerDisk = () => ({
                 desc: `A small but sturdy garden trowel with intricate vines etched into its handle. Despite its delicate appearance, it feels remarkably strong.`,
                 onUse() {
                   if (disk.roomId === 'earth_chamber') {
-                    println(`You carefully dig at the base of the crystal tree with the garden spade. The soil is surprisingly loose, and you uncover something interesting.`);
+                    println(`You carefully dig at the base of the crystal tree with the garden spade. The soil is surprisingly loose, and you unearth a small **EARTH TOKEN** that was buried among the roots. You pick up the token and add it to your inventory.`);
+
+                    // Add the Earth Token to inventory if not already there
+                    if (!disk.inventory.some(item => item.name.includes('earth token'))) {
+                      disk.inventory.push({
+                        name: ['earth token', 'leaf token', 'green token'],
+                        desc: `A small token made of a deep emerald-like material carved in the shape of a leaf. It feels pleasantly heavy and cool in your palm.`,
+                        onUse() {
+                          if (disk.roomId === 'element_hall') {
+                            println(`You place the earth token in its corresponding indentation on the dais.`);
+                          } else {
+                            println(`You roll the earth token between your fingers. It has a pleasant weight to it, reminiscent of rich soil.`);
+                          }
+                        }
+                      });
+                    }
                   } else {
                     println(`You make a few experimental digging motions with the trowel. It's well-crafted, but there's nothing to dig here.`);
                   }
@@ -1571,6 +1740,7 @@ const spiralTowerDisk = () => ({
         }
       ]
     },
+
     // Character 4: The Hermit
     {
       name: ['Hermit', 'Solus', 'desert sage'],
@@ -1850,97 +2020,40 @@ const spiralTowerDisk = () => ({
     \\___/
     / | \\
   `,
-      onTalk: () => println(`Archmage Zephyrian turns his cosmic gaze to you, a gentle smile appearing through his star-white beard.
-  
-  "You've come a long way, Seeker," he says. "What would you like to know?"`),
+      onTalk: () => println(`Archmage Zephyrian turns his cosmic gaze to you, a gentle smile appearing through his star-white beard. "You've come a long way, Seeker," he says.`),
       topics: [
         {
           option: `Ask about the **TOWER**.`,
-          line: `"The Spiral Tower is my greatest creation," Zephyrian says, his voice resonating with pride and perhaps a hint of melancholy. "I built it as both a testament to what magic can achieve and as a test for those who would seek true understanding.
-      
-      "The tower exists simultaneously in multiple realities, which is why it can contain spaces that seem impossible. Each challenge, each puzzle, was designed not merely to obstruct, but to teach. Those who reach this chamber have learned not just about magic, but about themselves."
-      
-      He gestures to the walls, which briefly become transparent, showing the tower's full spiral structure from an impossible external viewpoint. "It has been my home, my laboratory, and my legacy for over a millennium."`
+          line: `"The Spiral Tower is my greatest creation," Zephyrian says, his voice resonating with pride and perhaps a hint of melancholy. "I built it as both a testament to what magic can achieve and as a test for those who would seek true understanding. "The tower exists simultaneously in multiple realities, which is why it can contain spaces that seem impossible. Each challenge, each puzzle, was designed not merely to obstruct, but to teach. Those who reach this chamber have learned not just about magic, but about themselves."
+          He gestures to the walls, which briefly become transparent, showing the tower's full spiral structure from an impossible external viewpoint. "It has been my home, my laboratory, and my legacy for over a millennium."`
         },
         {
-          option: `Ask about **ZEPHYRIAN** himself.`,
-          line: `The Archmage's eyes—containing swirling galaxies—grow distant, as if seeing across vast spans of time.
-      
-      "I was once like you," he says quietly. "A seeker of knowledge, a student of magic. I built this tower when I was younger—though 'young' for me was still several centuries ago." He smiles. "As my power grew, I found myself increasingly separated from the world. The tower became my sanctuary and my prison.
-      
-      "When I discovered the Infinity Nexus, I realized my journey was taking me beyond the constraints of a single reality. I've spent recent centuries exploring other dimensions, only returning occasionally to ensure the tower remains and continues its purpose."
-      
-      He looks at you with sudden clarity. "You remind me of myself, in some ways. Perhaps that's why the tower allowed you to reach this far."`
+          option: `Ask about a **REWARD**.`,
+          line: `"Ah, the least interesting of the options, but I supposed you have earned it. Send this code to u/root88 on Reddit to receive your reward: "master-of-the-tower-and-pride-of-zephyrian"`
         },
         {
           option: `Ask about the **NEXUS**.`,
-          line: `Zephyrian turns to regard the swirling energies at the center of the chamber.
-      
-      "The Infinity Nexus is a confluence of all possible realities," he explains. "It exists at a point where dimensions touch, allowing passage between them. I didn't create it so much as discover it and build the tower around it.
-      
-      "Through the Nexus, one can travel to any reality, any possibility. One could even create new realities, with sufficient understanding and power." He glances at you. "It is incredibly dangerous for the unprepared mind. Many who sought it were driven mad by the infinite possibilities they glimpsed.
-      
-      "But you... you have proven resilient. You could use it, if you wished. To return home with new knowledge, to visit other worlds, or even to make a single wish come true."`
+          line: `Zephyrian turns to regard the swirling energies at the center of the chamber. "The Infinity Nexus is a confluence of all possible realities," he explains. "It exists at a point where dimensions touch, allowing passage between them. I didn't create it so much as discover it and build the tower around it. "Through the Nexus, one can travel to any reality, any possibility. One could even create new realities, with sufficient understanding and power." He glances at you. "It is incredibly dangerous for the unprepared mind. Many who sought it were driven mad by the infinite possibilities they glimpsed. "But you... you have proven resilient. You could use it, if you wished. To return home with new knowledge, to visit other worlds, or even to make a single wish come true."`
         },
         {
           option: `Make a **WISH**.`,
-          line: `Zephyrian nods solemnly. "The tower's promise is fulfilled, then. You wish to use the power of the Nexus to make your deepest desire reality."
-      
-      He gestures toward the swirling vortex of energy. "Step forward and touch the Nexus with both hands. Focus your mind on your truest wish—not merely a fleeting desire, but what you truly want in the depths of your soul. The Nexus will respond accordingly.
-      
-      "But be warned," he adds, his voice growing serious. "The Nexus grants the wish that lives in your heart, not necessarily the one in your mind. It sees through self-deception. And once granted, a wish cannot be undone."
-      
-      He steps aside, leaving the path to the Nexus clear. "The choice is yours. Wish wisely, or perhaps choose not to wish at all. That too is wisdom."`
+          line: `Zephyrian nods solemnly. "The tower's promise is fulfilled, then. You wish to use the power of the Nexus to make your deepest desire reality." He gestures toward the swirling vortex of energy. "Step forward and touch the Nexus with both hands. Focus your mind on your truest wish—not merely a fleeting desire, but what you truly want in the depths of your soul. The Nexus will respond accordingly. "But be warned," he adds, his voice growing serious. "The Nexus grants the wish that lives in your heart, not necessarily the one in your mind. It sees through self-deception. And once granted, a wish cannot be undone." He steps aside, leaving the path to the Nexus clear. "The choice is yours. Wish wisely, or perhaps choose not to wish at all. That too is wisdom."`
         },
         {
           option: `Ask about **ELARA**.`,
-          line: `The Archmage's expression changes subtly—surprise, followed by a profound sadness that seems to age him further.
-      
-      "You found her letters," he says quietly. "Yes, Elara was... important to me. Another mage of great power, my equal in many ways, my superior in others." A smile briefly touches his lips. "She helped design many of the tower's chambers, particularly the Moonlight Chamber. Her specialty was illusion and lunar magic.
-      
-      "We had... differences of opinion about the tower's purpose. She saw it as a potential school, a place to teach new generations. I became increasingly focused on the Nexus and the realities beyond.
-      
-      "Eventually, she left." The stars in his robes dim slightly. "She founded her own academy in the mortal realm. We corresponded for decades after, but eventually... well, time passes differently for me now. I sometimes lose track of mortal lifespans."
-      
-      He turns away briefly, composing himself. "I believe her academy still stands, though it has been centuries since her passing. The Silver Crescent Academy, in the far northern lands."`
+          line: `The Archmage's expression changes subtly—surprise, followed by a profound sadness that seems to age him further. "You found her letters," he says quietly. "Yes, Elara was... important to me. Another mage of great power, my equal in many ways, my superior in others. She helped design many of the tower's chambers, particularly the Moonlight Chamber. We had... differences of opinion about the tower's purpose. She saw it as a potential school, a place to teach new generations. I became increasingly focused on the Nexus and the realities beyond. Eventually, she left." The stars in his robes dim slightly. "She founded her own academy in the mortal realm. We corresponded for decades after, but eventually... well, time passes differently for me now. I sometimes lose track of mortal lifespans."`
         },
         {
           option: `Say you would like to **LEAVE** without making a wish.`,
-          line: `Zephyrian regards you with newfound respect.
-      
-      "A rare choice," he says. "Most who reach this chamber immediately seize the opportunity to wish. To walk away shows wisdom I seldom see."
-      
-      He waves his hand, and a doorway appears in the wall—a simple wooden door that seems oddly mundane in this extraordinary place.
-      
-      "This will take you back to where you entered the tower, with all the knowledge and experience you've gained intact. You may return someday, if you wish—the tower will remember you.
-      
-      "Or perhaps our paths will cross again in other realities. I journey often through the Nexus these days, exploring what lies beyond."
-      
-      He bows slightly. "Farewell, Seeker. You have impressed me today."`
+          line: `Zephyrian regards you with newfound respect. "A rare choice," he says. "Most who reach this chamber immediately seize the opportunity to wish. To walk away shows wisdom I seldom see." He waves his hand, and a doorway appears in the wall—a simple wooden door that seems oddly mundane in this extraordinary place. "This will take you back to where you entered the tower, with all the knowledge and experience you've gained intact. You may return someday, if you wish—the tower will remember you. "Or perhaps our paths will cross again in other realities. I journey often through the Nexus these days, exploring what lies beyond." He bows slightly. "Farewell, Seeker. You have impressed me today."`
         },
         {
           option: `Ask to **EXPLORE** other realities through the Nexus.`,
-          line: `Zephyrian's eyes light up with genuine pleasure.
-      
-      "A kindred spirit!" he exclaims. "Not content with a simple wish, but curious about what lies beyond... Yes, I can guide you through the Nexus to other realities.
-      
-      "It would be a journey of unknown duration and destination. We might visit worlds where magic flows like water, or places where the laws of nature are utterly different from your home. We could explore alternate histories, possible futures, or realms entirely separate from the timeline you know."
-      
-      He extends his hand. "If you truly wish this, come. I have visited a thousand realities and barely scratched the surface of what exists. Together, perhaps we could explore a thousand more."
-      
-      His expression grows serious. "But know that such journeys change a person. You may never see your home reality the same way again, if you see it at all. This is not a choice to make lightly."`
+          line: `Zephyrian's eyes light up with genuine pleasure. "A kindred spirit!" he exclaims. "Not content with a simple wish, but curious about what lies beyond... Yes, I can guide you through the Nexus to other realities. "It would be a journey of unknown duration and destination. We might visit worlds where magic flows like water, or places where the laws of nature are utterly different from your home. We could explore alternate histories, possible futures, or realms entirely separate from the timeline you know. If you truly wish this, come. I have visited a thousand realities and barely scratched the surface of what exists. Together, perhaps we could explore a thousand more. Know that such journeys change a person. You may never see your home reality the same way again, if you see it at all. This is not a choice to make lightly."`
         },
         {
           option: `Ask to **STUDY** with Zephyrian.`,
-          line: `The Archmage considers you thoughtfully, stroking his star-white beard.
-      
-      "A student..." he muses. "It has been centuries since I took an apprentice. My last one eventually built her own tower, though not nearly as interesting as this one." He smiles at the memory.
-      
-      "You have shown aptitude, determination, and wisdom in your journey here. These are the foundations upon which great magic can be built." He paces slowly, considering.
-      
-      "Very well. If that is your wish, I will teach you. Not merely spells and incantations, but the true nature of reality and how it may be shaped. Your training would take decades, perhaps centuries—but time works differently here at the tower's apex. When you eventually returned to your world, you might find that little time has passed."
-      
-      He stops pacing and faces you directly. "Be certain this is what you want. The path of magic is rewarding but demanding. It will transform you in ways you cannot predict."`
+          line: `The Archmage considers you thoughtfully, stroking his star-white beard. "A student..." he muses. "It has been centuries since I took an apprentice. My last one eventually built her own tower, though not nearly as interesting as this one." He smiles at the memory. "You have shown aptitude, determination, and wisdom in your journey here. These are the foundations upon which great magic can be built." He paces slowly, considering. "Very well. If that is your wish, I will teach you. Your training would take decades, perhaps centuries—but time works differently here at the tower's apex." He stops pacing and faces you directly. "Be certain this is what you want. The path of magic is rewarding but demanding. It will transform you in ways you cannot predict."`
         }
       ]
     },
@@ -1964,7 +2077,7 @@ const spiralTowerDisk = () => ({
         println("The gate blocking the stairs has opened!");
       }
     }
-  }  
+  }
 });
 
 // Load the disk

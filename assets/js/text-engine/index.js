@@ -111,7 +111,7 @@ let load = (name = 'save') => {
 
 // export current game to disk (optionally accepts a filename)
 let exportSave = (name) => {
-  const filename = `${name.length ? name : 'text-engine-save'}.txt`;
+  const filename = `${name.length ? name : 'spiral-tower-save'}.txt`;
   saveFile(JSON.stringify(inputs), filename);
   println(`Game exported to "${filename}".`);
 };
