@@ -943,6 +943,12 @@ body.text-only-mode {
   transform: translateY(-50%);
 }
 
+@media (max-width: 768px) {
+  .scroll-right {
+    bottom: 40px;
+  }
+}
+
 .scroll-down {
   bottom: 15px;
   right: 0%;
@@ -954,6 +960,12 @@ body.text-only-mode {
   left: 15px;
   transform: translateY(-50%);
 }
+
+@media (max-width: 768px) {
+  .scroll-left {
+    bottom: 40px;
+  }
+} 
 
 /* Visible state for the arrows */
 .scroll-arrow.visible {

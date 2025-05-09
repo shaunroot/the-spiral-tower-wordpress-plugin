@@ -344,7 +344,7 @@ class Spiral_Tower_Room_Manager
             'posts_per_page' => -1,
             'orderby' => 'meta_value_num',
             'meta_key' => '_floor_number',
-            'order' => 'ASC'
+            'order' => 'DESC'
         );
 
         if ($is_floor_author) {

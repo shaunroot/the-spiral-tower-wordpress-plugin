@@ -3,7 +3,7 @@
   src: url('fonts/font.ttf');
 }
 
-body {
+.spiral-tower-floor-wrapper {
   background: white;
   color: #AAA;
   font-size: 29px;

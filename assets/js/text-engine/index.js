@@ -312,8 +312,7 @@ let shortcuts = {
   sw: 'southwest',
 };
 
-// go the passed direction
-// string -> nothing
+// Add this code to handle URL exits in the goDir function
 let goDir = (dir) => {
   const room = getRoom(disk.roomId);
   const exits = room.exits;
@@ -337,6 +336,13 @@ let goDir = (dir) => {
 
   if (nextRoom.block) {
     println(nextRoom.block);
+    return;
+  }
+
+  // Handle URL exits - add just this section
+  if (nextRoom.isURL) {
+    println(`You enter the portal...`);
+    window.location.href = nextRoom.id;
     return;
   }
 
@@ -497,6 +503,30 @@ let talkToOrAboutX = (preposition, x) => {
   }
 };
 
+// Add an "exits" command to list available exits in the room
+let exits = () => {
+  const room = getRoom(disk.roomId);
+  const availableExits = room.exits.filter(exit => !exit.block);
+
+  if (!availableExits.length) {
+    println(`There are no exits from this room.`);
+    return;
+  }
+
+  println(`You can go in the following directions:`);
+  availableExits.forEach(exit => {
+    const dir = typeof exit.dir === 'object' ? exit.dir[0] : exit.dir;
+    const destination = getRoom(exit.id);
+    
+    // If the player has visited the destination, show its name
+    const exitName = destination && destination.visits > 0
+      ? `${dir.toUpperCase()} - to ${destination.name}`
+      : `${dir.toUpperCase()}`;
+      
+    println(`${bullet} ${exitName}`);
+  });
+};
+
 // list takeable items in room
 let take = () => {
   const room = getRoom(disk.roomId);
@@ -635,10 +665,13 @@ let help = () => {
     TALK:           'talk to mary'
     ITEMS:          list items in the room
     CHARS:          list characters in the room
-    INV:            list inventory items
+    EXITS:          list exits
+    INV:            list inventory items    
     SAVE/LOAD:      save current game, or load a saved game (in memory)
     IMPORT/EXPORT:  save current game, or load a saved game (on disk)
     HELP:   this help menu
+
+    Tip: try using every object.
   `;
   println(instructions);
 };
@@ -682,6 +715,7 @@ let commands = [
     take,
     get: take,
     items,
+    exits,
     use,
     chars,
     characters: chars,

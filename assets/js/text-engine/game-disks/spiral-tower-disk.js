@@ -1204,7 +1204,7 @@ const spiralTowerDisk = () => ({
         if (mirageDesert) {
           // Set the desertPathFound flag to true
           disk.desertPathFound = true;
-          
+
           // Find the 'northeast' exit and remove its block
           const neExit = mirageDesert.exits.find(exit => exit.dir === 'northeast');
           if (neExit && neExit.block) {
@@ -1307,7 +1307,7 @@ const spiralTowerDisk = () => ({
             println(`You examine the pedestal carefully. The runes appear to reference perception and reality. As you place your hands on its surface, the pedestal hums softly, and the crystal lens in its center begins to glow more brightly.
             
             You notice that when viewed through the lens, the violent winds seem to slow, revealing patterns within their chaotic movement.`);
-            
+
             if (!disk.chasmPedestalActivated) {
               disk.chasmPedestalActivated = true;
               println(`You've activated the pedestal. It seems to be linked somehow to the pulsing crystals along the edge of the chasm.`);
@@ -1329,20 +1329,20 @@ const spiralTowerDisk = () => ({
               println(`The crystals pulse with magical energy, but don't seem to respond to your touch. Perhaps they're linked to something else in the room.`);
               return;
             }
-            
+
             if (!disk.crystalSequenceSolved) {
               println(`As you touch the crystals, you notice they respond to your interaction. The pedestal's lens reveals a pattern in the winds—they shift in a specific sequence: white, green, red, blue.
               
               When you touch the crystals in that same sequence, they all light up simultaneously and remain brightly lit. The violent winds suddenly calm, forming a visible path of solidified air across the chasm!`);
-              
+
               disk.crystalSequenceSolved = true;
-              
+
               // Remove the block from the north exit
               const exit = getExit('north', getRoom('chasm_bridge').exits);
               if (exit) {
                 delete exit.block;
               }
-              
+
               println(`You can now cross safely to the northern side of the chasm.`);
             } else {
               println(`The crystals are already activated, maintaining the bridge of solidified air across the chasm. You can now cross safely to the north.`);
@@ -1363,7 +1363,7 @@ const spiralTowerDisk = () => ({
           println(`The bridge of solidified air remains in place, allowing safe passage across the chasm.`);
         }
       }
-    },   
+    },
 
     {
       id: 'time_vault',
@@ -1521,7 +1521,41 @@ const spiralTowerDisk = () => ({
               },
               {
                 option: `Ask about a **REWARD**.`,
-                line: `"Ah, the least interesting of the options, but I supposed you have earned it. Send this code to u/root88 on Reddit to receive your reward: "master-of-the-tower-and-pride-of-zephyrian"`
+                line: `"Ah, the least interesting of the options, but I supposed you have earned it. Send this code to u/root88 on Reddit to receive your reward: "master-of-the-tower-and-pride-of-zephyrian"`,
+                onSelected: ({disk, println, getRoom, enterRoom}) => {
+                  // Get the current room
+                  const room = getRoom('infinity_chamber');
+                  
+                  // Clear all existing exits
+                  room.exits = [];
+                  
+                  // Add only the URL exit
+                  room.exits.push({ 
+                    dir: 'portal', 
+                    id: 'https://www.reddit.com/u/root88', 
+                    isURL: true
+                  });
+                  
+                  // Remove Zephyrian from characters array
+                  disk.characters = disk.characters.filter(char => 
+                    !(char.name.includes('Zephyrian') || char.name.includes('archmage'))
+                  );
+                  
+                  // Also remove him from the room directly
+                  room.desc = room.desc.replace(/The \*\*ARCHMAGE ZEPHYRIAN\*\* himself stands before the Nexus.+?ancient face\./g, 
+                    "The room is now empty except for the swirling portal.");
+                  
+                  // Make Zephyrian item inaccessible 
+                  room.items = room.items.filter(item => 
+                    !(item.name.includes('Zephyrian') || item.name.includes('archmage'))
+                  );
+                  
+                  // Prevent talk command from working
+                  disk.conversant = undefined;
+                  disk.conversation = undefined;
+                  
+                  println(`\nA swirling **PORTAL** has appeared. It is your only way forward. Zephyrian has vanished.`);
+                }                
               },
               {
                 option: `Ask about the **NEXUS**.`,
@@ -1553,21 +1587,45 @@ const spiralTowerDisk = () => ({
                 
                 "Eventually, she left." The stars in his robes dim slightly. "She founded her own academy in the mortal realm. We corresponded for decades after, but eventually... well, time passes differently for me now. I sometimes lose track of mortal lifespans."
                 
-                He turns away briefly, composing himself. "I believe her academy still stands, though it has been centuries since her passing. The Silver Crescent Academy, in the far northern lands."`
+                He turns away briefly, composing himself. "I believe her academy still stands, though it has been centuries since her passing. The Golden Crescent Academy, in the far northern lands."`
               },
               {
                 option: `Say you would like to **LEAVE** without making a wish.`,
-                line: `Zephyrian regards you with newfound respect.
-                
-                "A rare choice," he says. "Most who reach this chamber immediately seize the opportunity to wish. To walk away shows wisdom I seldom see."
-                
-                He waves his hand, and a doorway appears in the wall—a simple wooden door that seems oddly mundane in this extraordinary place.
-                
-                "This will take you back to where you entered the tower, with all the knowledge and experience you've gained intact. You may return someday, if you wish—the tower will remember you.
-                
-                "Or perhaps our paths will cross again in other realities. I journey often through the Nexus these days, exploring what lies beyond."
-                
-                He bows slightly. "Farewell, Seeker. You have impressed me today."`
+                line: `Zephyrian regards you with newfound respect. "A rare choice," he says. "Most who reach this chamber immediately seize the opportunity to wish. To walk away shows wisdom I seldom see." He waves his hand, and a doorway appears in the wall—a simple wooden door that seems oddly mundane in this extraordinary place. "This will take you back to where you entered the tower, with all the knowledge and experience you've gained intact. You may return someday, if you wish—the tower will remember you. "Or perhaps our paths will cross again in other realities. I journey often through the Nexus these days, exploring what lies beyond." He bows slightly. "Farewell, Seeker. You have impressed me today."`,
+                onSelected: ({disk, println, getRoom, enterRoom}) => {
+                  // Get the current room
+                  const room = getRoom('infinity_chamber');
+                  
+                  // Clear all existing exits
+                  room.exits = [];
+                  
+                  // Add only the URL exit
+                  room.exits.push({ 
+                    dir: 'portal', 
+                    id: '/', 
+                    isURL: true
+                  });
+                  
+                  // Remove Zephyrian from characters array
+                  disk.characters = disk.characters.filter(char => 
+                    !(char.name.includes('Zephyrian') || char.name.includes('archmage'))
+                  );
+                  
+                  // Also remove him from the room directly
+                  room.desc = room.desc.replace(/The \*\*ARCHMAGE ZEPHYRIAN\*\* himself stands before the Nexus.+?ancient face\./g, 
+                    "The room is now empty except for the swirling portal.");
+                  
+                  // Make Zephyrian item inaccessible 
+                  room.items = room.items.filter(item => 
+                    !(item.name.includes('Zephyrian') || item.name.includes('archmage'))
+                  );
+                  
+                  // Prevent talk command from working
+                  disk.conversant = undefined;
+                  disk.conversation = undefined;
+                  
+                  println(`\nA swirling **PORTAL** has appeared. It is your only way forward. Zephyrian has vanished.`);
+                }                
               },
               {
                 option: `Ask to **EXPLORE** other realities through the Nexus.`,
@@ -1592,6 +1650,45 @@ const spiralTowerDisk = () => ({
                 "Very well. If that is your wish, I will teach you. Not merely spells and incantations, but the true nature of reality and how it may be shaped. Your training would take decades, perhaps centuries—but time works differently here at the tower's apex. When you eventually returned to your world, you might find that little time has passed."
                 
                 He stops pacing and faces you directly. "Be certain this is what you want. The path of magic is rewarding but demanding. It will transform you in ways you cannot predict."`
+              },
+              {
+                option: `Accuse him of **ABANDONING** his responsibilities to the tower.`,
+                line: `The warmth in Zephyrian's expression vanishes instantly. The stars in his robes pulse with angry red light, and the air around you grows heavy with power. "Abandonment?" His voice is dangerously quiet. "I've dedicated a millennium to the advancement of magical knowledge. I built this tower as both sanctuary and proving ground." With a dismissive gesture, a doorway materializes in the chamber wall. "This audience is over" An invisible force propels you toward a portal that opened in front of you. It seems questioning an archmage's choices was unwise.`,
+                onSelected: ({disk, println, getRoom, enterRoom}) => {
+                  // Get the current room
+                  const room = getRoom('infinity_chamber');
+                  
+                  // Clear all existing exits
+                  room.exits = [];
+                  
+                  // Add only the URL exit
+                  room.exits.push({ 
+                    dir: 'portal', 
+                    id: '/the-void', 
+                    isURL: true
+                  });
+                  
+                  // Remove Zephyrian from characters array
+                  disk.characters = disk.characters.filter(char => 
+                    !(char.name.includes('Zephyrian') || char.name.includes('archmage'))
+                  );
+                  
+                  // Also remove him from the room directly
+                  room.desc = room.desc.replace(/The \*\*ARCHMAGE ZEPHYRIAN\*\* himself stands before the Nexus.+?ancient face\./g, 
+                    "The room is now empty except for the swirling portal.");
+                  
+                  // Make Zephyrian item inaccessible 
+                  room.items = room.items.filter(item => 
+                    !(item.name.includes('Zephyrian') || item.name.includes('archmage'))
+                  );
+                  
+                  // Prevent talk command from working
+                  disk.conversant = undefined;
+                  disk.conversation = undefined;
+                  
+                  println(`\nA swirling **PORTAL** has appeared. It is your only way forward. Zephyrian has vanished.`);
+                },
+                removeOnRead: true,
               }
             ]
           });
@@ -2029,7 +2126,41 @@ const spiralTowerDisk = () => ({
         },
         {
           option: `Ask about a **REWARD**.`,
-          line: `"Ah, the least interesting of the options, but I supposed you have earned it. Send this code to u/root88 on Reddit to receive your reward: "master-of-the-tower-and-pride-of-zephyrian"`
+          line: `"Ah, the least interesting of the options, but I supposed you have earned it. Send this code to u/root88 on Reddit to receive your reward: "master-of-the-tower-and-pride-of-zephyrian"`,
+          onSelected: ({disk, println, getRoom, enterRoom}) => {
+            // Get the current room
+            const room = getRoom('infinity_chamber');
+            
+            // Clear all existing exits
+            room.exits = [];
+            
+            // Add only the URL exit
+            room.exits.push({ 
+              dir: 'portal', 
+              id: 'https://www.reddit.com/u/root88', 
+              isURL: true
+            });
+            
+            // Remove Zephyrian from characters array
+            disk.characters = disk.characters.filter(char => 
+              !(char.name.includes('Zephyrian') || char.name.includes('archmage'))
+            );
+            
+            // Also remove him from the room directly
+            room.desc = room.desc.replace(/The \*\*ARCHMAGE ZEPHYRIAN\*\* himself stands before the Nexus.+?ancient face\./g, 
+              "The room is now empty except for the swirling portal.");
+            
+            // Make Zephyrian item inaccessible 
+            room.items = room.items.filter(item => 
+              !(item.name.includes('Zephyrian') || item.name.includes('archmage'))
+            );
+            
+            // Prevent talk command from working
+            disk.conversant = undefined;
+            disk.conversation = undefined;
+            
+            println(`\nA swirling **PORTAL** has appeared. It is your only way forward. Zephyrian has vanished.`);
+          }          
         },
         {
           option: `Ask about the **NEXUS**.`,
@@ -2045,7 +2176,41 @@ const spiralTowerDisk = () => ({
         },
         {
           option: `Say you would like to **LEAVE** without making a wish.`,
-          line: `Zephyrian regards you with newfound respect. "A rare choice," he says. "Most who reach this chamber immediately seize the opportunity to wish. To walk away shows wisdom I seldom see." He waves his hand, and a doorway appears in the wall—a simple wooden door that seems oddly mundane in this extraordinary place. "This will take you back to where you entered the tower, with all the knowledge and experience you've gained intact. You may return someday, if you wish—the tower will remember you. "Or perhaps our paths will cross again in other realities. I journey often through the Nexus these days, exploring what lies beyond." He bows slightly. "Farewell, Seeker. You have impressed me today."`
+          line: `Zephyrian regards you with newfound respect. "A rare choice," he says. "Most who reach this chamber immediately seize the opportunity to wish. To walk away shows wisdom I seldom see." He waves his hand, and a doorway appears in the wall—a simple wooden door that seems oddly mundane in this extraordinary place. "This will take you back to where you entered the tower, with all the knowledge and experience you've gained intact. You may return someday, if you wish—the tower will remember you. "Or perhaps our paths will cross again in other realities. I journey often through the Nexus these days, exploring what lies beyond." He bows slightly. "Farewell, Seeker. You have impressed me today."`,
+          onSelected: ({disk, println, getRoom, enterRoom}) => {
+            // Get the current room
+            const room = getRoom('infinity_chamber');
+            
+            // Clear all existing exits
+            room.exits = [];
+            
+            // Add only the URL exit
+            room.exits.push({ 
+              dir: 'portal', 
+              id: '/', 
+              isURL: true
+            });
+            
+            // Remove Zephyrian from characters array
+            disk.characters = disk.characters.filter(char => 
+              !(char.name.includes('Zephyrian') || char.name.includes('archmage'))
+            );
+            
+            // Also remove him from the room directly
+            room.desc = room.desc.replace(/The \*\*ARCHMAGE ZEPHYRIAN\*\* himself stands before the Nexus.+?ancient face\./g, 
+              "The room is now empty except for the swirling portal.");
+            
+            // Make Zephyrian item inaccessible 
+            room.items = room.items.filter(item => 
+              !(item.name.includes('Zephyrian') || item.name.includes('archmage'))
+            );
+            
+            // Prevent talk command from working
+            disk.conversant = undefined;
+            disk.conversation = undefined;
+            
+            println(`\nA swirling **PORTAL** has appeared. It is your only way forward. Zephyrian has vanished.`);
+          }          
         },
         {
           option: `Ask to **EXPLORE** other realities through the Nexus.`,
@@ -2054,6 +2219,45 @@ const spiralTowerDisk = () => ({
         {
           option: `Ask to **STUDY** with Zephyrian.`,
           line: `The Archmage considers you thoughtfully, stroking his star-white beard. "A student..." he muses. "It has been centuries since I took an apprentice. My last one eventually built her own tower, though not nearly as interesting as this one." He smiles at the memory. "You have shown aptitude, determination, and wisdom in your journey here. These are the foundations upon which great magic can be built." He paces slowly, considering. "Very well. If that is your wish, I will teach you. Your training would take decades, perhaps centuries—but time works differently here at the tower's apex." He stops pacing and faces you directly. "Be certain this is what you want. The path of magic is rewarding but demanding. It will transform you in ways you cannot predict."`
+        },
+        {
+          option: `Accuse him of **ABANDONING** his responsibilities to the tower.`,
+          line: `The warmth in Zephyrian's expression vanishes instantly. The stars in his robes pulse with angry red light, and the air around you grows heavy with power. "Abandonment?" His voice is dangerously quiet. "I've dedicated a millennium to the advancement of magical knowledge. I built this tower as both sanctuary and proving ground." With a dismissive gesture, a doorway materializes in the chamber wall. "This audience is over" An invisible force propels you toward a portal that opened in front of you. It seems questioning an archmage's choices was unwise.`,
+          onSelected: ({disk, println, getRoom, enterRoom}) => {
+            // Get the current room
+            const room = getRoom('infinity_chamber');
+            
+            // Clear all existing exits
+            room.exits = [];
+            
+            // Add only the URL exit
+            room.exits.push({ 
+              dir: 'portal', 
+              id: '/the-void', 
+              isURL: true
+            });
+            
+            // Remove Zephyrian from characters array
+            disk.characters = disk.characters.filter(char => 
+              !(char.name.includes('Zephyrian') || char.name.includes('archmage'))
+            );
+            
+            // Also remove him from the room directly
+            room.desc = room.desc.replace(/The \*\*ARCHMAGE ZEPHYRIAN\*\* himself stands before the Nexus.+?ancient face\./g, 
+              "The room is now empty except for the swirling portal.");
+            
+            // Make Zephyrian item inaccessible 
+            room.items = room.items.filter(item => 
+              !(item.name.includes('Zephyrian') || item.name.includes('archmage'))
+            );
+            
+            // Prevent talk command from working
+            disk.conversant = undefined;
+            disk.conversation = undefined;
+            
+            println(`\nA swirling **PORTAL** has appeared. It is your only way forward. Zephyrian has vanished.`);
+          },
+          removeOnRead: true,
         }
       ]
     },

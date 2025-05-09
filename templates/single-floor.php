@@ -25,6 +25,14 @@ $content_color = get_post_meta(get_the_ID(), '_content_color', true);
 $content_bg_color = get_post_meta(get_the_ID(), '_content_background_color', true);
 $floor_number_color = get_post_meta(get_the_ID(), '_floor_number_color', true);
 
+// Get the post type to determine which meta keys to use
+$current_post_type = get_post_type(get_the_ID());
+$meta_prefix = ($current_post_type === 'room') ? '_room_' : '_floor_';
+
+// Use the appropriate meta key prefix
+$custom_script_inside = get_post_meta(get_the_ID(), $meta_prefix . 'custom_script_inside', true);
+$custom_script_outside = get_post_meta(get_the_ID(), $meta_prefix . 'custom_script_outside', true);
+
 // --- Process Featured Image ---
 $featured_image = '';
 $image_width = 0;
@@ -164,7 +172,6 @@ $portals = get_posts(array(
 
 			<?php // ----- START: Output Custom Interface Script --- ?>
 			<?php
-			$custom_script_inside = get_post_meta(get_the_ID(), '_floor_custom_script_inside', true);
 			if (!empty($custom_script_inside)) {
 				echo "\n\n";
 				echo $custom_script_inside; // Output the raw HTML/Script
@@ -277,7 +284,6 @@ $portals = get_posts(array(
 
 	<?php // ----- START: Output Custom Interface Script --- ?>
 	<?php
-	$custom_script_outside = get_post_meta(get_the_ID(), '_floor_custom_script_outside', true);
 	if (!empty($custom_script_outside)) {
 		echo "\n\n";
 		echo $custom_script_outside; // Output the raw HTML/Script
@@ -286,105 +292,102 @@ $portals = get_posts(array(
 	?>
 	<?php // ----- END: Custom Interface Script --- ?>
 
-
-
-
 	<?php // ----- START: GUEST BOOK MODAL ----- ?>
-<div id="guestbook-modal" class="spiral-tower-modal" style="display: none;">
-    <div class="modal-backdrop"></div>
-    <div class="guestbook-container">
-        <div class="guestbook-content">
-            <div class="guestbook-header">
-                <h2>Guest Book</h2>
-                <button id="close-guestbook-modal" class="guestbook-close">&times;</button>
-            </div>
-            <div class="guestbook-body">
-                <div class="guestbook-entries">
-                    <?php
-                    // Get comments for this post
-                    $comments = get_comments(array('post_id' => get_the_ID(), 'status' => 'approve'));
+	<div id="guestbook-modal" class="spiral-tower-modal" style="display: none;">
+		<div class="modal-backdrop"></div>
+		<div class="guestbook-container">
+			<div class="guestbook-content">
+				<div class="guestbook-header">
+					<h2>Guest Book</h2>
+					<button id="close-guestbook-modal" class="guestbook-close">&times;</button>
+				</div>
+				<div class="guestbook-body">
+					<div class="guestbook-entries">
+						<?php
+						// Get comments for this post
+						$comments = get_comments(array('post_id' => get_the_ID(), 'status' => 'approve'));
 
-                    // Display comments
-                    if ($comments) {
-                        echo '<h3>Previous Visitors</h3>';
-                        echo '<ul class="comment-list">';
+						// Display comments
+						if ($comments) {
+							echo '<h3>Previous Visitors</h3>';
+							echo '<ul class="comment-list">';
 
-                        foreach ($comments as $comment) {
-                            echo '<li class="comment">';
-                            echo '<div class="comment-author">' . esc_html($comment->comment_author) . '</div>';
-                            echo '<div class="comment-date">' . esc_html(date('F j, Y', strtotime($comment->comment_date))) . '</div>';
-                            echo '<div class="comment-content">' . wpautop(esc_html($comment->comment_content)) . '</div>';
-                            echo '</li>';
-                        }
+							foreach ($comments as $comment) {
+								echo '<li class="comment">';
+								echo '<div class="comment-author">' . esc_html($comment->comment_author) . '</div>';
+								echo '<div class="comment-date">' . esc_html(date('F j, Y', strtotime($comment->comment_date))) . '</div>';
+								echo '<div class="comment-content">' . wpautop(esc_html($comment->comment_content)) . '</div>';
+								echo '</li>';
+							}
 
-                        echo '</ul>';
-                    } else {
-                        echo '<p class="no-comments">No one has signed the guest book yet. Be the first!</p>';
-                    }
-                    ?>
-                </div>
-                <div class="guestbook-form">
-                    <?php
-                    // Only show comment form if comments are open for this post
-                    if (comments_open()) {
-                        comment_form(array(
-                            'title_reply' => 'Sign the Guest Book',
-                            'comment_notes_before' => '<p class="comment-notes">Leave your mark on the Spiral Tower.</p>',
-                            'label_submit' => 'Sign',
-                            'comment_field' => '<p class="comment-form-comment"><label for="comment">Your Message</label><textarea id="comment" name="comment" cols="45" rows="5" required="required"></textarea></p>',
-                        ));
-                    }
-                    ?>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+							echo '</ul>';
+						} else {
+							echo '<p class="no-comments">No one has signed the guest book yet. Be the first!</p>';
+						}
+						?>
+					</div>
+					<div class="guestbook-form">
+						<?php
+						// Only show comment form if comments are open for this post
+						if (comments_open()) {
+							comment_form(array(
+								'title_reply' => 'Sign the Guest Book',
+								'comment_notes_before' => '<p class="comment-notes">Leave your mark on the Spiral Tower.</p>',
+								'label_submit' => 'Sign',
+								'comment_field' => '<p class="comment-form-comment"><label for="comment">Your Message</label><textarea id="comment" name="comment" cols="45" rows="5" required="required"></textarea></p>',
+							));
+						}
+						?>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Get elements
-    const guestbookButton = document.getElementById('button-guestbook');
-    const guestbookModal = document.getElementById('guestbook-modal');
-    const closeModalButton = document.getElementById('close-guestbook-modal');
-    const modalBackdrop = guestbookModal ? guestbookModal.querySelector('.modal-backdrop') : null;
-    
-    // Open modal when guest book button is clicked
-    if (guestbookButton && guestbookModal) {
-        guestbookButton.addEventListener('click', function() {
-            guestbookModal.style.display = 'block';
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
-        });
-    }
-    
-    // Close modal when close button is clicked
-    if (closeModalButton && guestbookModal) {
-        closeModalButton.addEventListener('click', function() {
-            guestbookModal.style.display = 'none';
-            document.body.style.overflow = ''; // Restore scrolling
-        });
-    }
-    
-    // Close modal when clicking on backdrop
-    if (modalBackdrop && guestbookModal) {
-        modalBackdrop.addEventListener('click', function(event) {
-            if (event.target === modalBackdrop) {
-                guestbookModal.style.display = 'none';
-                document.body.style.overflow = ''; // Restore scrolling
-            }
-        });
-    }
-    
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape' && guestbookModal && guestbookModal.style.display === 'block') {
-            guestbookModal.style.display = 'none';
-            document.body.style.overflow = ''; // Restore scrolling
-        }
-    });
-});
-</script>
-<?php // ----- END: GUEST BOOK MODAL ----- ?>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			// Get elements
+			const guestbookButton = document.getElementById('button-guestbook');
+			const guestbookModal = document.getElementById('guestbook-modal');
+			const closeModalButton = document.getElementById('close-guestbook-modal');
+			const modalBackdrop = guestbookModal ? guestbookModal.querySelector('.modal-backdrop') : null;
+
+			// Open modal when guest book button is clicked
+			if (guestbookButton && guestbookModal) {
+				guestbookButton.addEventListener('click', function () {
+					guestbookModal.style.display = 'block';
+					document.body.style.overflow = 'hidden'; // Prevent background scrolling
+				});
+			}
+
+			// Close modal when close button is clicked
+			if (closeModalButton && guestbookModal) {
+				closeModalButton.addEventListener('click', function () {
+					guestbookModal.style.display = 'none';
+					document.body.style.overflow = ''; // Restore scrolling
+				});
+			}
+
+			// Close modal when clicking on backdrop
+			if (modalBackdrop && guestbookModal) {
+				modalBackdrop.addEventListener('click', function (event) {
+					if (event.target === modalBackdrop) {
+						guestbookModal.style.display = 'none';
+						document.body.style.overflow = ''; // Restore scrolling
+					}
+				});
+			}
+
+			// Close modal with Escape key
+			document.addEventListener('keydown', function (event) {
+				if (event.key === 'Escape' && guestbookModal && guestbookModal.style.display === 'block') {
+					guestbookModal.style.display = 'none';
+					document.body.style.overflow = ''; // Restore scrolling
+				}
+			});
+		});
+	</script>
+	<?php // ----- END: GUEST BOOK MODAL ----- ?>
 
 
 	<?php wp_footer(); ?>
