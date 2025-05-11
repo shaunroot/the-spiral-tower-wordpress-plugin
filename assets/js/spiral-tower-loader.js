@@ -29,9 +29,10 @@ window.SpiralTower.config = {
             background: false,
             gizmos: false,      
             youtube: false,
-            transitions: true,
+            transitions: false,
             colorExtractor: false,
             portalEditor: false,
+            like: true,
         }
     }
 };
@@ -112,6 +113,7 @@ if (typeof spiralTowerWpSettings !== 'undefined' && spiralTowerWpSettings.loggin
         'spiral-tower-tooltips.js',  
         'spiral-tower-portal-editor.js',   
         'spiral-tower-image-generator.js', 
+        'spiral-tower-like.js', 
         'spiral-tower-core.js'             
     ];
 

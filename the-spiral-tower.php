@@ -26,6 +26,7 @@ require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-portal-manag
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/stairs.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/twist.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-image-generator.php';
+require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-like-manager.php';
 
 /**
  * Main Plugin Class
@@ -48,6 +49,11 @@ class Spiral_Tower_Plugin
     public $portal_manager;
 
     /**
+     * Like Manager instance
+     */
+    public $like_manager;
+
+    /**
      * Initialize the plugin
      */
     public function __construct()
@@ -57,6 +63,7 @@ class Spiral_Tower_Plugin
         $this->room_manager = new Spiral_Tower_Room_Manager();
         $this->portal_manager = new Spiral_Tower_Portal_Manager();
         $this->image_generator = new Spiral_Tower_Image_Generator();
+        $this->like_manager = new Spiral_Tower_Like_Manager();
 
         // Register activation and deactivation hooks
         register_activation_hook(__FILE__, array($this, 'activate'));
@@ -468,8 +475,19 @@ class Spiral_Tower_Plugin
                     array(
                         'youtubeId' => $youtube_id,
                         'postType' => $current_post_type,
-                        // Add other data as needed
+                        'ajaxurl' => admin_url('admin-ajax.php'),
+                        'spiral_tower_like_nonce' => wp_create_nonce('spiral_tower_like_nonce'),
+                        'spiral_tower_like_users_nonce' => wp_create_nonce('spiral_tower_like_users_nonce')
                     )
+                );
+
+                // This creates the global JavaScript variables needed by the like module
+                wp_add_inline_script(
+                    'spiral-tower-loader',
+                    'var ajaxurl = "' . admin_url('admin-ajax.php') . '";
+                    var spiral_tower_like_nonce = "' . wp_create_nonce('spiral_tower_like_nonce') . '";
+                    var spiral_tower_like_users_nonce = "' . wp_create_nonce('spiral_tower_like_users_nonce') . '";',
+                    'before'
                 );
             }
         }
@@ -556,6 +574,33 @@ class Spiral_Tower_Plugin
             }
         }
         return $classes;
+    }
+
+    /**
+     * Get the like count for a post
+     */
+    function spiral_tower_get_like_count($post_id)
+    {
+        global $spiral_tower_plugin;
+        return $spiral_tower_plugin->like_manager->get_like_count($post_id);
+    }
+
+    /**
+     * Check if the current user has liked a post
+     */
+    function spiral_tower_has_user_liked($post_id)
+    {
+        global $spiral_tower_plugin;
+        return $spiral_tower_plugin->like_manager->has_user_liked($post_id);
+    }
+
+    /**
+     * Toggle a user's like status for a post
+     */
+    function spiral_tower_toggle_like($post_id)
+    {
+        global $spiral_tower_plugin;
+        return $spiral_tower_plugin->like_manager->toggle_like($post_id);
     }
 
     /**
@@ -699,6 +744,35 @@ add_action('admin_enqueue_scripts', 'spiral_tower_enqueue_admin_scripts');
 
 // Initialize the plugin
 $spiral_tower_plugin = new Spiral_Tower_Plugin();
+
+// Add these after initializing $spiral_tower_plugin
+add_action('wp_ajax_spiral_tower_generate_image', array($spiral_tower_plugin->image_generator, 'handle_generate_image_ajax'));
+add_action('wp_ajax_spiral_tower_set_featured_image', array($spiral_tower_plugin->image_generator, 'set_featured_image_ajax'));
+
+// Global helper functions for like system
+function spiral_tower_get_like_count($post_id) {
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->like_manager)) {
+        return $spiral_tower_plugin->like_manager->get_like_count($post_id);
+    }
+    return 0;
+}
+
+function spiral_tower_has_user_liked($post_id) {
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->like_manager)) {
+        return $spiral_tower_plugin->like_manager->has_user_liked($post_id);
+    }
+    return false;
+}
+
+function spiral_tower_toggle_like($post_id) {
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->like_manager)) {
+        return $spiral_tower_plugin->like_manager->toggle_like($post_id);
+    }
+    return false;
+}
 
 // Add these after initializing $spiral_tower_plugin
 add_action('wp_ajax_spiral_tower_generate_image', array($spiral_tower_plugin->image_generator, 'handle_generate_image_ajax'));

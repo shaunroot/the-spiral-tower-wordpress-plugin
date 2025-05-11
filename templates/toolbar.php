@@ -1,5 +1,23 @@
 <?php $current_post_type = get_post_type($current_post_id); ?>
 
+<?php
+// Get post data for like functionality
+$post_id = get_the_ID();
+$has_liked = function_exists('spiral_tower_has_user_liked') ? spiral_tower_has_user_liked($post_id) : false;
+$like_count = function_exists('spiral_tower_get_like_count') ? spiral_tower_get_like_count($post_id) : 0;
+
+// Tooltip text based on like count
+$tooltip_text = $like_count > 0
+    ? sprintf('%d %s liked this', $like_count, $like_count === 1 ? 'person' : 'people')
+    : 'Favorite';
+
+// CSS classes for the like button
+$like_button_classes = 'tooltip-trigger';
+if ($has_liked) {
+    $like_button_classes .= ' liked';
+}
+?>
+
 <div id="toolbar"> <?php // ----- START: Toolbar----- ?>
 
     <?php // ----- START: Content Visibility Toggle Button HTML ----- ?>
@@ -78,13 +96,28 @@
         $edit_portals_url = admin_url('edit.php?post_type=portal'); // Assumes 'portal' CPT slug
         ?>
         <div id="toolbar-edit-portals" class="tooltip-trigger" data-tooltip="Edit Portals">
-            <?php // --- SVG Icon for Edit Portals (Lucide List) --- ?>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="8" y1="9" x2="16" y2="9" />
-                <line x1="8" y1="12" x2="16" y2="12" />
-                <line x1="8" y1="15" x2="16" y2="15" />
+            <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 24 24">
+                <defs>
+                    <style>
+                        .st1 {
+                            fill: none;
+                            stroke: white;
+                            /* Changed from #000 to white */
+                            stroke-linecap: round;
+                            stroke-linejoin: round;
+                            stroke-width: 2px;
+                        }
+                    </style>
+                </defs>
+
+                <circle class="st1" cx="12" cy="12" r="10" />
+                <g>
+
+                    <path class="st1" d="M15.2,6.8c.5-.5,1.4-.5,1.9,0s.5,1.4,0,1.9l-8.1,8.1-2.6.6.6-2.6L15.2,6.8Z" />
+
+                    <line class="st1" x1="14" y1="9" x2="14.9" y2="9.9" />
+
+                </g>
             </svg>
         </div>
     <?php endif; ?>
@@ -95,7 +128,7 @@
     <?php
     // Check if the current user can create portals
     if (current_user_can('edit_posts')):
-        $current_post_id = get_the_ID();       
+        $current_post_id = get_the_ID();
 
         // Set up the portal creation URL with the current page as the origin
         $create_portal_url = admin_url('post-new.php?post_type=portal');
@@ -176,6 +209,18 @@
         <button type="button" id="toolbar-search-submit">Go</button>
     </div>
     <?php // ----- END: TWIST ----- ?>
+
+
+    <?php // ----- START: Like Button HTML ----- ?>
+    <div id="toolbar-like" class="<?php echo esc_attr($like_button_classes); ?>"
+        data-post-id="<?php echo esc_attr($post_id); ?>" data-tooltip="<?php echo esc_attr($tooltip_text); ?>">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+                d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z" />
+        </svg>
+    </div>
+    <?php // ----- END: Like Button HTML ----- ?>
 
 
     <?php // ----- START: Sound Toggle Button HTML ----- ?>

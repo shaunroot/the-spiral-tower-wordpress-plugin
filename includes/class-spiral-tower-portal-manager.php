@@ -290,7 +290,7 @@ class Spiral_Tower_Portal_Manager
                             'posts_per_page' => -1,
                             'orderby' => 'meta_value_num',
                             'meta_key' => '_floor_number',
-                            'order' => 'ASC'
+                            'order' => 'DESC'
                         ));
 
                         foreach ($floors as $floor) {

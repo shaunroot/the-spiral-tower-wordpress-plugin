@@ -584,6 +584,106 @@ body.text-only-mode .spiral-tower-floor-container {
       /* ... svg styles ... */
     }
   }
+
+  #toolbar-heart.liked svg {
+    fill: red;
+    stroke: red;
+    opacity: 1;
+  }
+
+  // Like system
+  /* Like users tooltip styles */
+  .like-users-tooltip {
+    position: fixed;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    max-width: 250px;
+    width: max-content;
+    display: none;
+    transform: translateX(-50%);
+  }
+
+  .tooltip-content {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .tooltip-header {
+    font-weight: bold;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .tooltip-user {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+
+  .user-name {
+    font-size: 13px;
+  }
+
+  .tooltip-no-users {
+    font-style: italic;
+    opacity: 0.7;
+  }
+
+  /* Processing state */
+  #toolbar-like.processing {
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  /* Like button in the toolbar */
+  #toolbar-like {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  /* Fill the heart when liked */
+  #toolbar-like.liked svg {
+    fill: #bb2222;
+  }
+
+  /* Hover animation */
+  #toolbar-like:hover {
+    transform: scale(1.1);
+  }
+
+  /* Processing state (while AJAX request is in progress) */
+  #toolbar-like.processing {
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  /* Like users tooltip - if you prefer to use CSS instead of JavaScript styling */
+  .like-users-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    max-width: 300px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    display: none;
+    transform: translateX(-50%);
+  }
 }
 
 #portal-notifications,
@@ -965,7 +1065,7 @@ body.text-only-mode {
   .scroll-left {
     bottom: 40px;
   }
-} 
+}
 
 /* Visible state for the arrows */
 .scroll-arrow.visible {

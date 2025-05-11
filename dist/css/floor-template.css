@@ -1147,6 +1147,13 @@ body.text-only-mode .spiral-tower-floor-container {
   opacity: 0.8;
   /* Add this to your CSS */
   /* Optional hover effect */
+  /* Like users tooltip styles */
+  /* Processing state */
+  /* Like button in the toolbar */
+  /* Fill the heart when liked */
+  /* Hover animation */
+  /* Processing state (while AJAX request is in progress) */
+  /* Like users tooltip - if you prefer to use CSS instead of JavaScript styling */
 }
 #toolbar > a,
 #toolbar > div {
@@ -1205,6 +1212,85 @@ body.text-only-mode .spiral-tower-floor-container {
 #toolbar #button-sound-toggle #volume-off-icon,
 #toolbar #button-sound-toggle #volume-on-icon {
   /* ... svg styles ... */
+}
+#toolbar #toolbar-heart.liked svg {
+  fill: red;
+  stroke: red;
+  opacity: 1;
+}
+#toolbar .like-users-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  border-radius: 4px;
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  max-width: 250px;
+  width: -moz-max-content;
+  width: max-content;
+  display: none;
+  transform: translateX(-50%);
+}
+#toolbar .tooltip-content {
+  max-height: 200px;
+  overflow-y: auto;
+}
+#toolbar .tooltip-header {
+  font-weight: bold;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+#toolbar .tooltip-user {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+#toolbar .user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+#toolbar .user-name {
+  font-size: 13px;
+}
+#toolbar .tooltip-no-users {
+  font-style: italic;
+  opacity: 0.7;
+}
+#toolbar #toolbar-like.processing {
+  opacity: 0.7;
+  pointer-events: none;
+}
+#toolbar #toolbar-like {
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+#toolbar #toolbar-like.liked svg {
+  fill: #bb2222;
+}
+#toolbar #toolbar-like:hover {
+  transform: scale(1.1);
+}
+#toolbar #toolbar-like.processing {
+  opacity: 0.7;
+  pointer-events: none;
+}
+#toolbar .like-users-tooltip {
+  position: fixed;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  max-width: 300px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  display: none;
+  transform: translateX(-50%);
 }
 
 #portal-notifications,
