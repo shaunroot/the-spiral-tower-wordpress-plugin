@@ -1,7 +1,7 @@
 <?php
 /**
  * Like Manager Component
- * Manages the like functionality for Floor and Room post types
+ * Manages the like functionality for Floor and Room post types with improved tooltip
  */
 class Spiral_Tower_Like_Manager
 {
@@ -12,13 +12,12 @@ class Spiral_Tower_Like_Manager
     {
         // Create likes table on plugin activation
         register_activation_hook(SPIRAL_TOWER_PLUGIN_DIR . 'spiral-tower.php', array($this, 'create_likes_table'));
-        
+
         // Also ensure table exists on init
         add_action('init', array($this, 'check_and_create_table'));
 
-        // Add AJAX handlers
+        // Add AJAX handlers for like functionality only
         add_action('wp_ajax_spiral_tower_toggle_like', array($this, 'handle_like_ajax'));
-        add_action('wp_ajax_spiral_tower_get_like_users', array($this, 'handle_get_like_users_ajax'));
 
         // Add like count to REST API
         add_action('rest_api_init', array($this, 'add_like_count_to_rest_api'));
@@ -29,22 +28,29 @@ class Spiral_Tower_Like_Manager
 
         add_filter('manage_room_posts_columns', array($this, 'add_likes_column'));
         add_action('manage_room_posts_custom_column', array($this, 'display_likes_column'), 10, 2);
+
+        // Add styles and scripts to the footer
+        add_action('wp_footer', array($this, 'add_like_tooltip_styles'), 10);
+        add_action('wp_footer', array($this, 'add_like_scripts'), 20);
+
+        // Add functionality for getting user names
+        add_filter('spiral_tower_get_like_tooltip_content', array($this, 'get_like_tooltip_content'), 10, 1);
     }
-    
+
     /**
      * Check if the likes table exists and create it if not
      */
-    public function check_and_create_table() {
+    public function check_and_create_table()
+    {
         global $wpdb;
         $table_name = $wpdb->prefix . 'spiral_tower_likes';
-        
+
         // Check if table exists
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
-        
+
         if (!$table_exists) {
             // Table doesn't exist, create it
             $this->create_likes_table();
-            error_log("Spiral Tower: Likes table created during init check");
         }
     }
 
@@ -71,10 +77,6 @@ class Spiral_Tower_Like_Manager
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
-        
-        // Log creation attempt
-        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
-        error_log("Spiral Tower: Likes table creation " . ($table_exists ? "successful" : "failed"));
     }
 
     /**
@@ -100,111 +102,83 @@ class Spiral_Tower_Like_Manager
             wp_send_json_error(array('message' => 'Invalid post ID'));
             return;
         }
-        
-        // Log the request
-        error_log("Spiral Tower: Like toggle request for post $post_id by user " . get_current_user_id());
 
         // Toggle like status
         $is_liked = $this->toggle_like($post_id);
 
         // Get updated like count
         $like_count = $this->get_like_count($post_id);
-        
-        // Log the result
-        error_log("Spiral Tower: Like toggle result - liked: " . ($is_liked ? "Yes" : "No") . ", count: $like_count");
 
-        // Send response
+        // Get tooltip content
+        $tooltip_content = $this->get_like_tooltip_content($post_id);
+
+        // Send response with HTML
         wp_send_json_success(array(
             'liked' => $is_liked,
-            'count' => $like_count
+            'count' => $like_count,
+            'tooltip_text' => sprintf('%d %s liked this', $like_count, $like_count === 1 ? 'person' : 'people'),
+            'tooltip_content' => $tooltip_content
         ));
     }
-   
-    /**
-     * Handle AJAX request to get users who liked a post
-     */
-    public function handle_get_like_users_ajax()
-    {
-        // Check nonce for security
-        if (!isset($_POST['security']) || !wp_verify_nonce($_POST['security'], 'spiral_tower_like_users_nonce')) {
-            wp_send_json_error(array('message' => 'Security check failed'));
-            return;
-        }
-    
-        // Get post ID
-        $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
-        if (!$post_id) {
-            wp_send_json_error(array('message' => 'Invalid post ID'));
-            return;
-        }
-    
-        // Log the request for debugging
-        error_log("Spiral Tower: Getting users who liked post $post_id");
-    
-        // Get users who liked this post
-        $users = $this->get_users_who_liked($post_id, 20); // Limit to 20 users
-    
-        // Log the result for debugging
-        error_log("Spiral Tower: Found " . count($users) . " users who liked post $post_id");
-        if (!empty($users)) {
-            error_log("Spiral Tower: User names: " . implode(", ", array_column($users, 'name')));
-        }
-    
-        // Return the list of users
-        wp_send_json_success(array(
-            'users' => $users
-        ));
-    }
-    
+
     /**
      * Get users who have liked a post
-     * Add more error checking and logging
      */
-    public function get_users_who_liked($post_id, $limit = 10, $offset = 0)
-    {
+    public function get_users_who_liked($post_id, $limit = 100) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'spiral_tower_likes';
         
         // Check if the table exists
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
         if (!$table_exists) {
-            error_log("Spiral Tower: Likes table doesn't exist in get_users_who_liked, creating now");
-            $this->create_likes_table();
             return array();
         }
     
         $query = $wpdb->prepare(
-            "SELECT user_id FROM $table_name WHERE post_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d",
+            "SELECT user_id FROM $table_name WHERE post_id = %d ORDER BY created_at DESC LIMIT %d",
             $post_id,
-            $limit,
-            $offset
+            $limit
         );
         
-        // Log the query for debugging
-        error_log("Spiral Tower: Executing query: $query");
-        
         $user_ids = $wpdb->get_col($query);
-        
-        // Log the found user IDs
-        error_log("Spiral Tower: Found user IDs: " . implode(", ", $user_ids));
-    
-        $users = array();
+        $user_names = array();
     
         foreach ($user_ids as $user_id) {
             $user = get_userdata($user_id);
-    
             if ($user) {
-                $users[] = array(
-                    'id' => $user_id,
-                    'name' => $user->display_name,
-                    'avatar' => get_avatar_url($user_id, array('size' => 32))
-                );
-            } else {
-                error_log("Spiral Tower: Could not find user data for user ID $user_id");
+                $user_names[] = $user->display_name;
             }
         }
     
-        return $users;
+        return $user_names;
+    }
+    
+    function spiral_tower_get_users_who_liked($post_id) {
+        global $spiral_tower_plugin;
+        if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->like_manager)) {
+            return $spiral_tower_plugin->like_manager->get_users_who_liked($post_id);
+        }
+        return array();
+    }   
+
+    /**
+     * Get HTML content for the like tooltip
+     */
+    public function get_like_tooltip_content($post_id)
+    {
+        $users = $this->get_users_who_liked($post_id);
+
+        if (empty($users)) {
+            return '';
+        }
+
+        $html = '<div class="like-users-list">';
+        foreach ($users as $user) {
+            $html .= '<span class="like-user-name">' . esc_html($user['name']) . '</span>';
+        }
+        $html .= '</div>';
+
+        return $html;
     }
 
     /**
@@ -298,12 +272,12 @@ class Spiral_Tower_Like_Manager
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'spiral_tower_likes';
-        
+
         // Check if the table exists
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
         if (!$table_exists) {
-            error_log("Spiral Tower: Likes table doesn't exist in get_like_count, creating now");
             $this->create_likes_table();
+            return 0;
         }
 
         $count = $wpdb->get_var($wpdb->prepare(
@@ -330,11 +304,10 @@ class Spiral_Tower_Like_Manager
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'spiral_tower_likes';
-        
+
         // Check if the table exists
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
         if (!$table_exists) {
-            error_log("Spiral Tower: Likes table doesn't exist in has_user_liked, creating now");
             $this->create_likes_table();
             return false;
         }
@@ -360,27 +333,24 @@ class Spiral_Tower_Like_Manager
 
         // If not logged in, they can't like
         if (!$user_id) {
-            error_log("Spiral Tower: Toggle like failed - User not logged in");
             return false;
         }
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'spiral_tower_likes';
-        
+
         // Check if the table exists
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
         if (!$table_exists) {
-            error_log("Spiral Tower: Likes table doesn't exist in toggle_like, creating now");
             $this->create_likes_table();
         }
 
         // Check if user has already liked
         $has_liked = $this->has_user_liked($post_id, $user_id);
-        error_log("Spiral Tower: User $user_id has liked post $post_id: " . ($has_liked ? 'Yes' : 'No'));
 
         if ($has_liked) {
             // Unlike - remove record
-            $result = $wpdb->delete(
+            $wpdb->delete(
                 $table_name,
                 array(
                     'post_id' => $post_id,
@@ -388,12 +358,11 @@ class Spiral_Tower_Like_Manager
                 ),
                 array('%d', '%d')
             );
-            
-            error_log("Spiral Tower: Unlike result: " . ($result ? 'Success' : 'Failed - ' . $wpdb->last_error));
+
             return false; // Now unliked
         } else {
             // Like - add record
-            $result = $wpdb->insert(
+            $wpdb->insert(
                 $table_name,
                 array(
                     'post_id' => $post_id,
@@ -402,9 +371,246 @@ class Spiral_Tower_Like_Manager
                 ),
                 array('%d', '%d', '%s')
             );
-            
-            error_log("Spiral Tower: Like result: " . ($result ? 'Success' : 'Failed - ' . $wpdb->last_error));
+
             return true; // Now liked
         }
+    }
+
+    /**
+     * Add styles for the like tooltip
+     */
+    public function add_like_tooltip_styles()
+    {
+        // Only output on single floor or room pages, or pages with floor template
+        if (
+            !is_singular(array('floor', 'room')) &&
+            !(is_page() && get_post_meta(get_the_ID(), '_use_floor_template', true) === '1')
+        ) {
+            return;
+        }
+
+        // Get post data to check if we need to output tooltip
+        $post_id = get_the_ID();
+        $like_count = $this->get_like_count($post_id);
+
+        // Output the CSS
+        ?>
+        <style>
+            /* Add enhanced tooltip styles */
+            .tooltip-trigger[data-tooltip]:hover::before {
+                white-space: normal !important;
+                width: auto !important;
+                max-width: 250px !important;
+            }
+
+            /* Enhanced like tooltip */
+            #toolbar-like:hover::before {
+                content: attr(data-tooltip);
+                white-space: normal !important;
+                line-height: 1.4 !important;
+                padding: 8px 12px !important;
+                text-align: center !important;
+            }
+
+            /* Custom tooltip for like button */
+            .like-tooltip {
+                display: none;
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                margin-bottom: 10px;
+                padding: 10px;
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                border-radius: 4px;
+                z-index: 1000;
+                width: 200px;
+                max-width: 300px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+                text-align: center;
+            }
+
+            .like-tooltip::after {
+                content: '';
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 5px;
+                border-style: solid;
+                border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+            }
+
+            .like-users-list {
+                margin-top: 5px;
+                max-height: 100px;
+                overflow-y: auto;
+                text-align: center;
+            }
+
+            .like-user-name {
+                display: inline-block;
+                margin: 2px;
+                padding: 1px 5px;
+                border-radius: 3px;
+                background-color: rgba(255, 255, 255, 0.1);
+                font-size: 12px;
+            }
+
+            /* Liked state styling */
+            #toolbar-like.liked svg {
+                fill: #ff5555;
+                filter: drop-shadow(0 0 3px rgba(255, 85, 85, 0.7));
+            }
+
+            /* Processing state */
+            #toolbar-like.processing {
+                opacity: 0.7;
+                pointer-events: none;
+            }
+
+            /* Enhanced tooltip that shows the list of users */
+            #toolbar-like.has-tooltip-content:hover::before {
+                content: attr(data-tooltip) !important;
+                width: auto !important;
+                max-width: 250px !important;
+                white-space: normal !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+                margin-bottom: 5px !important;
+                padding-bottom: 5px !important;
+            }
+
+            #toolbar-like.has-tooltip-content:hover::after {
+                content: attr(data-tooltip-content) !important;
+                position: absolute !important;
+                display: block !important;
+                font-size: 12px !important;
+                line-height: 1.4 !important;
+                width: auto !important;
+                max-width: 250px !important;
+                white-space: normal !important;
+                text-align: center !important;
+                background: transparent !important;
+                border: none !important;
+                transform: none !important;
+                bottom: auto !important;
+                left: auto !important;
+                top: auto !important;
+                right: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+        </style>
+        <?php
+
+        // Custom tooltip HTML if there are users who liked
+        if ($like_count > 0) {
+            // Get the list of users
+            $users = $this->get_users_who_liked($post_id);
+            if (!empty($users)) {
+                $tooltip_html = '';
+                foreach ($users as $user) {
+                    $tooltip_html .= '<span class="like-user-name">' . esc_html($user['name']) . '</span> ';
+                }
+
+                // Add data attribute with user names to the like button
+                ?>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var likeButton = document.getElementById('toolbar-like');
+                        if (likeButton) {
+                            likeButton.setAttribute('data-tooltip-content', <?php echo json_encode(trim($tooltip_html)); ?>);
+                            likeButton.classList.add('has-tooltip-content');
+                        }
+                    });
+                </script>
+                <?php
+            }
+        }
+    }
+
+    /**
+     * Add scripts for like functionality
+     */
+    public function add_like_scripts()
+    {
+        // Only output on single floor or room pages, or pages with floor template
+        if (
+            !is_singular(array('floor', 'room')) &&
+            !(is_page() && get_post_meta(get_the_ID(), '_use_floor_template', true) === '1')
+        ) {
+            return;
+        }
+
+        ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Find the like button
+                var likeButton = document.getElementById('toolbar-like');
+                if (!likeButton) return;
+
+                // Add click event listener
+                likeButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    toggleLike(this);
+                });
+
+                // Function to toggle like
+                function toggleLike(button) {
+                    if (button.classList.contains('processing')) {
+                        return;
+                    }
+
+                    var postId = button.getAttribute('data-post-id');
+                    if (!postId) return;
+
+                    // Add processing class
+                    button.classList.add('processing');
+
+                    // Make AJAX request
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', '<?php echo admin_url('admin-ajax.php'); ?>', true);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState === 4) {
+                            button.classList.remove('processing');
+
+                            if (xhr.status === 200) {
+                                try {
+                                    var response = JSON.parse(xhr.responseText);
+
+                                    if (response.success) {
+                                        // Toggle liked class
+                                        if (response.data.liked) {
+                                            button.classList.add('liked');
+                                        } else {
+                                            button.classList.remove('liked');
+                                        }
+
+                                        // Update tooltip text
+                                        button.setAttribute('data-tooltip', response.data.tooltip_text);
+
+                                        // Update tooltip content if provided
+                                        if (response.data.tooltip_content) {
+                                            button.setAttribute('data-tooltip-content', response.data.tooltip_content);
+                                            button.classList.add('has-tooltip-content');
+                                        } else {
+                                            button.removeAttribute('data-tooltip-content');
+                                            button.classList.remove('has-tooltip-content');
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing JSON:', e);
+                                }
+                            }
+                        }
+                    };
+
+                    xhr.send('action=spiral_tower_toggle_like&post_id=' + postId + '&security=<?php echo wp_create_nonce('spiral_tower_like_nonce'); ?>');
+                }
+            });
+        </script>
+        <?php
     }
 }

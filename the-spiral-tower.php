@@ -750,7 +750,8 @@ add_action('wp_ajax_spiral_tower_generate_image', array($spiral_tower_plugin->im
 add_action('wp_ajax_spiral_tower_set_featured_image', array($spiral_tower_plugin->image_generator, 'set_featured_image_ajax'));
 
 // Global helper functions for like system
-function spiral_tower_get_like_count($post_id) {
+function spiral_tower_get_like_count($post_id)
+{
     global $spiral_tower_plugin;
     if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->like_manager)) {
         return $spiral_tower_plugin->like_manager->get_like_count($post_id);
@@ -758,7 +759,17 @@ function spiral_tower_get_like_count($post_id) {
     return 0;
 }
 
-function spiral_tower_has_user_liked($post_id) {
+function spiral_tower_get_users_who_liked($post_id, $limit = 100)
+{
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->like_manager)) {
+        return $spiral_tower_plugin->like_manager->get_users_who_liked($post_id, $limit);
+    }
+    return array();
+}
+
+function spiral_tower_has_user_liked($post_id)
+{
     global $spiral_tower_plugin;
     if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->like_manager)) {
         return $spiral_tower_plugin->like_manager->has_user_liked($post_id);
@@ -766,7 +777,8 @@ function spiral_tower_has_user_liked($post_id) {
     return false;
 }
 
-function spiral_tower_toggle_like($post_id) {
+function spiral_tower_toggle_like($post_id)
+{
     global $spiral_tower_plugin;
     if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->like_manager)) {
         return $spiral_tower_plugin->like_manager->toggle_like($post_id);

@@ -6,10 +6,18 @@ $post_id = get_the_ID();
 $has_liked = function_exists('spiral_tower_has_user_liked') ? spiral_tower_has_user_liked($post_id) : false;
 $like_count = function_exists('spiral_tower_get_like_count') ? spiral_tower_get_like_count($post_id) : 0;
 
-// Tooltip text based on like count
-$tooltip_text = $like_count > 0
-    ? sprintf('%d %s liked this', $like_count, $like_count === 1 ? 'person' : 'people')
+// Get users who liked this post (array of display names)
+$like_users = function_exists('spiral_tower_get_users_who_liked') ? spiral_tower_get_users_who_liked($post_id) : array();
+
+// Basic tooltip text based on like count
+$tooltip_text = $like_count > 0 
+    ? sprintf('%d %s liked this', $like_count, $like_count === 1 ? 'person' : 'people') 
     : 'Favorite';
+
+// Add user names to tooltip if there are any
+if (!empty($like_users)) {
+    $tooltip_text .= ': ' . implode(', ', $like_users);
+}
 
 // CSS classes for the like button
 $like_button_classes = 'tooltip-trigger';
