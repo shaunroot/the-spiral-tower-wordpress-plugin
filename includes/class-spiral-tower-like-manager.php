@@ -109,15 +109,31 @@ class Spiral_Tower_Like_Manager
         // Get updated like count
         $like_count = $this->get_like_count($post_id);
 
-        // Get tooltip content
-        $tooltip_content = $this->get_like_tooltip_content($post_id);
+        // Generate users list for tooltip
+        $users = $this->get_users_who_liked($post_id);
+        $names_array = array();
+        
+        // Extract display names
+        foreach ($users as $user) {
+            if (is_array($user) && isset($user['name'])) {
+                $names_array[] = $user['name'];
+            } else if (is_string($user)) {
+                $names_array[] = $user;
+            }
+        }
+        
+        // Build HTML for tooltip content
+        $tooltip_html = '';
+        foreach ($names_array as $name) {
+            $tooltip_html .= '<span class="like-user-name">' . esc_html($name) . '</span> ';
+        }
 
         // Send response with HTML
         wp_send_json_success(array(
             'liked' => $is_liked,
             'count' => $like_count,
             'tooltip_text' => sprintf('%d %s liked this', $like_count, $like_count === 1 ? 'person' : 'people'),
-            'tooltip_content' => $tooltip_content
+            'tooltip_content' => trim($tooltip_html)
         ));
     }
 
@@ -141,18 +157,25 @@ class Spiral_Tower_Like_Manager
         );
         
         $user_ids = $wpdb->get_col($query);
-        $user_names = array();
+        $users = array();
     
         foreach ($user_ids as $user_id) {
             $user = get_userdata($user_id);
             if ($user) {
-                $user_names[] = $user->display_name;
+                // Create a proper array with user data
+                $users[] = array(
+                    'id' => $user_id,
+                    'name' => $user->display_name
+                );
             }
         }
     
-        return $user_names;
+        return $users;
     }
     
+    /**
+     * Wrapper function for global access
+     */
     function spiral_tower_get_users_who_liked($post_id) {
         global $spiral_tower_plugin;
         if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->like_manager)) {
@@ -172,9 +195,21 @@ class Spiral_Tower_Like_Manager
             return '';
         }
 
-        $html = '<div class="like-users-list">';
+        $names_array = array();
+        
+        // Extract all user display names into a simple array of strings
         foreach ($users as $user) {
-            $html .= '<span class="like-user-name">' . esc_html($user['name']) . '</span>';
+            if (is_array($user) && isset($user['name'])) {
+                $names_array[] = $user['name'];
+            } else if (is_string($user)) {
+                $names_array[] = $user;
+            }
+        }
+        
+        // Now build the HTML
+        $html = '<div class="like-users-list">';
+        foreach ($names_array as $name) {
+            $html .= '<span class="like-user-name">' . esc_html($name) . '</span>';
         }
         $html .= '</div>';
 
@@ -509,9 +544,21 @@ class Spiral_Tower_Like_Manager
             // Get the list of users
             $users = $this->get_users_who_liked($post_id);
             if (!empty($users)) {
-                $tooltip_html = '';
+                $names_array = array();
+                
+                // Extract all user display names into a simple array of strings
                 foreach ($users as $user) {
-                    $tooltip_html .= '<span class="like-user-name">' . esc_html($user['name']) . '</span> ';
+                    if (is_array($user) && isset($user['name'])) {
+                        $names_array[] = $user['name'];
+                    } else if (is_string($user)) {
+                        $names_array[] = $user;
+                    }
+                }
+                
+                // Now we'll create HTML with these names
+                $tooltip_html = '';
+                foreach ($names_array as $name) {
+                    $tooltip_html .= '<span class="like-user-name">' . esc_html($name) . '</span> ';
                 }
 
                 // Add data attribute with user names to the like button

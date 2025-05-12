@@ -1,7 +1,6 @@
 /**
  * Enhanced DOM-based Tooltip Implementation with improved positioning
- * Features: max-width, line breaks, screen boundary detection
- * Also disables CSS-based tooltips to prevent duplicates
+ * Features: wider max-width (200px), line breaks, comprehensive screen boundary detection
  */
 (function() {
     // Initialize module
@@ -31,7 +30,6 @@
             if (!tooltipText) return;
             
             // Disable CSS-based tooltip for this trigger
-            // First approach: Add a class to identify elements with DOM tooltips
             trigger.classList.add('js-tooltip-enabled');
             
             // Create tooltip element - APPENDING TO BODY
@@ -52,11 +50,12 @@
                 pointer-events: none;
                 font-size: 14px;
                 box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-                max-width: 160px; 
+                max-width: 200px; /* Increased to 200px for wider tooltips */
                 text-align: center;
                 white-space: normal; /* Allow text wrapping */
                 word-wrap: break-word; /* Break long words if needed */
                 line-height: 1.4; /* Better spacing for wrapped text */
+                hyphens: auto; /* Enable hyphenation for better word breaks */
             `;
             
             // Add tooltip to BODY
@@ -70,42 +69,98 @@
                 // Get position of the trigger element
                 const rect = this.getBoundingClientRect();
                 
-                // Calculate initial position (centered horizontally, above the element)
-                const centerX = rect.left + rect.width / 2;
-                const topY = rect.top - 10; // Position above the element with a small gap
+                // Check if this is a floor-gizmo (portal) or a toolbar element
+                const isFloorGizmo = this.classList.contains('floor-gizmo');
                 
-                // Set initial position
-                tooltip.style.left = centerX + 'px';
-                tooltip.style.bottom = (window.innerHeight - topY) + 'px'; // Position from bottom
-                tooltip.style.transform = 'translateX(-50%)'; // Center horizontally
+                // Set initial position (will be adjusted for screen boundaries after)
+                let posX, posY;
+                
+                if (isFloorGizmo) {
+                    // Calculate center position for floor-gizmo
+                    posX = rect.left + rect.width / 2;
+                    posY = rect.top + rect.height / 2;
+                    
+                    // Initial positioning in center
+                    tooltip.style.left = posX + 'px';
+                    tooltip.style.top = posY + 'px';
+                    tooltip.style.bottom = 'auto';
+                    tooltip.style.transform = 'translate(-50%, -50%)';
+                } else {
+                    // Calculate position above for toolbar elements
+                    posX = rect.left + rect.width / 2;
+                    posY = rect.top - 10;
+                    
+                    // Initial positioning above
+                    tooltip.style.left = posX + 'px';
+                    tooltip.style.bottom = (window.innerHeight - posY) + 'px';
+                    tooltip.style.top = 'auto';
+                    tooltip.style.transform = 'translateX(-50%)';
+                }
                 
                 // Show tooltip
                 tooltip.style.opacity = '0.8';
                 tooltip.style.visibility = 'visible';
                 
-                // Check boundaries AFTER tooltip is visible
-                // Small timeout to allow the tooltip to render with correct dimensions
+                // Check and adjust for screen boundaries AFTER tooltip is visible
                 setTimeout(() => {
                     const tooltipRect = tooltip.getBoundingClientRect();
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    const PADDING = 10; // Minimum distance from screen edge
                     
-                    // Check left edge
-                    if (tooltipRect.left < 5) {
-                        tooltip.style.left = (tooltipRect.width / 2 + 5) + 'px';
+                    // Track if we need to adjust positioning
+                    let needsAdjustment = false;
+                    let newX = posX;
+                    let newY = posY;
+                    
+                    // Horizontal boundary checks
+                    if (tooltipRect.left < PADDING) {
+                        // Too far left
+                        newX = PADDING + (tooltipRect.width / 2);
+                        needsAdjustment = true;
+                    } else if (tooltipRect.right > viewportWidth - PADDING) {
+                        // Too far right
+                        newX = viewportWidth - PADDING - (tooltipRect.width / 2);
+                        needsAdjustment = true;
                     }
                     
-                    // Check right edge
-                    if (tooltipRect.right > window.innerWidth - 5) {
-                        tooltip.style.left = (window.innerWidth - tooltipRect.width / 2 - 5) + 'px';
+                    // Vertical boundary checks
+                    if (isFloorGizmo) {
+                        // For floor-gizmos, check both top and bottom
+                        if (tooltipRect.top < PADDING) {
+                            // Too high
+                            newY = PADDING + (tooltipRect.height / 2);
+                            needsAdjustment = true;
+                        } else if (tooltipRect.bottom > viewportHeight - PADDING) {
+                            // Too low
+                            newY = viewportHeight - PADDING - (tooltipRect.height / 2);
+                            needsAdjustment = true;
+                        }
+                        
+                        // Apply adjusted centered position if needed
+                        if (needsAdjustment) {
+                            tooltip.style.left = newX + 'px';
+                            tooltip.style.top = newY + 'px';
+                            // Maintain centered transform
+                            tooltip.style.transform = 'translate(-50%, -50%)';
+                        }
+                    } else {
+                        // For toolbar elements, if tooltip goes above screen, flip below
+                        if (tooltipRect.top < PADDING) {
+                            // Switch to below
+                            tooltip.style.bottom = 'auto';
+                            tooltip.style.top = (rect.bottom + 10) + 'px';
+                            // Horizontal adjustment still applies
+                            if (newX !== posX) {
+                                tooltip.style.left = newX + 'px';
+                            }
+                        } else if (needsAdjustment) {
+                            // Just adjust horizontally
+                            tooltip.style.left = newX + 'px';
+                        }
                     }
                     
-                    // Check top edge
-                    if (tooltipRect.top < 5) {
-                        // Switch to positioning below the element
-                        tooltip.style.bottom = 'auto';
-                        tooltip.style.top = (rect.bottom + 10) + 'px';
-                    }
-                    
-                    logger.log(MODULE_NAME, `Positioned tooltip for "${tooltipText}" with bounds checking`);
+                    logger.log(MODULE_NAME, `Positioned tooltip for "${tooltipText}" with comprehensive bounds checking`);
                 }, 10);
             });
             
@@ -180,6 +235,16 @@
         
         // Add a global handler to ensure tooltips are hidden when cursor leaves window
         document.addEventListener('mouseleave', function() {
+            const tooltips = document.querySelectorAll('.dom-tooltip');
+            tooltips.forEach(tooltip => {
+                tooltip.style.opacity = '0';
+                tooltip.style.visibility = 'hidden';
+            });
+        });
+        
+        // Also handle window resize to reposition active tooltips
+        window.addEventListener('resize', function() {
+            // Hide all tooltips on resize for simplicity
             const tooltips = document.querySelectorAll('.dom-tooltip');
             tooltips.forEach(tooltip => {
                 tooltip.style.opacity = '0';
