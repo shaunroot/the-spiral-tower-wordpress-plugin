@@ -27,6 +27,7 @@ require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/stairs.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/twist.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-image-generator.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-like-manager.php';
+require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-log-manager.php';
 
 /**
  * Main Plugin Class
@@ -54,6 +55,11 @@ class Spiral_Tower_Plugin
     public $like_manager;
 
     /**
+     * Log Manager instance
+     */    
+    public $log_manager;    
+
+    /**
      * Initialize the plugin
      */
     public function __construct()
@@ -64,6 +70,7 @@ class Spiral_Tower_Plugin
         $this->portal_manager = new Spiral_Tower_Portal_Manager();
         $this->image_generator = new Spiral_Tower_Image_Generator();
         $this->like_manager = new Spiral_Tower_Like_Manager();
+        $this->log_manager = new Spiral_Tower_Log_Manager();
 
         // Register activation and deactivation hooks
         register_activation_hook(__FILE__, array($this, 'activate'));
