@@ -17,8 +17,8 @@ $floor_query_args = array(
     'posts_per_page' => -1,
     'orderby' => 'meta_value_num',
     'meta_key' => '_floor_number',
-    'order' => 'ASC',
-    // *** MODIFICATION: Add meta_query to exclude hidden floors ***
+    'order' => 'DESC',
+
     'meta_query' => array(
         'relation' => 'OR', // Include if either condition is met
         array(
@@ -75,7 +75,8 @@ wp_reset_postdata();
     <div class="stairs-container">
         <div class="stairs-left"></div>
         <div class="stairs-center">
-            <div class="stairs-top"></div>
+            <div class="stairs-top">
+            </div>
             <div class="stairs-middle">
                 <?php if (!empty($floors)): ?>
                     <div class="stairs-floor-list">
@@ -104,15 +105,35 @@ wp_reset_postdata();
                     </div>
                 <?php endif; ?>
             </div>
-            <div class="stairs-bottom"></div>
+            <div class="stairs-bottom">
+            </div>
         </div>
         <div class="stairs-right"></div>
     </div>
 
+    <!-- Fixed navigation arrows -->
+    <button class="stairs-nav-arrow" id="goToBottomBtn" title="Go to bottom">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    </button>
+    
+    <button class="stairs-nav-arrow" id="goToTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
+
     <script>
-        // Your existing JavaScript can remain here if needed
-        // //Fix elevator tiling by making the middle height a multiple of 386px
-        // document.addEventListener('DOMContentLoaded', function () { ... });
+        document.getElementById('goToBottomBtn').addEventListener('click', function() {
+            document.body.scrollTop = document.body.scrollHeight; // For Safari
+            document.documentElement.scrollTop = document.documentElement.scrollHeight; // For Chrome, Firefox, IE and Opera
+        });
+        
+        document.getElementById('goToTopBtn').addEventListener('click', function() {
+            document.body.scrollTop = 0; // For Safari
+            document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+        });
     </script>
 
     <?php wp_footer(); ?>

@@ -648,6 +648,35 @@ body.stairs-fullscreen .floor-title {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+body.stairs-fullscreen .stairs-nav-arrow {
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  transition: background-color 0.3s ease;
+  position: fixed;
+  right: 24px;
+  z-index: 1000;
+  border: none;
+  padding: 0;
+}
+body.stairs-fullscreen #goToTopBtn {
+  top: 20px;
+}
+body.stairs-fullscreen #goToBottomBtn {
+  bottom: 20px;
+}
+body.stairs-fullscreen .stairs-nav-arrow:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+body.stairs-fullscreen .stairs-nav-arrow svg {
+  width: 24px;
+  height: 24px;
+}
 
 /* --- End of body.stairs-fullscreen rules --- */
 /* * Styles for the fixed background divs (using the 1x animated tile)

@@ -83,7 +83,7 @@ function spiral_tower_get_floors() {
         'posts_per_page' => -1,
         'orderby' => 'meta_value_num',
         'meta_key' => '_floor_number',
-        'order' => 'ASC'
+        'order' => 'DESC'
     ));
     
     if ($floor_query->have_posts()) {
