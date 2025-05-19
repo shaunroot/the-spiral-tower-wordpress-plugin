@@ -285,6 +285,7 @@ class Spiral_Tower_Floor_Manager
 
         // Get existing values
         $floor_number = get_post_meta($post->ID, '_floor_number', true);
+        $floor_number_alt_text = get_post_meta($post->ID, '_floor_number_alt_text', true);
         $no_public_transport = get_post_meta($post->ID, '_floor_no_public_transport', true) === '1'; // *** NEW *** Get value
         $hidden = get_post_meta($post->ID, '_floor_hidden', true) === '1'; // *** NEW *** Get value
         $background_youtube_url = get_post_meta($post->ID, '_background_youtube_url', true);
@@ -304,7 +305,14 @@ class Spiral_Tower_Floor_Manager
         echo '<input type="number" id="floor_number" name="floor_number" value="' . esc_attr($floor_number) . '" style="width:100%">';
         echo '</p>';
 
-        // --- No Public Transport Checkbox ---  *** NEW *** Add field HTML
+        // --- Floor Number Alternate Text ---
+        echo '<p>';
+        echo '<label for="floor_number_alt_text">Floor Number Alternate Text:</label>';
+        echo '<input type="text" id="floor_number_alt_text" name="floor_number_alt_text" value="' . esc_attr($floor_number_alt_text) . '" style="width:100%">';
+        echo '<small>' . __('Optional. Displayed instead of the floor number.', 'spiral-tower') . '</small>';
+        echo '</p>';
+
+        // --- No Public Transport Checkbox ---  
         echo '<p>';
         echo '<label>';
         echo '<input type="checkbox" name="floor_no_public_transport" value="1" ' . checked($no_public_transport, true, false) . ' /> ';
@@ -312,13 +320,26 @@ class Spiral_Tower_Floor_Manager
         echo '</label>';
         echo '</p>';
 
-        // --- Hidden Checkbox ---  *** NEW *** Add field HTML
+        // --- Hidden Checkbox ---  
         echo '<p>';
         echo '<label>';
         echo '<input type="checkbox" name="floor_hidden" value="1" ' . checked($hidden, true, false) . ' /> ';
         echo __('Hidden', 'spiral-tower');
         echo '</label>';
         echo '</p>';
+
+        $send_to_void = get_post_meta($post->ID, '_floor_send_to_void', true) === '1';
+
+        // --- Send to the Void ---
+        echo '<p>';
+        echo '<label>';
+        echo '<input type="checkbox" name="floor_send_to_void" value="1" ' . checked($send_to_void, true, false) . ' /> ';
+        echo __('Send to the void', 'spiral-tower');
+        echo '</label>';
+        echo '<br><small>' . __('If checked, visitors will be redirected to a 404 page when attempting to view this floor.', 'spiral-tower') . '</small>';
+        echo '</p>';   
+        
+        echo '<hr>';
 
         echo '<p>';
         echo '<label for="background_youtube_url">Background YouTube URL:</label>';
@@ -331,6 +352,8 @@ class Spiral_Tower_Floor_Manager
         echo 'Audio only';
         echo '</label>';
         echo '</p>';
+
+        echo '<hr>';
 
         echo '<p>';
         echo '<label for="title_color">Title Color:</label>';
@@ -355,18 +378,6 @@ class Spiral_Tower_Floor_Manager
         echo '<p>';
         echo '<label for="floor_number_color">Floor Number Color:</label>';
         echo '<input type="text" id="floor_number_color" name="floor_number_color" value="' . esc_attr($floor_number_color) . '" style="width:100%">';
-        echo '</p>';
-
-        $send_to_void = get_post_meta($post->ID, '_floor_send_to_void', true) === '1';
-
-        // After your existing fields, add the new checkbox
-        echo '<hr>';
-        echo '<p>';
-        echo '<label>';
-        echo '<input type="checkbox" name="floor_send_to_void" value="1" ' . checked($send_to_void, true, false) . ' /> ';
-        echo __('Send to the void', 'spiral-tower');
-        echo '</label>';
-        echo '<br><small>' . __('If checked, visitors will be redirected to a 404 page when attempting to view this floor.', 'spiral-tower') . '</small>';
         echo '</p>';
 
         // --- Background Position X Dropdown --- 
@@ -498,6 +509,7 @@ class Spiral_Tower_Floor_Manager
         // --- Save ORIGINAL Floor Settings Fields (Text/Color/URL etc.) ---
         $fields_to_save = [
             '_floor_number' => isset($_POST['floor_number']) ? sanitize_text_field($_POST['floor_number']) : null,
+            '_floor_number_alt_text' => isset($_POST['floor_number_alt_text']) ? sanitize_text_field($_POST['floor_number_alt_text']) : null,            
             '_background_youtube_url' => isset($_POST['background_youtube_url']) ? sanitize_text_field($_POST['background_youtube_url']) : null,
             '_title_color' => isset($_POST['title_color']) ? sanitize_text_field($_POST['title_color']) : null, // Basic sanitize
             '_title_background_color' => isset($_POST['title_background_color']) ? sanitize_text_field($_POST['title_background_color']) : null, // Basic sanitize

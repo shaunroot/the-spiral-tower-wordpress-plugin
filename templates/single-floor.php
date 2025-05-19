@@ -17,6 +17,7 @@ if (!defined('ABSPATH')) {
 
 // --- Get Post Meta ---
 $floor_number = get_post_meta(get_the_ID(), '_floor_number', true);
+$floor_number_alt_text = get_post_meta(get_the_ID(), '_floor_number_alt_text', true);
 $background_youtube_url = get_post_meta(get_the_ID(), '_background_youtube_url', true);
 $youtube_audio_only = get_post_meta(get_the_ID(), '_youtube_audio_only', true) === '1';
 $title_color = get_post_meta(get_the_ID(), '_title_color', true);
@@ -189,8 +190,8 @@ $portals = get_posts(array(
 
 	<?php // ----- START: Your Content Structure ----- ?>
 	<div class="spiral-tower-floor-title">
-		<?php if ($floor_number): ?>
-			<div class="spiral-tower-floor-number">Floor <?php echo esc_html($floor_number); ?></div>
+		<?php if ($floor_number || $floor_number_alt_text): ?>
+			<div class="spiral-tower-floor-number">Floor <?php echo $floor_number_alt_text ? esc_html($floor_number_alt_text) : esc_html($floor_number); ?></div>
 		<?php endif; ?>
 		<h1><?php the_title(); ?></h1>
 	</div>
