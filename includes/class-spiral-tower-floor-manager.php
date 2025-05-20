@@ -122,7 +122,7 @@ class Spiral_Tower_Floor_Manager
     public function add_floor_rewrite_rules()
     {
         add_rewrite_rule(
-            'floor/([0-9]+)/([^/]+)/?$',
+            'floor/(-?[0-9]+)/([^/]+)/?$',
             'index.php?post_type=floor&floor_number=$matches[1]&name=$matches[2]',
             'top'
         );

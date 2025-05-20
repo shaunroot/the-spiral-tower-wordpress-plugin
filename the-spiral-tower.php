@@ -28,6 +28,8 @@ require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/twist.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-image-generator.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-like-manager.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-log-manager.php';
+require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-user-profile-manager.php';
+
 
 /**
  * Main Plugin Class
@@ -60,6 +62,11 @@ class Spiral_Tower_Plugin
     public $log_manager;    
 
     /**
+     * Profile Manager instance
+     */     
+    public $user_profile_manager;
+
+    /**
      * Initialize the plugin
      */
     public function __construct()
@@ -71,6 +78,7 @@ class Spiral_Tower_Plugin
         $this->image_generator = new Spiral_Tower_Image_Generator();
         $this->like_manager = new Spiral_Tower_Like_Manager();
         $this->log_manager = new Spiral_Tower_Log_Manager();
+        $this->user_profile_manager = new Spiral_Tower_User_Profile_Manager(); 
 
         // Register activation and deactivation hooks
         register_activation_hook(__FILE__, array($this, 'activate'));
@@ -418,6 +426,11 @@ class Spiral_Tower_Plugin
                 $load_assets = true;
             }
         }
+
+        $is_profile_page = !empty(get_query_var('spiral_tower_user_profile'));
+        if ($is_profile_page) {
+            $load_assets = true;
+        }        
 
         // Only load assets if it's a floor, room, or page using the template
         if ($load_assets) {
@@ -793,6 +806,15 @@ function spiral_tower_toggle_like($post_id)
     return false;
 }
 
+function spiral_tower_get_user_profile_url($user_id) {
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->user_profile_manager)) {
+        return $spiral_tower_plugin->user_profile_manager->get_user_profile_url($user_id);
+    }
+    return false;
+}
+
 // Add these after initializing $spiral_tower_plugin
 add_action('wp_ajax_spiral_tower_generate_image', array($spiral_tower_plugin->image_generator, 'handle_generate_image_ajax'));
 add_action('wp_ajax_spiral_tower_set_featured_image', array($spiral_tower_plugin->image_generator, 'set_featured_image_ajax'));
+

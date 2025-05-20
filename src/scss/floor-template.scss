@@ -4,8 +4,9 @@
  * Positioning for .floor-gizmo relies on inline styles (left%, top%) in HTML.
  */
 
-@use 'portal'; // Assuming these are valid SASS module imports
-@use 'stairs'; // Assuming these are valid SASS module imports
+@use 'portal'; 
+@use 'stairs'; 
+@use 'profile';
 
 :root {
   /* Default colors (fallbacks) - Keep these */
