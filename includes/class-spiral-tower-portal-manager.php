@@ -42,6 +42,11 @@ class Spiral_Tower_Portal_Manager
 
         // Add AJAX handler for getting permalink
         add_action('wp_ajax_get_post_permalink', array($this, 'ajax_get_post_permalink'));
+
+        // Add AJAX handlers for typeahead
+        add_action('wp_ajax_spiral_tower_search_floors', array($this, 'ajax_search_floors'));
+        add_action('wp_ajax_spiral_tower_search_rooms', array($this, 'ajax_search_rooms'));
+
     }
 
     /**
@@ -74,6 +79,124 @@ class Spiral_Tower_Portal_Manager
         wp_send_json_success(array(
             'permalink' => $permalink
         ));
+    }
+
+    /**
+     * AJAX handler for floor search
+     */
+    public function ajax_search_floors()
+    {
+        // Check permissions
+        if (!current_user_can('edit_posts')) {
+            wp_die('Permission denied');
+        }
+
+        $search_term = isset($_GET['term']) ? sanitize_text_field($_GET['term']) : '';
+
+        $args = array(
+            'post_type' => 'floor',
+            'posts_per_page' => 20, // Limit results
+            'post_status' => 'publish',
+            's' => $search_term, // Search in title and content
+            'orderby' => array(
+                'meta_value_num' => 'DESC',
+                'title' => 'ASC'
+            ),
+            'meta_query' => array(
+                'relation' => 'OR',
+                array(
+                    'key' => '_floor_number',
+                    'compare' => 'EXISTS'
+                ),
+                array(
+                    'key' => '_floor_number',
+                    'compare' => 'NOT EXISTS'
+                )
+            )
+        );
+
+        $floors = get_posts($args);
+        $results = array();
+
+        foreach ($floors as $floor) {
+            $floor_number = get_post_meta($floor->ID, '_floor_number', true);
+            $floor_number_alt_text = get_post_meta($floor->ID, '_floor_number_alt_text', true);
+
+            // Build label same as dropdown
+            if ($floor_number !== '' && $floor_number !== null && is_numeric($floor_number)) {
+                $label = "Floor #$floor_number: " . $floor->post_title;
+                if (!empty($floor_number_alt_text)) {
+                    $label .= " ($floor_number_alt_text)";
+                }
+            } else {
+                $label = $floor->post_title;
+                if (!empty($floor_number_alt_text)) {
+                    $label .= " ($floor_number_alt_text)";
+                } else {
+                    $label .= " (No Number)";
+                }
+            }
+
+            $results[] = array(
+                'id' => $floor->ID,
+                'label' => $label,
+                'value' => $label
+            );
+        }
+
+        wp_send_json($results);
+    }
+
+    /**
+     * AJAX handler for room search
+     */
+    public function ajax_search_rooms()
+    {
+        // Check permissions
+        if (!current_user_can('edit_posts')) {
+            wp_die('Permission denied');
+        }
+
+        $search_term = isset($_GET['term']) ? sanitize_text_field($_GET['term']) : '';
+
+        $args = array(
+            'post_type' => 'room',
+            'posts_per_page' => 20, // Limit results
+            'post_status' => 'publish',
+            's' => $search_term, // Search in title and content
+            'orderby' => 'title',
+            'order' => 'ASC'
+        );
+
+        $rooms = get_posts($args);
+        $results = array();
+
+        foreach ($rooms as $room) {
+            // Get parent floor info for context
+            $floor_id = get_post_meta($room->ID, '_room_floor_id', true);
+            $floor_context = '';
+            if ($floor_id) {
+                $floor = get_post($floor_id);
+                if ($floor) {
+                    $floor_number = get_post_meta($floor_id, '_floor_number', true);
+                    if ($floor_number !== '' && is_numeric($floor_number)) {
+                        $floor_context = " (Floor #$floor_number)";
+                    } else {
+                        $floor_context = " ({$floor->post_title})";
+                    }
+                }
+            }
+
+            $label = $room->post_title . $floor_context;
+
+            $results[] = array(
+                'id' => $room->ID,
+                'label' => $label,
+                'value' => $label
+            );
+        }
+
+        wp_send_json($results);
     }
 
     /**
@@ -132,13 +255,13 @@ class Spiral_Tower_Portal_Manager
     }
 
     /**
-     * Display Portal Settings Meta Box
+     * Display Portal Settings Meta Box - FIXED VERSION
      */
     public function display_portal_settings_meta_box($post)
     {
         // Add nonce for security
         wp_nonce_field('portal_settings_nonce_action', 'portal_settings_nonce');
-
+    
         // Get current values
         $portal_type = get_post_meta($post->ID, '_portal_type', true);
         $custom_image = get_post_meta($post->ID, '_custom_image', true);
@@ -149,7 +272,7 @@ class Spiral_Tower_Portal_Manager
         $use_custom_size = get_post_meta($post->ID, '_use_custom_size', true) === '1';
         $width = get_post_meta($post->ID, '_width', true);
         $height = get_post_meta($post->ID, '_height', true);
-
+    
         // Origin and destination values
         $origin_type = get_post_meta($post->ID, '_origin_type', true);
         $origin_floor_id = get_post_meta($post->ID, '_origin_floor_id', true);
@@ -157,86 +280,147 @@ class Spiral_Tower_Portal_Manager
         $destination_type = get_post_meta($post->ID, '_destination_type', true);
         $destination_floor_id = get_post_meta($post->ID, '_destination_floor_id', true);
         $destination_room_id = get_post_meta($post->ID, '_destination_room_id', true);
-        // --- NEW --- Get saved external URL
         $destination_external_url = get_post_meta($post->ID, '_destination_external_url', true);
-
+    
+        // Handle URL parameters for new portals
+        if (empty($origin_type) && isset($_GET['origin_type'])) {
+            $origin_type = sanitize_text_field($_GET['origin_type']);
+            if (isset($_GET['origin_floor_id'])) {
+                $origin_floor_id = intval($_GET['origin_floor_id']);
+            }
+            if (isset($_GET['origin_room_id'])) {
+                $origin_room_id = intval($_GET['origin_room_id']);
+            }
+        }
+    
         // Default values if empty
-        if (empty($position_x))
-            $position_x = '50';
-        if (empty($position_y))
-            $position_y = '50';
-        if (empty($scale))
-            $scale = '100';
-
-        // Output fields
+        if (empty($position_x)) $position_x = '50';
+        if (empty($position_y)) $position_y = '50';
+        if (empty($scale)) $scale = '100';
+    
+        // Get current floor/room titles for display
+        $origin_floor_title = $origin_floor_id ? $this->get_floor_display_name($origin_floor_id) : '';
+        $origin_room_title = '';
+        if ($origin_room_id) {
+            $origin_room_title = get_the_title($origin_room_id);
+            // Add floor context for room
+            $room_floor_id = get_post_meta($origin_room_id, '_room_floor_id', true);
+            if ($room_floor_id) {
+                $room_floor = get_post($room_floor_id);
+                if ($room_floor) {
+                    $room_floor_number = get_post_meta($room_floor_id, '_floor_number', true);
+                    if ($room_floor_number !== '' && is_numeric($room_floor_number)) {
+                        $origin_room_title .= " (Floor #$room_floor_number)";
+                    } else {
+                        $origin_room_title .= " ({$room_floor->post_title})";
+                    }
+                }
+            }
+        }
+        $destination_floor_title = $destination_floor_id ? $this->get_floor_display_name($destination_floor_id) : '';
+        $destination_room_title = $destination_room_id ? get_the_title($destination_room_id) : '';
+    
         ?>
         <style>
+            .portal-typeahead-container {
+                position: relative;
+            }
+            .portal-typeahead-input {
+                width: 100%;
+                padding: 6px 8px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }
+            .portal-typeahead-results {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                border: 1px solid #ddd;
+                border-top: none;
+                max-height: 200px;
+                overflow-y: auto;
+                z-index: 1000;
+                display: none;
+            }
+            .portal-typeahead-result {
+                padding: 8px 12px;
+                cursor: pointer;
+                border-bottom: 1px solid #eee;
+            }
+            .portal-typeahead-result:hover,
+            .portal-typeahead-result.highlighted {
+                background-color: #f0f0f0;
+            }
+            .portal-typeahead-result:last-child {
+                border-bottom: none;
+            }
             .portal-settings-section {
                 margin-bottom: 20px;
                 padding-bottom: 20px;
                 border-bottom: 1px solid #eee;
             }
-
+    
             .portal-settings-section h3 {
                 margin-top: 0;
                 margin-bottom: 15px;
                 padding-bottom: 5px;
                 border-bottom: 1px solid #eee;
             }
-
+    
             .portal-settings-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 grid-gap: 15px;
             }
-
+    
             .portal-settings-field {
                 margin-bottom: 15px;
             }
-
+    
             .portal-settings-field label {
                 display: block;
                 margin-bottom: 5px;
                 font-weight: bold;
             }
-
+    
             .portal-settings-field input[type="number"],
             .portal-settings-field input[type="url"],
-            /* Style for URL input */
             .portal-settings-field select {
                 width: 100%;
             }
-
+    
             .portal-settings-field .description {
                 display: block;
                 font-size: 0.85em;
                 color: #666;
                 margin-top: 3px;
             }
-
+    
             .portal-image-preview {
                 max-width: 100%;
                 max-height: 150px;
                 margin-top: 10px;
                 display: block;
             }
-
+    
             #custom_size_fields {
                 margin-top: 10px;
             }
-
+    
             .header-link-container {
                 font-size: 0.8em;
                 font-weight: normal;
                 margin-left: 8px;
             }
-
+    
             .header-link {
                 text-decoration: none;
                 display: inline-flex;
                 align-items: center;
             }
-
+    
             .header-link .dashicons {
                 font-size: 16px;
                 width: 16px;
@@ -244,7 +428,7 @@ class Spiral_Tower_Portal_Manager
                 margin-right: 3px;
             }
         </style>
-
+    
         <div class="portal-settings-section">
             <h3 class="section-header">
                 Origin
@@ -279,53 +463,43 @@ class Spiral_Tower_Portal_Manager
                         <option value="room" <?php selected($origin_type, 'room'); ?>>Room</option>
                     </select>
                 </div>
-
+    
                 <div class="portal-settings-field origin-floor-field" <?php echo ($origin_type !== 'room') ? '' : 'style="display:none;"'; ?>>
-                    <label for="origin_floor_id">Origin Floor:</label>
-                    <select id="origin_floor_id" name="origin_floor_id">
-                        <option value="">Select Floor</option>
-                        <?php
-                        $floors = get_posts(array(
-                            'post_type' => 'floor',
-                            'posts_per_page' => -1,
-                            'orderby' => 'meta_value_num',
-                            'meta_key' => '_floor_number',
-                            'order' => 'DESC'
-                        ));
-
-                        foreach ($floors as $floor) {
-                            $floor_number = get_post_meta($floor->ID, '_floor_number', true);
-                            echo '<option value="' . esc_attr($floor->ID) . '" ' . selected($origin_floor_id, $floor->ID, false) . '>';
-                            echo esc_html("Floor #$floor_number: " . $floor->post_title);
-                            echo '</option>';
-                        }
-                        ?>
-                    </select>
+                    <label for="origin_floor_search">Origin Floor:</label>
+                    <div class="portal-typeahead-container">
+                        <input type="text" 
+                               id="origin_floor_search" 
+                               class="portal-typeahead-input floor-typeahead"
+                               value="<?php echo esc_attr($origin_floor_title); ?>"
+                               placeholder="Type to search floors..."
+                               autocomplete="off" />
+                        <input type="hidden" 
+                               id="origin_floor_id" 
+                               name="origin_floor_id" 
+                               value="<?php echo esc_attr($origin_floor_id); ?>" />
+                        <div class="portal-typeahead-results" id="origin_floor_results"></div>
+                    </div>
                 </div>
-
+    
                 <div class="portal-settings-field origin-room-field" <?php echo ($origin_type === 'room') ? '' : 'style="display:none;"'; ?>>
-                    <label for="origin_room_id">Origin Room:</label>
-                    <select id="origin_room_id" name="origin_room_id">
-                        <option value="">Select Room</option>
-                        <?php
-                        $rooms = get_posts(array(
-                            'post_type' => 'room',
-                            'posts_per_page' => -1,
-                            'orderby' => 'title',
-                            'order' => 'ASC'
-                        ));
-
-                        foreach ($rooms as $room) {
-                            echo '<option value="' . esc_attr($room->ID) . '" ' . selected($origin_room_id, $room->ID, false) . '>';
-                            echo esc_html($room->post_title);
-                            echo '</option>';
-                        }
-                        ?>
-                    </select>
+                    <label for="origin_room_search">Origin Room:</label>
+                    <div class="portal-typeahead-container">
+                        <input type="text" 
+                               id="origin_room_search" 
+                               class="portal-typeahead-input room-typeahead"
+                               value="<?php echo esc_attr($origin_room_title); ?>"
+                               placeholder="Type to search rooms..."
+                               autocomplete="off" />
+                        <input type="hidden" 
+                               id="origin_room_id" 
+                               name="origin_room_id" 
+                               value="<?php echo esc_attr($origin_room_id); ?>" />
+                        <div class="portal-typeahead-results" id="origin_room_results"></div>
+                    </div>
                 </div>
             </div>
         </div>
-
+    
         <div class="portal-settings-section">
             <h3 class="section-header">
                 Destination
@@ -366,38 +540,41 @@ class Spiral_Tower_Portal_Manager
                         <option value="external_url" <?php selected($destination_type, 'external_url'); ?>>External URL</option>
                     </select>
                 </div>
-
+    
                 <div class="portal-settings-field destination-floor-field" <?php echo ($destination_type === 'floor') ? '' : 'style="display:none;"'; ?>>
-                    <label for="destination_floor_id">Destination Floor:</label>
-                    <select id="destination_floor_id" name="destination_floor_id">
-                        <option value="">Select Floor</option>
-                        <?php
-                        // Reuse $floors from above
-                        foreach ($floors as $floor) {
-                            $floor_number = get_post_meta($floor->ID, '_floor_number', true);
-                            echo '<option value="' . esc_attr($floor->ID) . '" ' . selected($destination_floor_id, $floor->ID, false) . '>';
-                            echo esc_html("Floor #$floor_number: " . $floor->post_title);
-                            echo '</option>';
-                        }
-                        ?>
-                    </select>
+                    <label for="destination_floor_search">Destination Floor:</label>
+                    <div class="portal-typeahead-container">
+                        <input type="text" 
+                               id="destination_floor_search" 
+                               class="portal-typeahead-input floor-typeahead"
+                               value="<?php echo esc_attr($destination_floor_title); ?>"
+                               placeholder="Type to search floors..."
+                               autocomplete="off" />
+                        <input type="hidden" 
+                               id="destination_floor_id" 
+                               name="destination_floor_id" 
+                               value="<?php echo esc_attr($destination_floor_id); ?>" />
+                        <div class="portal-typeahead-results" id="destination_floor_results"></div>
+                    </div>
                 </div>
-
+    
                 <div class="portal-settings-field destination-room-field" <?php echo ($destination_type === 'room') ? '' : 'style="display:none;"'; ?>>
-                    <label for="destination_room_id">Destination Room:</label>
-                    <select id="destination_room_id" name="destination_room_id">
-                        <option value="">Select Room</option>
-                        <?php
-                        // Reuse $rooms from above
-                        foreach ($rooms as $room) {
-                            echo '<option value="' . esc_attr($room->ID) . '" ' . selected($destination_room_id, $room->ID, false) . '>';
-                            echo esc_html($room->post_title);
-                            echo '</option>';
-                        }
-                        ?>
-                    </select>
+                    <label for="destination_room_search">Destination Room:</label>
+                    <div class="portal-typeahead-container">
+                        <input type="text" 
+                               id="destination_room_search" 
+                               class="portal-typeahead-input room-typeahead"
+                               value="<?php echo esc_attr($destination_room_title); ?>"
+                               placeholder="Type to search rooms..."
+                               autocomplete="off" />
+                        <input type="hidden" 
+                               id="destination_room_id" 
+                               name="destination_room_id" 
+                               value="<?php echo esc_attr($destination_room_id); ?>" />
+                        <div class="portal-typeahead-results" id="destination_room_results"></div>
+                    </div>
                 </div>
-
+    
                 <div class="portal-settings-field destination-external-url-field" <?php echo ($destination_type === 'external_url') ? '' : 'style="display:none;"'; ?>>
                     <label for="destination_external_url">Destination URL:</label>
                     <input type="url" id="destination_external_url" name="destination_external_url"
@@ -406,7 +583,7 @@ class Spiral_Tower_Portal_Manager
                 </div>
             </div>
         </div>
-
+    
         <div class="portal-settings-section">
             <h3>Portal Appearance</h3>
             <div class="portal-settings-grid">
@@ -421,40 +598,40 @@ class Spiral_Tower_Portal_Manager
                         <option value="custom" <?php selected($portal_type, 'custom'); ?>>Custom</option>
                     </select>
                 </div>
-
+    
                 <div class="portal-settings-field">
                     <label for="disable_pointer">Disable Pointer:</label>
                     <input type="checkbox" id="disable_pointer" name="disable_pointer" value="1" <?php checked($disable_pointer, true); ?>>
                     <span class="description">Hide cursor when hovering over portal</span>
                 </div>
-
+    
                 <div class="portal-settings-field">
                     <label for="position_x">Position X (%):</label>
                     <input type="number" id="position_x" name="position_x" value="<?php echo esc_attr($position_x); ?>" min="0"
                         max="100">
                     <span class="description">Horizontal position (0 = left, 100 = right)</span>
                 </div>
-
+    
                 <div class="portal-settings-field">
                     <label for="position_y">Position Y (%):</label>
                     <input type="number" id="position_y" name="position_y" value="<?php echo esc_attr($position_y); ?>" min="0"
                         max="100">
                     <span class="description">Vertical position (0 = top, 100 = bottom)</span>
                 </div>
-
+    
                 <div class="portal-settings-field">
                     <label for="scale">Scale (%):</label>
                     <input type="number" id="scale" name="scale" value="<?php echo esc_attr($scale); ?>" min="10" max="500">
                     <span class="description">Size of the portal (100 = normal size)</span>
                 </div>
-
+    
                 <div class="portal-settings-field">
                     <label>
                         <input type="checkbox" name="use_custom_size" id="use_custom_size" value="1" <?php checked($use_custom_size, true); ?> />
                         Set custom size
                     </label>
                 </div>
-
+    
                 <div id="custom_size_fields" style="<?php echo $use_custom_size ? 'display:block;' : 'display:none;'; ?>">
                     <div class="portal-settings-field">
                         <label for="portal_width">Width (%):</label><br>
@@ -467,7 +644,7 @@ class Spiral_Tower_Portal_Manager
                             min="1" max="100" />
                     </div>
                 </div>
-
+    
             </div>
             <div class="portal-settings-field" id="custom_image_field"
                 style="<?php echo ($portal_type === 'custom') ? 'display:block;' : 'display:none;' ?>">
@@ -485,29 +662,110 @@ class Spiral_Tower_Portal_Manager
                     endif; ?>
                 </div>
             </div>
-
+    
         </div>
         <script type="text/javascript">
-
+    
             jQuery(document).ready(function ($) {
                 // Auto-populate fields from URL parameters
                 const urlParams = new URLSearchParams(window.location.search);
                 const originType = urlParams.get('origin_type');
                 const originFloorId = urlParams.get('origin_floor_id');
                 const originRoomId = urlParams.get('origin_room_id');
-
+    
                 // Auto-select origin type if provided
                 if (originType && (originType === 'floor' || originType === 'room')) {
                     $('#origin_type').val(originType).trigger('change');
-
-                    // Auto-select specific floor or room
-                    if (originType === 'floor' && originFloorId) {
-                        $('#origin_floor_id').val(originFloorId);
-                    } else if (originType === 'room' && originRoomId) {
-                        $('#origin_room_id').val(originRoomId);
-                    }
+                    // The PHP code above already handles populating the hidden fields and display values
                 }
-
+    
+                // TypeAhead functionality
+                function initTypeAhead(inputSelector, resultsSelector, searchAction, hiddenInputSelector) {
+                    let currentTimeout = null;
+                    let currentRequest = null;
+                    
+                    $(document).on('input', inputSelector, function() {
+                        const $input = $(this);
+                        const $results = $(resultsSelector);
+                        const $hidden = $(hiddenInputSelector);
+                        const searchTerm = $input.val();
+                        
+                        // Clear previous timeout and request
+                        if (currentTimeout) clearTimeout(currentTimeout);
+                        if (currentRequest) currentRequest.abort();
+                        
+                        if (searchTerm.length < 2) {
+                            $results.hide();
+                            return;
+                        }
+                        
+                        // Debounce the search
+                        currentTimeout = setTimeout(function() {
+                            currentRequest = $.ajax({
+                                url: ajaxurl,
+                                method: 'GET',
+                                data: {
+                                    action: searchAction,
+                                    term: searchTerm
+                                },
+                                success: function(data) {
+                                    $results.empty();
+                                    
+                                    if (data.length === 0) {
+                                        $results.html('<div class="portal-typeahead-result">No results found</div>');
+                                    } else {
+                                        $.each(data, function(index, item) {
+                                            const $result = $('<div class="portal-typeahead-result"></div>')
+                                                .text(item.label)
+                                                .data('id', item.id)
+                                                .data('label', item.label);
+                                            $results.append($result);
+                                        });
+                                    }
+                                    
+                                    $results.show();
+                                }
+                            });
+                        }, 300);
+                    });
+                    
+                    // Handle result selection
+                    $(document).on('click', resultsSelector + ' .portal-typeahead-result', function() {
+                        const $result = $(this);
+                        const id = $result.data('id');
+                        const label = $result.data('label');
+                        
+                        if (id) {
+                            $(inputSelector).val(label);
+                            $(hiddenInputSelector).val(id);
+                        }
+                        
+                        $(resultsSelector).hide();
+                        updateOriginLink();
+                        updateDestinationLink();
+                    });
+                    
+                    // Hide results when clicking outside
+                    $(document).on('click', function(e) {
+                        if (!$(e.target).closest('.portal-typeahead-container').length) {
+                            $(resultsSelector).hide();
+                        }
+                    });
+                    
+                    // Clear hidden value when input is manually cleared
+                    $(document).on('input', inputSelector, function() {
+                        if ($(this).val() === '') {
+                            $(hiddenInputSelector).val('');
+                        }
+                    });
+                }
+                
+                // Initialize typeaheads
+                initTypeAhead('#origin_floor_search', '#origin_floor_results', 'spiral_tower_search_floors', '#origin_floor_id');
+                initTypeAhead('#destination_floor_search', '#destination_floor_results', 'spiral_tower_search_floors', '#destination_floor_id');
+                initTypeAhead('#origin_room_search', '#origin_room_results', 'spiral_tower_search_rooms', '#origin_room_id');
+                initTypeAhead('#destination_room_search', '#destination_room_results', 'spiral_tower_search_rooms', '#destination_room_id');
+    
                 // Custom Size Toggle
                 $('#use_custom_size').on('change', function () {
                     if ($(this).is(':checked')) {
@@ -516,7 +774,7 @@ class Spiral_Tower_Portal_Manager
                         $('#custom_size_fields').hide();
                     }
                 });
-
+    
                 // Custom Image Toggle
                 $('#portal_type').on('change', function () {
                     if ($(this).val() === 'custom') {
@@ -525,7 +783,7 @@ class Spiral_Tower_Portal_Manager
                         $('#custom_image_field').hide();
                     }
                 }).trigger('change');
-
+    
                 // Media Uploader
                 var mediaUploader;
                 $('#custom_image_button').on('click', function (e) {
@@ -547,13 +805,13 @@ class Spiral_Tower_Portal_Manager
                     });
                     mediaUploader.open();
                 });
-
+    
                 $('#custom_image_remove').on('click', function () {
                     $('#custom_image').val('');
                     $('#custom_image_preview').html('');
                     $(this).hide();
                 });
-
+    
                 // Origin Field Toggle
                 $('#origin_type').on('change', function () {
                     if ($(this).val() === 'floor') {
@@ -565,14 +823,14 @@ class Spiral_Tower_Portal_Manager
                     }
                     updateOriginLink();
                 }).trigger('change');
-
+    
                 // Destination Field Toggle
                 $('#destination_type').on('change', function () {
                     var selectedType = $(this).val();
                     $('.destination-floor-field').hide();
                     $('.destination-room-field').hide();
                     $('.destination-external-url-field').hide();
-
+    
                     if (selectedType === 'floor') {
                         $('.destination-floor-field').show();
                     } else if (selectedType === 'room') {
@@ -582,21 +840,21 @@ class Spiral_Tower_Portal_Manager
                     }
                     updateDestinationLink();
                 }).trigger('change');
-
+    
                 // Function to update the origin link
                 function updateOriginLink() {
                     var originType = $('#origin_type').val();
                     var originId = null;
-
+    
                     if (originType === 'floor') {
                         originId = $('#origin_floor_id').val();
                     } else if (originType === 'room') {
                         originId = $('#origin_room_id').val();
                     }
-
+    
                     var $container = $('#origin-link-container');
                     $container.empty();
-
+    
                     if (originId) {
                         // Use admin AJAX to get the permalink
                         $.ajax({
@@ -618,12 +876,12 @@ class Spiral_Tower_Portal_Manager
                         });
                     }
                 }
-
+    
                 // Function to update the destination link
                 function updateDestinationLink() {
                     var destinationType = $('#destination_type').val();
                     var destinationId = null;
-
+    
                     if (destinationType === 'floor') {
                         destinationId = $('#destination_floor_id').val();
                     } else if (destinationType === 'room') {
@@ -641,10 +899,10 @@ class Spiral_Tower_Portal_Manager
                         }
                         return;
                     }
-
+    
                     var $container = $('#destination-link-container');
                     $container.empty();
-
+    
                     if (destinationId) {
                         // Use admin AJAX to get the permalink
                         $.ajax({
@@ -666,15 +924,13 @@ class Spiral_Tower_Portal_Manager
                         });
                     }
                 }
-
+    
                 // Set up event listeners for form field changes
-                $('#origin_floor_id, #origin_room_id').on('change', updateOriginLink);
-                $('#destination_floor_id, #destination_room_id').on('change', updateDestinationLink);
                 $('#destination_external_url').on('change input', updateDestinationLink);
             });
         </script>
-
-
+    
+    
         <?php
     }
 

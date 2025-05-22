@@ -337,8 +337,8 @@ class Spiral_Tower_Floor_Manager
         echo __('Send to the void', 'spiral-tower');
         echo '</label>';
         echo '<br><small>' . __('If checked, visitors will be redirected to a 404 page when attempting to view this floor.', 'spiral-tower') . '</small>';
-        echo '</p>';   
-        
+        echo '</p>';
+
         echo '<hr>';
 
         echo '<p>';
@@ -509,7 +509,7 @@ class Spiral_Tower_Floor_Manager
         // --- Save ORIGINAL Floor Settings Fields (Text/Color/URL etc.) ---
         $fields_to_save = [
             '_floor_number' => isset($_POST['floor_number']) ? sanitize_text_field($_POST['floor_number']) : null,
-            '_floor_number_alt_text' => isset($_POST['floor_number_alt_text']) ? sanitize_text_field($_POST['floor_number_alt_text']) : null,            
+            '_floor_number_alt_text' => isset($_POST['floor_number_alt_text']) ? sanitize_text_field($_POST['floor_number_alt_text']) : null,
             '_background_youtube_url' => isset($_POST['background_youtube_url']) ? sanitize_text_field($_POST['background_youtube_url']) : null,
             '_title_color' => isset($_POST['title_color']) ? sanitize_text_field($_POST['title_color']) : null, // Basic sanitize
             '_title_background_color' => isset($_POST['title_background_color']) ? sanitize_text_field($_POST['title_background_color']) : null, // Basic sanitize
@@ -630,8 +630,10 @@ class Spiral_Tower_Floor_Manager
         // Only run on the front-end for singular floor views
         if (is_singular('floor')) {
             $floor_id = get_the_ID();
+            
+            // Check for "send to void" specifically, NOT "hidden"
             $send_to_void = get_post_meta($floor_id, '_floor_send_to_void', true);
-
+    
             if ($send_to_void === '1') {
                 // Redirect to the void page instead of showing 404
                 wp_redirect(home_url('/the-void/'), 302); // 302 = temporary redirect
@@ -692,6 +694,7 @@ class Spiral_Tower_Floor_Manager
             $new_columns[$key] = $value;
             if ($key === 'title') {
                 $new_columns['floor_number'] = 'Floor Number';
+                $new_columns['floor_number_alt_text'] = 'Floor Number Alt Text';
             }
         }
         return $new_columns;
@@ -704,7 +707,22 @@ class Spiral_Tower_Floor_Manager
     {
         if ($column === 'floor_number') {
             $floor_number = get_post_meta($post_id, '_floor_number', true);
-            echo esc_html($floor_number);
+
+            if ($floor_number !== '' && is_numeric($floor_number)) {
+                echo esc_html($floor_number);
+            } else {
+                echo '<em style="color: #999;">(No Number)</em>';
+            }
+        }
+
+        if ($column === 'floor_number_alt_text') {
+            $floor_number_alt_text = get_post_meta($post_id, '_floor_number_alt_text', true);
+
+            if ($floor_number_alt_text !== '') {
+                echo esc_html($floor_number_alt_text);
+            } else {
+                echo '<span style="color: #ccc;">—</span>';
+            }
         }
     }
 
@@ -714,6 +732,7 @@ class Spiral_Tower_Floor_Manager
     public function make_floor_number_column_sortable($columns)
     {
         $columns['floor_number'] = 'floor_number';
+        $columns['floor_number_alt_text'] = 'floor_number_alt_text';
         return $columns;
     }
 
@@ -725,10 +744,56 @@ class Spiral_Tower_Floor_Manager
         if (!is_admin() || !$query->is_main_query()) {
             return;
         }
-        if ($query->get('post_type') === 'floor' && $query->get('orderby') === 'floor_number') {
-            $query->set('meta_key', '_floor_number');
-            $query->set('orderby', 'meta_value_num');
+
+        if ($query->get('post_type') === 'floor') {
+            $orderby = $query->get('orderby');
+
+            if ($orderby === 'floor_number') {
+                // Use posts_orderby filter to create custom SQL that includes all posts
+                add_filter('posts_orderby', array($this, 'custom_floor_number_orderby_sql'), 10, 2);
+
+            } elseif ($orderby === 'floor_number_alt_text') {
+                // Use posts_orderby filter for alt text too
+                add_filter('posts_orderby', array($this, 'custom_floor_alt_text_orderby_sql'), 10, 2);
+            }
         }
+    }
+
+    /**
+     * Custom orderby for floor numbers that treats missing values as 0
+     */
+    public function custom_floor_number_orderby_sql($orderby, $query)
+    {
+        global $wpdb;
+
+        if ($query->get('post_type') === 'floor' && $query->get('orderby') === 'floor_number') {
+            $order = $query->get('order') === 'ASC' ? 'ASC' : 'DESC';
+
+            // Custom SQL that treats missing meta as 0 for numeric sorting
+            $orderby = "CAST(COALESCE((SELECT meta_value FROM {$wpdb->postmeta} WHERE {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID AND {$wpdb->postmeta}.meta_key = '_floor_number'), '0') AS SIGNED) $order";
+
+            // Remove filter after use
+            remove_filter('posts_orderby', array($this, 'custom_floor_number_orderby_sql'), 10);
+        }
+
+        return $orderby;
+    }
+
+    public function custom_floor_alt_text_orderby_sql($orderby, $query)
+    {
+        global $wpdb;
+
+        if ($query->get('post_type') === 'floor' && $query->get('orderby') === 'floor_number_alt_text') {
+            $order = $query->get('order') === 'ASC' ? 'ASC' : 'DESC';
+
+            // Custom SQL that treats missing meta as empty string for text sorting
+            $orderby = "COALESCE((SELECT meta_value FROM {$wpdb->postmeta} WHERE {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID AND {$wpdb->postmeta}.meta_key = '_floor_number_alt_text'), '') $order";
+
+            // Remove filter after use
+            remove_filter('posts_orderby', array($this, 'custom_floor_alt_text_orderby_sql'), 10);
+        }
+
+        return $orderby;
     }
 
     /**
@@ -900,21 +965,23 @@ class Spiral_Tower_Floor_Manager
      */
     public function exclude_hidden_floors_from_frontend($query)
     {
-        // Check if it's a frontend query, not in admin, and it's the main query or a search query
-        if (!is_admin() && ($query->is_main_query() || $query->is_search())) {
+        // Only run on frontend, never in admin
+        if (is_admin()) {
+            return;
+        }
 
-            // Check if the query is for floors or if it's a search query (which could include floors)
+        // Check if it's a frontend query and it's the main query or a search query
+        if ($query->is_main_query() || $query->is_search()) {
+            // Check if the query is for floors or if it's a search query
             $post_type = $query->get('post_type');
-            // Handle multiple post types in query
             if (is_array($post_type)) {
                 $is_floor_query = in_array('floor', $post_type);
             } else {
-                $is_floor_query = ($post_type === 'floor' || empty($post_type)); // Empty post_type might mean search across all CPTs
+                $is_floor_query = ($post_type === 'floor' || empty($post_type));
             }
 
             // Apply exclusion if it's a floor query OR a general search, but NOT if viewing a single floor directly
             if (($is_floor_query || $query->is_search()) && !$query->is_singular('floor')) {
-
                 // Get existing meta query
                 $meta_query = $query->get('meta_query');
                 if (!is_array($meta_query)) {
@@ -922,7 +989,6 @@ class Spiral_Tower_Floor_Manager
                 }
 
                 // Add the condition to exclude hidden floors
-                // We want posts where _floor_hidden is NOT '1' OR where the key doesn't exist
                 $meta_query[] = array(
                     'relation' => 'OR',
                     array(
@@ -936,51 +1002,9 @@ class Spiral_Tower_Floor_Manager
                     )
                 );
 
-                // Set the modified meta query back to the main query object
                 $query->set('meta_query', $meta_query);
             }
         }
-    }
-
-    /**
-     * Exclude hidden floors from the main REST API query for floors.
-     * Hooked to 'rest_floor_query'.
-     * @param array $args WP_Query arguments.
-     * @param WP_REST_Request $request The REST request.
-     * @return array Modified WP_Query arguments.
-     */
-    public function exclude_hidden_floors_from_rest($args, $request)
-    {
-        // Check if a specific post is requested by ID or slug - if so, don't exclude
-        if (!empty($request['id']) || !empty($request['slug'])) {
-            return $args;
-        }
-
-        // Get existing meta query arguments from the REST request processing
-        $meta_query = isset($args['meta_query']) ? $args['meta_query'] : array();
-        if (!is_array($meta_query)) {
-            $meta_query = array();
-        }
-
-        // Add the condition to exclude hidden floors
-        // We want posts where _floor_hidden is NOT '1' OR where the key doesn't exist
-        $meta_query[] = array(
-            'relation' => 'OR',
-            array(
-                'key' => '_floor_hidden',
-                'value' => '1',
-                'compare' => '!=',
-            ),
-            array(
-                'key' => '_floor_hidden',
-                'compare' => 'NOT EXISTS',
-            )
-        );
-
-        // Set the modified meta query back to the arguments array
-        $args['meta_query'] = $meta_query;
-
-        return $args;
     }
 
 } // End Class Spiral_Tower_Floor_Manager

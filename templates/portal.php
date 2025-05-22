@@ -19,6 +19,7 @@ $can_edit_floor = current_user_can('edit_post', get_the_ID());
         // Get portal data
         $portal_id = $portal->ID;
         $portal_title = $portal->post_title;
+        $portal_post_date = $portal->post_date;
 
         // Get portal meta
         $portal_type = get_post_meta($portal_id, '_portal_type', true);
@@ -151,7 +152,7 @@ $can_edit_floor = current_user_can('edit_post', get_the_ID());
         }
         ?>
         <div id="portal-<?php echo esc_attr($portal_id); ?>" class="<?php echo esc_attr(implode(' ', $portal_classes)); ?>"
-            data-portal-id="<?php echo esc_attr($portal_id); ?>" data-portal-type="<?php echo esc_attr($portal_type); ?>"
+            data-portal-id="<?php echo esc_attr($portal_id); ?>" data-post-date="<?php echo esc_attr($portal_post_date); ?>" data-portal-type="<?php echo esc_attr($portal_type); ?>"
             data-tooltip="<?php echo esc_attr($portal_title); ?>" style="<?php echo $style_attr; ?>">
 
             <a href="<?php echo esc_url($destination_url); ?>" class="spiral-tower-portal-link">

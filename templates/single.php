@@ -70,6 +70,8 @@ if ($has_youtube && !$youtube_audio_only) {
 $portals = get_posts(array(
 	'post_type' => 'portal',
 	'posts_per_page' => -1,
+	'orderby' => 'post_date',
+	'order' => 'DESC',
 	'meta_query' => array(
 		'relation' => 'AND',
 		array(
@@ -84,6 +86,7 @@ $portals = get_posts(array(
 		)
 	)
 ));
+
 
 ?>
 <!DOCTYPE html>

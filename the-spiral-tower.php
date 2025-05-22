@@ -58,12 +58,12 @@ class Spiral_Tower_Plugin
 
     /**
      * Log Manager instance
-     */    
-    public $log_manager;    
+     */
+    public $log_manager;
 
     /**
      * Profile Manager instance
-     */     
+     */
     public $user_profile_manager;
 
     /**
@@ -78,7 +78,7 @@ class Spiral_Tower_Plugin
         $this->image_generator = new Spiral_Tower_Image_Generator();
         $this->like_manager = new Spiral_Tower_Like_Manager();
         $this->log_manager = new Spiral_Tower_Log_Manager();
-        $this->user_profile_manager = new Spiral_Tower_User_Profile_Manager(); 
+        $this->user_profile_manager = new Spiral_Tower_User_Profile_Manager();
 
         // Register activation and deactivation hooks
         register_activation_hook(__FILE__, array($this, 'activate'));
@@ -98,11 +98,44 @@ class Spiral_Tower_Plugin
         add_action('add_meta_boxes', array($this, 'add_floor_template_metabox'));
         add_action('save_post', array($this, 'save_floor_template_meta'));
 
+        add_action('parse_request', array($this, 'handle_homepage_as_floor'));
         add_action('init', array($this, 'setup_stairs_page'));
         add_action('init', array($this, 'setup_void_page'));
 
         add_action('template_redirect', array($this, 'redirect_404_to_void'), 1);
         add_filter('template_include', array($this, 'handle_404_template'), 99);
+    }
+
+    /**
+     * Make specific floor appear as homepage without redirect (if it exists)
+     * TODO: Make a plugin option for this
+     */
+    public function handle_homepage_as_floor($wp)
+    {
+        // Only handle if this is the homepage (empty request)
+        if (empty($wp->request) && empty($wp->query_vars['pagename']) && empty($wp->query_vars['name'])) {
+
+            // Check if our specific floor exists
+            $floor_slug = 'you-find-yourself-in-a-strange-spiral-tower';
+            $floor = get_page_by_path($floor_slug, OBJECT, 'floor');
+
+            // Only override homepage if the floor exists
+            if ($floor && $floor->post_status === 'publish') {
+                // Set query vars to load our specific floor
+                $wp->query_vars = array(
+                    'post_type' => 'floor',
+                    'name' => $floor_slug
+                );
+
+                // Clear the matched rule so WordPress processes our query vars
+                $wp->matched_rule = '';
+                $wp->matched_query = 'post_type=floor&name=' . $floor_slug;
+
+                // Make sure WordPress knows this is not a 404
+                $wp->did_permalink = true;
+            }
+            // If floor doesn't exist, WordPress will continue with normal homepage logic
+        }
     }
 
     /**
@@ -430,7 +463,7 @@ class Spiral_Tower_Plugin
         $is_profile_page = !empty(get_query_var('spiral_tower_user_profile'));
         if ($is_profile_page) {
             $load_assets = true;
-        }        
+        }
 
         // Only load assets if it's a floor, room, or page using the template
         if ($load_assets) {
@@ -806,7 +839,8 @@ function spiral_tower_toggle_like($post_id)
     return false;
 }
 
-function spiral_tower_get_user_profile_url($user_id) {
+function spiral_tower_get_user_profile_url($user_id)
+{
     global $spiral_tower_plugin;
     if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->user_profile_manager)) {
         return $spiral_tower_plugin->user_profile_manager->get_user_profile_url($user_id);

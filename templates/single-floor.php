@@ -78,9 +78,12 @@ if ($has_youtube && !$youtube_audio_only) {
 // If neither, visual_bg_type remains null
 
 // --- Get portals ---
-$portals = get_posts(array(
+$portal_query = new WP_Query(array(
 	'post_type' => 'portal',
 	'posts_per_page' => -1,
+	'post_status' => 'publish',
+	'orderby' => 'post_date',
+	'order' => 'ASC',
 	'meta_query' => array(
 		'relation' => 'AND',
 
@@ -115,6 +118,9 @@ $portals = get_posts(array(
 		)
 	)
 ));
+
+$portals = $portal_query->posts;
+
 
 ?>
 <!DOCTYPE html>

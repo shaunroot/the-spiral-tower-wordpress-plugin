@@ -229,6 +229,47 @@ if ($has_liked) {
     <?php // ----- END: TWIST ----- ?>
 
 
+
+    
+    <?php // ----- START: User Profile Button ----- ?>
+<div id="button-user-profile" class="tooltip-trigger" data-tooltip="Creator Info">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+    </svg>
+</div>
+
+<div id="user-profile-popup" style="display: none; width: 280px; height: 70px;">
+    <?php
+    $post_id = get_the_ID();
+    $author_id = get_post_field('post_author', $post_id);
+    $author = get_user_by('id', $author_id);
+    $avatar_url = function_exists('spiral_tower_get_user_profile_url') ? spiral_tower_get_user_profile_url($author_id) : '';
+    $author_avatar = get_user_meta($author_id, 'spiral_tower_avatar', true);
+    $upload_dir = wp_upload_dir();
+    $avatar_url_full = !empty($author_avatar) ? $upload_dir['baseurl'] . '/' . $author_avatar : SPIRAL_TOWER_PLUGIN_URL . 'assets/images/default-avatar.jpg';
+    $profile_url = spiral_tower_get_user_profile_url($author_id);
+    ?>
+    <a href="<?php echo esc_url($profile_url); ?>" class="profile-popup-link">
+        <div class="profile-popup-content">
+            <div class="author-info">
+                <p>Floor created by <span class="author-name"><?php echo esc_html($author->display_name); ?></span></p>
+            </div>
+            <div class="author-avatar-container">
+                <img src="<?php echo esc_url($avatar_url_full); ?>" alt="<?php echo esc_attr($author->display_name); ?>"
+                    class="author-avatar">
+            </div>
+        </div>
+    </a>
+</div>
+<?php // ----- END: User Profile Button ----- ?>
+
+
+
+
+
+
     <?php // ----- START: Like Button HTML ----- ?>
     <div id="toolbar-like" class="<?php echo esc_attr($like_button_classes); ?>"
         data-post-id="<?php echo esc_attr($post_id); ?>" data-tooltip="<?php echo esc_attr($tooltip_text); ?>">
@@ -261,4 +302,72 @@ if ($has_liked) {
     <?php endif; ?>
     <?php // ----- END: Sound Toggle Button HTML ----- ?>
 
-</div> <?php // ----- END: Toolbar----- ?>
+</div>
+
+
+
+<script>
+/**
+ * Ultra-simple inline fix for mobile
+ * Add this directly to your HTML page right before the closing </body> tag
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Only run this on mobile devices
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        console.log("Mobile fix applied");
+        
+        // Get the button and popup
+        var profileButton = document.getElementById('button-user-profile');
+        var profilePopup = document.getElementById('user-profile-popup');
+        
+        if (!profileButton || !profilePopup) return;
+        
+        // Simple toggle for mobile
+        var isVisible = false;
+        
+        profileButton.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log("Mobile button tapped");
+            
+            if (!isVisible) {
+                profilePopup.style.display = 'block';
+                profilePopup.style.opacity = '1';
+                profilePopup.style.visibility = 'visible';
+                isVisible = true;
+            } else {
+                profilePopup.style.display = 'none';
+                profilePopup.style.opacity = '0';
+                profilePopup.style.visibility = 'hidden';
+                isVisible = false;
+            }
+        }, false);
+        
+        // Hide when tapping elsewhere
+        document.addEventListener('touchend', function(e) {
+            if (isVisible && e.target !== profileButton && !profilePopup.contains(e.target)) {
+                profilePopup.style.display = 'none';
+                profilePopup.style.opacity = '0';
+                profilePopup.style.visibility = 'hidden';
+                isVisible = false;
+            }
+        }, false);
+        
+        // Make sure popup is positioned correctly
+        profilePopup.style.position = 'absolute';
+        profilePopup.style.zIndex = '9999';
+        profilePopup.style.bottom = '60px';
+        profilePopup.style.right = '10px';
+        profilePopup.style.backgroundColor = 'rgba(20, 20, 20, 0.95)';
+        profilePopup.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+        profilePopup.style.borderRadius = '8px';
+        profilePopup.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+    }
+});
+</script>
+
+
+
+
+<?php // ----- END: Toolbar----- ?>

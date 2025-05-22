@@ -33,6 +33,7 @@ window.SpiralTower.config = {
             colorExtractor: false,
             portalEditor: false,
             like: true,
+            userProfile: true,
         }
     }
 };
@@ -114,6 +115,7 @@ if (typeof spiralTowerWpSettings !== 'undefined' && spiralTowerWpSettings.loggin
         'spiral-tower-portal-editor.js',   
         'spiral-tower-image-generator.js', 
         'spiral-tower-like.js', 
+        'spiral-tower-user-profile.js',
         'spiral-tower-core.js'             
     ];
 

@@ -253,19 +253,7 @@
     &.no-pointer {
         cursor: default;
     }
-    
-    /* Hover effect */
-    &:hover {
-        transform: translate(-50%, -50%) scale(1.05) !important;
-        filter: brightness(1.2);
-        z-index: 101;
-    }
-    
-    /* Active effect (being clicked) */
-    &:active {
-        transform: translate(-50%, -50%) scale(0.95) !important; 
-    }
-    
+        
     /* Basic link styling */
     a {
         text-decoration: none;
