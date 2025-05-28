@@ -14,9 +14,7 @@ SpiralTower.like = (function() {
     /**
      * Initialize like functionality
      */
-    function init() {
-        console.log('Initializing like system');
-        
+    function init() {        
         // Find like button in toolbar
         likeButton = document.getElementById('toolbar-like');
         
@@ -24,9 +22,7 @@ SpiralTower.like = (function() {
             console.warn('Like button not found in DOM');
             return;
         }
-        
-        console.log('Found like button:', likeButton);
-        
+       
         // Ensure the post ID is available
         const postId = likeButton.getAttribute('data-post-id');
         if (!postId) {
@@ -93,9 +89,7 @@ SpiralTower.like = (function() {
                 } else {
                     likeButton.removeAttribute('data-tooltip-content');
                     likeButton.classList.remove('has-tooltip-content');
-                }
-                
-                console.log('Like toggled successfully');
+                }                
             } else {
                 console.error('Error toggling like:', data.data.message);
             }

@@ -1,5 +1,5 @@
 /**
- * Portal Editor with Direct Save Approach - FIXED
+ * Portal Editor with Direct Save Approach
  * This version resolves the drag and resize issues
  */
 (function () {
@@ -7,14 +7,11 @@
     const isFloorPage = document.body.classList.contains('floor-template-active');
     if (!isFloorPage) return;
 
-    console.log('Portal Editor: Initializing on floor page');
-
     function createUI() {
         // Find the existing toolbar edit button
         const editButton = document.getElementById('toolbar-edit-portals');
 
         if (!editButton) {
-            console.error('Portal Editor: Could not find existing edit button with ID "toolbar-edit-portals"');
             return { editButton: null, saveButton: null, notificationContainer: null };
         }
 
@@ -91,14 +88,11 @@
         if (!wrapper) return [];
 
         const portals = wrapper.querySelectorAll('.floor-gizmo');
-        console.log(`Portal Editor: Found ${portals.length} portal elements`);
         return Array.from(portals);
     }
 
     // Create resize handles for a portal
     function addResizeHandles(portal) {
-        console.log('Adding resize handles to portal:', portal.id);
-
         // Create all four corner handles
         createResizeHandle(portal, 'top-left');
         createResizeHandle(portal, 'top-right');
@@ -167,7 +161,6 @@
         const saveButton = document.getElementById('portal-save-changes');
 
         if (editModeActive) {
-            console.log('Portal Editor: Enabling edit mode');
             document.body.classList.add('portal-edit-mode');
 
             // Change edit button appearance to "Save Portals" in green
@@ -202,7 +195,6 @@
 
             showNotification('Portal edit mode enabled. Drag portals or resize with corner handles.', 'info');
         } else {
-            console.log('Portal Editor: Disabling edit mode');
             document.body.classList.remove('portal-edit-mode');
 
             // Restore edit button appearance to original state
@@ -307,24 +299,24 @@
         document.addEventListener('mouseup', stopDrag);
         
         // Log initial state for debugging
-        console.log('Start drag:', {
-            startLeft,
-            startTop,
-            initialClickOffsetX,
-            initialClickOffsetY,
-            portalRect: {
-                left: portalRect.left,
-                top: portalRect.top,
-                width: portalRect.width,
-                height: portalRect.height
-            },
-            wrapperRect: {
-                left: wrapperRect.left,
-                top: wrapperRect.top,
-                width: wrapperRect.width,
-                height: wrapperRect.height
-            }
-        });
+        // console.log('Start drag:', {
+        //     startLeft,
+        //     startTop,
+        //     initialClickOffsetX,
+        //     initialClickOffsetY,
+        //     portalRect: {
+        //         left: portalRect.left,
+        //         top: portalRect.top,
+        //         width: portalRect.width,
+        //         height: portalRect.height
+        //     },
+        //     wrapperRect: {
+        //         left: wrapperRect.left,
+        //         top: wrapperRect.top,
+        //         width: wrapperRect.width,
+        //         height: wrapperRect.height
+        //     }
+        // });
     }
 
     function doDrag(e) {
@@ -517,14 +509,6 @@
             const width = parseFloat(portal.style.width) || null;
             const height = parseFloat(portal.style.height) || null;
 
-            // Log values for debugging
-            console.log(`Portal ${id} values:`, {
-                left: `${left}%`,
-                top: `${top}%`,
-                width: width ? `${width}%` : null,
-                height: height ? `${height}%` : null
-            });
-
             return {
                 id: id,
                 position: {
@@ -543,8 +527,6 @@
             showNotification('No portals to save', 'info');
             return;
         }
-
-        console.log('Saving all portals:', portalData);
 
         // Update save button to show loading state
         const saveButton = document.getElementById('portal-save-changes');
@@ -571,10 +553,6 @@
         // Find WordPress admin-ajax.php URL
         const ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : '/wp-admin/admin-ajax.php';
 
-        // Debug info
-        console.log('Saving to:', ajaxUrl);
-        console.log('Form data keys:', Array.from(formData.keys()));
-
         // Send AJAX request using standard WordPress approach
         fetch(ajaxUrl, {
             method: 'POST',
@@ -582,9 +560,7 @@
             credentials: 'same-origin'
         })
             .then(response => {
-                console.log('Response status:', response.status);
                 return response.text().then(text => {
-                    console.log('Raw response:', text);
                     try {
                         // Try to parse as JSON
                         return JSON.parse(text);
@@ -595,8 +571,6 @@
                 });
             })
             .then(data => {
-                console.log('Save response data:', data);
-
                 if (data.success) {
                     showNotification(`Changes saved successfully! Updated ${portalData.length} portal(s).`, 'success');
 
@@ -635,7 +609,6 @@
         const urlRegex = /\/floor\/(\d+)(?:\/|$)/;
         const urlMatch = window.location.pathname.match(urlRegex);
         if (urlMatch && urlMatch[1]) {
-            console.log('Found floor ID in URL:', urlMatch[1]);
             return urlMatch[1];
         }
 
@@ -645,7 +618,6 @@
             // Look for classes like 'floor-123'
             const classMatch = cls.match(/floor-(\d+)/);
             if (classMatch && classMatch[1]) {
-                console.log('Found floor ID in body class:', classMatch[1]);
                 return classMatch[1];
             }
         }
@@ -654,23 +626,18 @@
         const urlParams = new URLSearchParams(window.location.search);
         const postId = urlParams.get('post') || urlParams.get('post_id');
         if (postId) {
-            console.log('Found floor ID in query string:', postId);
             return postId;
         }
 
         // Return current post ID as a fallback
         const currentId = document.querySelector('body').getAttribute('data-post-id') || document.querySelector('article')?.id?.replace('post-', '');
         if (currentId) {
-            console.log('Using current post ID as floor ID:', currentId);
             return currentId;
         }
-
-        console.warn('Could not determine floor ID');
 
         // If all else fails, try to use any post ID we can find in the URL
         const anyIdMatch = window.location.href.match(/\d+/);
         if (anyIdMatch) {
-            console.log('Using ID from URL as floor ID:', anyIdMatch[0]);
             return anyIdMatch[0];
         }
 

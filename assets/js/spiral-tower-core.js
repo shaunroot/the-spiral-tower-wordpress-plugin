@@ -404,6 +404,13 @@ SpiralTower.core = (function () {
                         await SpiralTower.scrollArrows.init();
                     }
 
+                    if (SpiralTower.achievements?.init) {
+                        logger.log(MODULE_NAME, "Initializing: achievements...");
+                        await SpiralTower.achievements.init();
+                    } else {
+                        logger.warn(MODULE_NAME, "Achievements module not found or missing init");
+                    }                 
+
                     // Load Initial Frontend States
                     isTextOnlyActive = SpiralTower.utils?.isTextOnly ? SpiralTower.utils.isTextOnly() : false;
                     isContentVisible = SpiralTower.utils?.loadSetting ? SpiralTower.utils.loadSetting('contentVisible', false) : false;

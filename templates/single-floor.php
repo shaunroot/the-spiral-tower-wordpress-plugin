@@ -197,7 +197,9 @@ $portals = $portal_query->posts;
 	<?php // ----- START: Your Content Structure ----- ?>
 	<div class="spiral-tower-floor-title">
 		<?php if ($floor_number || $floor_number_alt_text): ?>
-			<div class="spiral-tower-floor-number">Floor <?php echo $floor_number_alt_text ? esc_html($floor_number_alt_text) : esc_html($floor_number); ?></div>
+			<div class="spiral-tower-floor-number">Floor
+				<?php echo $floor_number_alt_text ? esc_html($floor_number_alt_text) : esc_html($floor_number); ?>
+			</div>
 		<?php endif; ?>
 		<h1><?php the_title(); ?></h1>
 	</div>
@@ -256,6 +258,7 @@ $portals = $portal_query->posts;
 		<?php
 	}
 	// ----- END: Portals --- ?>
+
 
 
 	<!-- // START - BG scrolling -->
@@ -517,6 +520,21 @@ $portals = $portal_query->posts;
 
 		});
 	</script>
+
+	<?php
+	// Output any newly awarded achievements for JavaScript
+	global $spiral_tower_plugin;
+	if (isset($spiral_tower_plugin->achievement_manager)) {
+		$newly_awarded = $spiral_tower_plugin->achievement_manager->get_newly_awarded_achievements();
+		if (!empty($newly_awarded)) {
+			$achievement_data = array('achievements' => $newly_awarded);
+			echo '<script type="text/javascript">';
+			echo 'window.spiralTowerAchievements = ' . wp_json_encode($achievement_data) . ';';
+			echo 'console.log("Spiral Tower: Achievement data loaded:", window.spiralTowerAchievements);';
+			echo '</script>';
+		}
+	}
+	?>
 
 </body>
 

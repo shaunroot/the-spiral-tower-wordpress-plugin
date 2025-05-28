@@ -1,4 +1,7 @@
-<?php $current_post_type = get_post_type($current_post_id); ?>
+<?php
+$current_post_id = get_the_ID();
+$current_post_type = get_post_type($current_post_id);
+?>
 
 <?php
 // Get post data for like functionality
@@ -148,7 +151,6 @@ if ($has_liked) {
     <?php
     // Check if the current user can create portals
     if (current_user_can('edit_posts')):
-        $current_post_id = get_the_ID();
 
         // Set up the portal creation URL with the current page as the origin
         $create_portal_url = admin_url('post-new.php?post_type=portal');

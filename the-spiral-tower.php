@@ -32,6 +32,7 @@ require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-image-genera
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-like-manager.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-log-manager.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-user-profile-manager.php';
+require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-achievement-manager.php';
 
 
 /**
@@ -70,6 +71,11 @@ class Spiral_Tower_Plugin
     public $user_profile_manager;
 
     /**
+     * Achievement Manager instance
+     */
+    public $achievement_manager;
+
+    /**
      * Initialize the plugin
      */
     public function __construct()
@@ -82,6 +88,7 @@ class Spiral_Tower_Plugin
         $this->like_manager = new Spiral_Tower_Like_Manager();
         $this->log_manager = new Spiral_Tower_Log_Manager();
         $this->user_profile_manager = new Spiral_Tower_User_Profile_Manager();
+        $this->achievement_manager = new Spiral_Tower_Achievement_Manager();
 
         // Inject Log_Manager into User_Profile_Manager
         if (method_exists($this->user_profile_manager, 'set_log_manager')) {
@@ -672,7 +679,8 @@ class Spiral_Tower_Plugin
         // Register post types first
         $this->floor_manager->register_floor_post_type();
         $this->room_manager->register_room_post_type();
-        $this->portal_manager->register_portal_post_type(); // Assuming portal manager handles this
+        $this->portal_manager->register_portal_post_type(); 
+        $this->achievement_manager->create_user_achievements_table();
 
         // Add rewrite rules (now done inside floor manager init)
         // $this->floor_manager->add_floor_rewrite_rules(); // Might be redundant if called in manager __construct
@@ -754,15 +762,16 @@ function spiral_tower_settings_page()
 /**
  * Enqueue and localize the admin scripts
  */
-function spiral_tower_enqueue_admin_scripts($hook) {
+function spiral_tower_enqueue_admin_scripts($hook)
+{
     global $post;
 
     error_log("Spiral Tower: spiral_tower_enqueue_admin_scripts called with hook: {$hook}");
 
     // Define on which hooks the main admin loader script should be loaded
     $load_loader_script_on_hooks = array(
-        'post.php', 
-        'post-new.php', 
+        'post.php',
+        'post-new.php',
         'profile.php',      // User's own profile
         'user-edit.php'     // Editing another user's profile
     );
@@ -798,13 +807,13 @@ function spiral_tower_enqueue_admin_scripts($hook) {
         wp_enqueue_script('jquery-ui-widget');
         wp_enqueue_script('jquery-ui-accordion');
         wp_enqueue_style('wp-jquery-ui-dialog'); // This includes accordion styles
-        
+
         error_log("Spiral Tower: Enqueued jQuery UI components for profile page");
     }
 
     // Set up dependencies
     $dependencies = array('jquery');
-    
+
     // Add jQuery UI dependencies for profile pages
     if ($hook === 'profile.php' || $hook === 'user-edit.php') {
         $dependencies = array('jquery', 'jquery-ui-core', 'jquery-ui-widget', 'jquery-ui-accordion');
@@ -815,7 +824,7 @@ function spiral_tower_enqueue_admin_scripts($hook) {
         'spiral-tower-loader-admin',
         SPIRAL_TOWER_PLUGIN_URL . 'assets/js/spiral-tower-loader.js',
         $dependencies,
-        SPIRAL_TOWER_VERSION, 
+        SPIRAL_TOWER_VERSION,
         true // Load in footer
     );
 
@@ -846,6 +855,9 @@ add_action('wp_ajax_spiral_tower_generate_image', array($spiral_tower_plugin->im
 add_action('wp_ajax_spiral_tower_set_featured_image', array($spiral_tower_plugin->image_generator, 'set_featured_image_ajax'));
 add_action('wp_ajax_spiral_tower_navigate_floor', 'spiral_tower_handle_floor_navigation');
 add_action('wp_ajax_nopriv_spiral_tower_navigate_floor', 'spiral_tower_handle_floor_navigation');
+add_action('wp_ajax_spiral_tower_award_achievement', array($spiral_tower_plugin->achievement_manager, 'ajax_award_achievement'));
+add_action('wp_ajax_spiral_tower_get_user_achievements', array($spiral_tower_plugin->achievement_manager, 'ajax_get_user_achievements'));
+
 
 /**
  * Handle floor navigation AJAX requests
@@ -1043,20 +1055,21 @@ function spiral_tower_get_user_profile_url($user_id)
     return false;
 }
 
-function spiral_tower_debug_admin_scripts() {
+function spiral_tower_debug_admin_scripts()
+{
     if (!is_admin() || !current_user_can('manage_options')) {
         return;
     }
-    
+
     $current_screen = get_current_screen();
     $hook_suffix = $current_screen ? $current_screen->id : 'unknown';
-    
+
     error_log("=== Spiral Tower Debug Info ===");
     error_log("Current hook: " . $hook_suffix);
     error_log("Current URL: " . (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'unknown'));
     error_log("SPIRAL_TOWER_PLUGIN_URL: " . (defined('SPIRAL_TOWER_PLUGIN_URL') ? SPIRAL_TOWER_PLUGIN_URL : 'NOT DEFINED'));
     error_log("SPIRAL_TOWER_VERSION: " . (defined('SPIRAL_TOWER_VERSION') ? SPIRAL_TOWER_VERSION : 'NOT DEFINED'));
-    
+
     // Check what scripts are enqueued
     global $wp_scripts;
     if (isset($wp_scripts->registered['spiral-tower-loader-admin'])) {
@@ -1067,13 +1080,13 @@ function spiral_tower_debug_admin_scripts() {
     } else {
         error_log("spiral-tower-loader-admin is NOT registered");
     }
-    
+
     if (isset($wp_scripts->queue) && in_array('spiral-tower-loader-admin', $wp_scripts->queue)) {
         error_log("spiral-tower-loader-admin is in queue");
     } else {
         error_log("spiral-tower-loader-admin is NOT in queue");
     }
-    
+
     // Check jQuery UI scripts
     $jquery_ui_scripts = ['jquery-ui-core', 'jquery-ui-widget', 'jquery-ui-accordion'];
     foreach ($jquery_ui_scripts as $script) {
@@ -1083,7 +1096,7 @@ function spiral_tower_debug_admin_scripts() {
             error_log("{$script} is NOT enqueued");
         }
     }
-    
+
     error_log("=== End Debug Info ===");
 }
 
@@ -1091,7 +1104,8 @@ function spiral_tower_debug_admin_scripts() {
  * Add Spiral Tower as a top-level admin menu with Settings and Logs submenus
  * Replace the existing spiral_tower_add_settings_page function with this
  */
-function spiral_tower_add_admin_menu() {
+function spiral_tower_add_admin_menu()
+{
     // Add Spiral Tower as a top-level menu
     add_menu_page(
         'Spiral Tower',                  // Page title
@@ -1102,7 +1116,7 @@ function spiral_tower_add_admin_menu() {
         'dashicons-admin-multisite',     // Icon (tower-like icon)
         30                               // Position (30 puts it after Comments)
     );
-    
+
     // Add Settings submenu
     add_submenu_page(
         'spiral-tower',                  // Parent menu slug
@@ -1112,7 +1126,7 @@ function spiral_tower_add_admin_menu() {
         'spiral-tower-settings',         // Menu slug
         'spiral_tower_settings_page'     // Callback function
     );
-    
+
     // Add Logs submenu
     add_submenu_page(
         'spiral-tower',                  // Parent menu slug
@@ -1143,6 +1157,14 @@ function spiral_tower_main_page() {
     $room_count = wp_count_posts('room');
     $portal_count = wp_count_posts('portal');
     
+    // Get achievement stats
+    $total_achievements_awarded = 0;
+    $recent_achievement_awards = array();
+    if (isset($spiral_tower_plugin->achievement_manager)) {
+        $total_achievements_awarded = $spiral_tower_plugin->achievement_manager->get_achievement_log_count();
+        $recent_achievement_awards = $spiral_tower_plugin->achievement_manager->get_achievement_log('', 0, 10);
+    }
+    
     ?>
     <div class="wrap">
         <h1>Spiral Tower Dashboard</h1>
@@ -1166,7 +1188,64 @@ function spiral_tower_main_page() {
                 <p class="stat-number"><?php echo $portal_count->publish ?? 0; ?></p>
                 <a href="<?php echo admin_url('edit.php?post_type=portal'); ?>" class="button">Manage Portals</a>
             </div>
+            
+            <div class="dashboard-stat-box">
+                <h3>Achievements Awarded</h3>
+                <p class="stat-number"><?php echo $total_achievements_awarded; ?></p>
+                <a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>" class="button">View Achievement Log</a>
+            </div>
         </div>
+        
+        <?php if (!empty($recent_achievement_awards)): ?>
+        <div class="tower-recent-achievements">
+            <h2>Recent Achievement Awards</h2>
+            <div class="achievement-awards-list">
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Achievement</th>
+                            <th>Points</th>
+                            <th>Date Awarded</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($recent_achievement_awards as $award): ?>
+                        <tr>
+                            <td>
+                                <?php 
+                                $user_edit_link = get_edit_user_link($award->user_id);
+                                $user_name = $award->user_name ?: $award->user_login ?: 'Unknown User';
+                                if ($user_edit_link) {
+                                    echo '<a href="' . esc_url($user_edit_link) . '">' . esc_html($user_name) . '</a>';
+                                } else {
+                                    echo esc_html($user_name);
+                                }
+                                ?>
+                            </td>
+                            <td>
+                                <div class="achievement-info">
+                                    <?php if (isset($award->icon)): ?>
+                                        <span class="dashicons <?php echo esc_attr($award->icon); ?>"></span>
+                                    <?php endif; ?>
+                                    <strong><?php echo esc_html($award->title ?? $award->achievement_key); ?></strong>
+                                    <?php if (isset($award->description)): ?>
+                                        <br><small><?php echo esc_html($award->description); ?></small>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                            <td><?php echo esc_html($award->points ?? '—'); ?></td>
+                            <td><?php echo esc_html(mysql2date('F j, Y g:i a', $award->awarded_date)); ?></td>
+                            <td><?php echo esc_html($award->notes ?: '—'); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <p><a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>">View Full Achievement Log →</a></p>
+            </div>
+        </div>
+        <?php endif; ?>
         
         <div class="tower-dashboard-actions">
             <h2>Quick Actions</h2>
@@ -1181,6 +1260,12 @@ function spiral_tower_main_page() {
                     <h3>Tower Logs</h3>
                     <p>View activity logs and user statistics for all tower locations.</p>
                     <a href="<?php echo admin_url('admin.php?page=spiral-tower-logs'); ?>" class="button button-primary">View Logs</a>
+                </div>
+                
+                <div class="action-card">
+                    <h3>Achievement Log</h3>
+                    <p>View all achievement awards and filter by achievement type.</p>
+                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>" class="button button-primary">View Achievement Log</a>
                 </div>
                 
                 <div class="action-card">
@@ -1239,6 +1324,48 @@ function spiral_tower_main_page() {
             margin: 0 0 15px 0;
             color: #646970;
         }
+        .tower-recent-achievements {
+            margin: 30px 0;
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+        }
+        .tower-recent-achievements h2 {
+            margin: 0 0 15px 0;
+            color: #23282d;
+        }
+        .achievement-awards-list {
+            overflow-x: auto;
+        }
+        .achievement-awards-list table {
+            min-width: 600px;
+        }
+        .achievement-awards-list th,
+        .achievement-awards-list td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .achievement-awards-list th {
+            background-color: #f9f9f9;
+            font-weight: 600;
+        }
+        .achievement-info {
+            display: flex;
+            align-items: flex-start;
+            gap: 5px;
+        }
+        .achievement-info .dashicons {
+            color: #0073aa;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+        .achievement-info small {
+            color: #666;
+            font-style: italic;
+        }
         </style>
     </div>
     <?php
@@ -1247,34 +1374,35 @@ function spiral_tower_main_page() {
 /**
  * Display the Tower Logs page
  */
-function spiral_tower_logs_page() {
+function spiral_tower_logs_page()
+{
     global $spiral_tower_plugin;
-    
+
     if (!current_user_can('manage_options')) {
         wp_die(__('You do not have sufficient permissions to access this page.'));
     }
-    
+
     // Get the log manager
     $log_manager = isset($spiral_tower_plugin) ? $spiral_tower_plugin->log_manager : null;
-    
+
     if (!$log_manager) {
         echo '<div class="wrap"><h1>Tower Logs</h1><p>Log manager not available.</p></div>';
         return;
     }
-    
+
     ?>
     <div class="wrap">
         <h1>Tower Logs</h1>
         <p>Activity logs for all floors and rooms in the Spiral Tower.</p>
-        
+
         <div class="tower-logs-dashboard">
             <h2>Activity Statistics</h2>
-            
+
             <div class="tower-logs-stats">
                 <div class="logs-stat-box">
                     <h3>Total Floor Visits</h3>
                     <p class="stat-number">
-                        <?php 
+                        <?php
                         // Get total floor visits if the method exists
                         if (method_exists($log_manager, 'get_total_visits')) {
                             echo $log_manager->get_total_visits('floor');
@@ -1284,11 +1412,11 @@ function spiral_tower_logs_page() {
                         ?>
                     </p>
                 </div>
-                
+
                 <div class="logs-stat-box">
                     <h3>Total Room Visits</h3>
                     <p class="stat-number">
-                        <?php 
+                        <?php
                         // Get total room visits if the method exists
                         if (method_exists($log_manager, 'get_total_visits')) {
                             echo $log_manager->get_total_visits('room');
@@ -1298,11 +1426,11 @@ function spiral_tower_logs_page() {
                         ?>
                     </p>
                 </div>
-                
+
                 <div class="logs-stat-box">
                     <h3>Unique Visitors</h3>
                     <p class="stat-number">
-                        <?php 
+                        <?php
                         // Get unique visitors if the method exists
                         if (method_exists($log_manager, 'get_unique_visitors_count')) {
                             echo $log_manager->get_unique_visitors_count();
@@ -1313,7 +1441,7 @@ function spiral_tower_logs_page() {
                     </p>
                 </div>
             </div>
-            
+
             <h2>User Activity Management</h2>
             <p>Detailed user activity tracking is available in individual user profiles. Each user's profile shows:</p>
             <ul>
@@ -1322,39 +1450,120 @@ function spiral_tower_logs_page() {
                 <li>Activity timeline and statistics</li>
             </ul>
             <p><a href="<?php echo admin_url('users.php'); ?>" class="button button-primary">View Users</a></p>
-            
+
         </div>
-        
+
         <style>
-        .tower-logs-stats {
-            display: flex;
-            gap: 20px;
-            margin: 20px 0;
-        }
-        .logs-stat-box {
-            background: #fff;
-            border: 1px solid #ccd0d4;
-            border-radius: 4px;
-            padding: 20px;
-            text-align: center;
-            flex: 1;
-            box-shadow: 0 1px 1px rgba(0,0,0,.04);
-        }
-        .logs-stat-box h3 {
-            margin: 0 0 10px 0;
-            color: #23282d;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            margin: 0;
-            color: #0073aa;
-        }
+            .tower-logs-stats {
+                display: flex;
+                gap: 20px;
+                margin: 20px 0;
+            }
+
+            .logs-stat-box {
+                background: #fff;
+                border: 1px solid #ccd0d4;
+                border-radius: 4px;
+                padding: 20px;
+                text-align: center;
+                flex: 1;
+                box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+            }
+
+            .logs-stat-box h3 {
+                margin: 0 0 10px 0;
+                color: #23282d;
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            .stat-number {
+                font-size: 32px;
+                font-weight: bold;
+                margin: 0;
+                color: #0073aa;
+            }
         </style>
     </div>
     <?php
+}
+
+/**
+ * Award an achievement to a user
+ * 
+ * @param int $user_id The user ID
+ * @param string $achievement_key The achievement key (defined in code)
+ * @param string $notes Optional notes about the award
+ * @return bool True if awarded, false if already has it or doesn't exist
+ */
+function spiral_tower_award_achievement($user_id, $achievement_key, $notes = '')
+{
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->achievement_manager)) {
+        return $spiral_tower_plugin->achievement_manager->award_achievement($user_id, $achievement_key, $notes);
+    }
+    return false;
+}
+
+/**
+ * Check if user has achievement
+ * 
+ * @param int $user_id The user ID
+ * @param string $achievement_key The achievement key
+ * @return bool True if user has the achievement
+ */
+function spiral_tower_user_has_achievement($user_id, $achievement_key)
+{
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->achievement_manager)) {
+        return $spiral_tower_plugin->achievement_manager->user_has_achievement($user_id, $achievement_key);
+    }
+    return false;
+}
+
+/**
+ * Get user's total achievement points
+ * 
+ * @param int $user_id The user ID
+ * @return int Total points from all achievements
+ */
+function spiral_tower_get_user_achievement_points($user_id)
+{
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->achievement_manager)) {
+        return $spiral_tower_plugin->achievement_manager->get_user_total_points($user_id);
+    }
+    return 0;
+}
+
+/**
+ * Get user's achievements
+ * 
+ * @param int $user_id The user ID
+ * @param int $limit Maximum number of achievements to return
+ * @return array Array of achievement objects with details
+ */
+function spiral_tower_get_user_achievements($user_id, $limit = 100)
+{
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->achievement_manager)) {
+        return $spiral_tower_plugin->achievement_manager->get_user_achievements($user_id, $limit);
+    }
+    return array();
+}
+
+/**
+ * Get all defined achievements
+ * 
+ * @return array Array of all achievement definitions
+ */
+function spiral_tower_get_all_achievements()
+{
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->achievement_manager)) {
+        return $spiral_tower_plugin->achievement_manager->get_achievements();
+    }
+    return array();
 }
 
 /**
