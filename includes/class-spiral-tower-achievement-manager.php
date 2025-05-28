@@ -41,7 +41,6 @@ class Spiral_Tower_Achievement_Manager
         add_action('wp_ajax_spiral_tower_update_achievement_table', array($this, 'ajax_update_achievement_table'));
 
         // Hook into floor and room viewing to check for achievements
-        add_action('template_redirect', array($this, 'check_writer_achievement'));
         add_action('template_redirect', array($this, 'check_floor_achievement'));
         add_action('template_redirect', array($this, 'check_room_achievement')); // Make sure this is here!
 
@@ -58,19 +57,167 @@ class Spiral_Tower_Achievement_Manager
     private function define_achievements()
     {
         $this->achievements = array(
+            // --- Creation Achievements ---
             'writer' => array(
                 'title' => 'Writer',
-                'description' => 'Create your first floor or room',
+                'description' => 'Create 1 floor or room',
                 'points' => 1,
                 'icon' => 'dashicons-edit',
                 'hidden' => false,
                 'repeatable' => false
+            ),
+            'architect' => array(
+                'title' => 'Architect',
+                'description' => 'Create 5 floors or rooms',
+                'points' => 1,
+                'icon' => 'dashicons-building',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'mythmaker' => array(
+                'title' => 'Mythmaker',
+                'description' => 'Create 10 floors or rooms',
+                'points' => 1,
+                'icon' => 'dashicons-superhero',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'world_builder' => array(
+                'title' => 'World-builder',
+                'description' => 'Create 20 floors or rooms',
+                'points' => 1,
+                'icon' => 'dashicons-admin-multisite',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'aetherforger' => array(
+                'title' => 'Aetherforger',
+                'description' => 'Create 50 floors or rooms',
+                'points' => 1,
+                'icon' => 'dashicons-hammer',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'dreamer' => array(
+                'title' => 'Dreamer',
+                'description' => 'Create 100 floors or rooms',
+                'points' => 1,
+                'icon' => 'dashicons-heart',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            
+            // --- Visiting Achievements ---
+            'wanderer' => array(
+                'title' => 'Wanderer',
+                'description' => 'Visit 10 unique floors or rooms',
+                'points' => 1,
+                'icon' => 'dashicons-location',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'traveler' => array(
+                'title' => 'Traveler',
+                'description' => 'Visit 50 unique floors or rooms',
+                'points' => 1,
+                'icon' => 'dashicons-car',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'adventurer' => array(
+                'title' => 'Adventurer',
+                'description' => 'Visit 100 unique floors or rooms',
+                'points' => 1,
+                'icon' => 'dashicons-shield',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'explorer' => array(
+                'title' => 'Explorer',
+                'description' => 'Visit 250 unique floors or rooms',
+                'points' => 1,
+                'icon' => 'dashicons-search',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'seeker' => array(
+                'title' => 'Seeker',
+                'description' => 'Visit 500 unique floors or rooms',
+                'points' => 1,
+                'icon' => 'dashicons-visibility',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'voyager' => array(
+                'title' => 'Voyager',
+                'description' => 'Visit 1000 unique floors or rooms',
+                'points' => 1,
+                'icon' => 'dashicons-airplane',
+                'hidden' => false,
+                'repeatable' => false
             )
         );
-
+        
         // Add image URLs after defining achievements
         foreach ($this->achievements as $key => &$achievement) {
             $achievement['image'] = $this->get_achievement_image_url($key);
+        }
+    }
+
+    /**
+     * Check creation achievements for a user (single DB call)
+     */
+    private function check_creation_achievements($user_id)
+    {
+        // Single DB call to get creation count
+        $creation_count = get_posts(array(
+            'author' => $user_id,
+            'post_type' => array('floor', 'room'),
+            'post_status' => array('publish', 'draft', 'private'),
+            'posts_per_page' => -1,
+            'fields' => 'ids'
+        ));
+        $count = count($creation_count);
+        
+        // Check achievements in ascending order (smallest first) for proper notification order
+        $thresholds = array(1 => 'writer', 5 => 'architect', 10 => 'mythmaker', 
+                           20 => 'world_builder', 50 => 'aetherforger', 100 => 'dreamer');
+        
+        foreach ($thresholds as $threshold => $achievement_key) {
+            if ($count >= $threshold && !$this->user_has_achievement($user_id, $achievement_key)) {
+                $this->award_achievement($user_id, $achievement_key, "Created {$count} floors/rooms");
+            }
+        }
+    }
+
+    /**
+     * Check visit achievements for a user (single DB call)
+     */
+    private function check_visit_achievements($user_id)
+    {
+        global $wpdb;
+        
+        // Single DB call to get unique visit count
+        $log_table = $wpdb->prefix . 'spiral_tower_logs';
+        $visit_count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT l.post_id) 
+             FROM {$log_table} l
+             JOIN {$wpdb->posts} p ON l.post_id = p.ID
+             WHERE l.user_id = %d 
+             AND l.post_type IN ('floor', 'room')
+             AND p.post_status = 'publish'",
+            $user_id
+        ));
+        $count = intval($visit_count);
+        
+        // Check achievements in ascending order (smallest first) for proper notification order
+        $thresholds = array(10 => 'wanderer', 50 => 'traveler', 100 => 'adventurer', 
+                           250 => 'explorer', 500 => 'seeker', 1000 => 'voyager');
+        
+        foreach ($thresholds as $threshold => $achievement_key) {
+            if ($count >= $threshold && !$this->user_has_achievement($user_id, $achievement_key)) {
+                $this->award_achievement($user_id, $achievement_key, "Visited {$count} unique floors/rooms");
+            }
         }
     }
 
@@ -132,20 +279,20 @@ class Spiral_Tower_Achievement_Manager
     public function get_achievement($key)
     {
         error_log("Spiral Tower: Looking for achievement with key: '{$key}'");
-        
+
         // Check static achievements first
         if (isset($this->achievements[$key])) {
             error_log("Spiral Tower: Found static achievement: '{$key}'");
             return $this->achievements[$key];
         }
-        
+
         // Check for dynamic floor/room achievements
         $dynamic_achievement = $this->get_dynamic_achievement($key);
         if ($dynamic_achievement) {
             error_log("Spiral Tower: Found dynamic achievement: '{$key}' - " . print_r($dynamic_achievement, true));
             return $dynamic_achievement;
         }
-        
+
         error_log("Spiral Tower: Achievement '{$key}' not found in static or dynamic achievements");
         return null;
     }
@@ -219,45 +366,29 @@ class Spiral_Tower_Achievement_Manager
      */
     public function check_floor_achievement()
     {
-        error_log("Spiral Tower: check_floor_achievement called");
-        
-        if (!is_singular('floor')) {
-            error_log("Spiral Tower: Not on a singular floor page");
-            return;
-        }
-        
-        if (!is_user_logged_in()) {
-            error_log("Spiral Tower: User not logged in");
+        if (!is_singular('floor') || !is_user_logged_in()) {
             return;
         }
         
         $user_id = get_current_user_id();
         $floor_id = get_the_ID();
         
-        error_log("Spiral Tower: Checking floor achievement for user {$user_id} on floor {$floor_id}");
-        
-        // Check if this floor has a custom achievement
+        // Check for custom floor achievement
         $achievement_title = get_post_meta($floor_id, '_floor_achievement_title', true);
-        error_log("Spiral Tower: Floor achievement title: " . ($achievement_title ?: 'EMPTY'));
-        
-        if (empty($achievement_title)) {
-            error_log("Spiral Tower: No achievement title set for floor {$floor_id}");
-            return;
+        if (!empty($achievement_title)) {
+            $achievement_key = 'floor_' . $floor_id;
+            if (!$this->user_has_achievement($user_id, $achievement_key)) {
+                $this->award_achievement($user_id, $achievement_key, 'Visited floor: ' . get_the_title($floor_id));
+            }
         }
         
-        $achievement_key = 'floor_' . $floor_id;
-        error_log("Spiral Tower: Achievement key: {$achievement_key}");
+        // Check creation achievements
+        $this->check_creation_achievements($user_id);
         
-        // Check if user already has this achievement
-        if ($this->user_has_achievement($user_id, $achievement_key)) {
-            error_log("Spiral Tower: User {$user_id} already has achievement {$achievement_key}");
-            return;
-        }
-        
-        // Award the achievement
-        error_log("Spiral Tower: Awarding achievement {$achievement_key} to user {$user_id}");
-        $result = $this->award_achievement($user_id, $achievement_key, 'Visited floor: ' . get_the_title($floor_id));
-        error_log("Spiral Tower: Award result: " . ($result ? 'SUCCESS' : 'FAILED'));
+        // Check visit achievements after page load (when visit is logged)
+        add_action('shutdown', function() use ($user_id) {
+            $this->check_visit_achievements($user_id);
+        }, 1000);
     }
 
     /**
@@ -265,45 +396,29 @@ class Spiral_Tower_Achievement_Manager
      */
     public function check_room_achievement()
     {
-        error_log("Spiral Tower: check_room_achievement called");
-
-        if (!is_singular('room')) {
-            error_log("Spiral Tower: Not on a singular room page");
+        if (!is_singular('room') || !is_user_logged_in()) {
             return;
         }
-
-        if (!is_user_logged_in()) {
-            error_log("Spiral Tower: User not logged in");
-            return;
-        }
-
+        
         $user_id = get_current_user_id();
         $room_id = get_the_ID();
-
-        error_log("Spiral Tower: Checking room achievement for user {$user_id} on room {$room_id}");
-
-        // Check if this room has a custom achievement
+        
+        // Check for custom room achievement
         $achievement_title = get_post_meta($room_id, '_room_achievement_title', true);
-        error_log("Spiral Tower: Room achievement title: " . ($achievement_title ?: 'EMPTY'));
-
-        if (empty($achievement_title)) {
-            error_log("Spiral Tower: No achievement title set for room {$room_id}");
-            return;
+        if (!empty($achievement_title)) {
+            $achievement_key = 'room_' . $room_id;
+            if (!$this->user_has_achievement($user_id, $achievement_key)) {
+                $this->award_achievement($user_id, $achievement_key, 'Visited room: ' . get_the_title($room_id));
+            }
         }
-
-        $achievement_key = 'room_' . $room_id;
-        error_log("Spiral Tower: Achievement key: {$achievement_key}");
-
-        // Check if user already has this achievement
-        if ($this->user_has_achievement($user_id, $achievement_key)) {
-            error_log("Spiral Tower: User {$user_id} already has achievement {$achievement_key}");
-            return;
-        }
-
-        // Award the achievement
-        error_log("Spiral Tower: Awarding achievement {$achievement_key} to user {$user_id}");
-        $result = $this->award_achievement($user_id, $achievement_key, 'Visited room: ' . get_the_title($room_id));
-        error_log("Spiral Tower: Award result: " . ($result ? 'SUCCESS' : 'FAILED'));
+        
+        // Check creation achievements
+        $this->check_creation_achievements($user_id);
+        
+        // Check visit achievements after page load (when visit is logged)
+        add_action('shutdown', function() use ($user_id) {
+            $this->check_visit_achievements($user_id);
+        }, 1000);
     }
 
 
@@ -425,16 +540,16 @@ class Spiral_Tower_Achievement_Manager
     public function award_achievement($user_id, $achievement_key, $notes = '')
     {
         global $wpdb;
-    
+
         // Check if achievement exists (static or dynamic)
         $achievement = $this->get_achievement($achievement_key);
         if (!$achievement) {
             error_log("Spiral Tower: Achievement '{$achievement_key}' not found (neither static nor dynamic)");
             return false;
         }
-    
+
         error_log("Spiral Tower: Found achievement definition for '{$achievement_key}': " . print_r($achievement, true));
-    
+
         // Check if achievement is repeatable
         if (!$achievement['repeatable']) {
             // Check if user already has this achievement
@@ -443,12 +558,12 @@ class Spiral_Tower_Achievement_Manager
                 return false; // User already has this non-repeatable achievement
             }
         }
-    
+
         // Award the achievement
         $table_name = $wpdb->prefix . 'spiral_tower_user_achievements';
-        
+
         error_log("Spiral Tower: Inserting achievement '{$achievement_key}' for user {$user_id} into table {$table_name}");
-        
+
         $result = $wpdb->insert(
             $table_name,
             array(
@@ -458,16 +573,16 @@ class Spiral_Tower_Achievement_Manager
             ),
             array('%d', '%s', '%s')
         );
-    
+
         // Log the achievement award
         if ($result !== false) {
             error_log("Spiral Tower: Achievement '{$achievement_key}' successfully awarded to user {$user_id}");
-            
+
             // Clear cache for this user/achievement
             if (isset($this->user_achievement_cache[$user_id][$achievement_key])) {
                 unset($this->user_achievement_cache[$user_id][$achievement_key]);
             }
-            
+
             // Add to newly awarded achievements queue for frontend display
             $this->newly_awarded_achievements[] = array(
                 'key' => $achievement_key,
@@ -475,16 +590,16 @@ class Spiral_Tower_Achievement_Manager
                 'description' => $achievement['description'],
                 'points' => $achievement['points'],
                 'image' => $achievement['image']
-            );            
-            
+            );
+
             error_log("Spiral Tower: Added achievement to frontend queue: " . print_r($this->newly_awarded_achievements[count($this->newly_awarded_achievements) - 1], true));
-            
+
             // You could add a hook here for other plugins to listen to
             do_action('spiral_tower_achievement_awarded', $user_id, $achievement_key, $achievement);
         } else {
             error_log("Spiral Tower: Failed to award achievement '{$achievement_key}' to user {$user_id}. DB Error: " . $wpdb->last_error);
         }
-    
+
         return $result !== false;
     }
 
@@ -561,47 +676,6 @@ class Spiral_Tower_Achievement_Manager
         $this->user_achievement_cache[$user_id][$achievement_key] = $has_achievement;
 
         return $has_achievement;
-    }
-
-    /**
-     * Check for Writer achievement when user views a floor
-     */
-    public function check_writer_achievement()
-    {
-        // Only check on singular floor pages
-        if (!is_singular('floor') || !is_user_logged_in()) {
-            return;
-        }
-
-        $user_id = get_current_user_id();
-
-        // Debug logging
-        error_log("Spiral Tower: Checking Writer achievement for user {$user_id}");
-
-        // Don't check if user already has this achievement (saves DB hit)
-        if ($this->user_has_achievement($user_id, 'writer')) {
-            error_log("Spiral Tower: User {$user_id} already has Writer achievement");
-            return;
-        }
-
-        // Check if user has created any floors or rooms
-        $user_created_content = get_posts(array(
-            'author' => $user_id,
-            'post_type' => array('floor', 'room'),
-            'post_status' => array('publish', 'draft', 'private'),
-            'posts_per_page' => 1,
-            'fields' => 'ids'
-        ));
-
-        error_log("Spiral Tower: User {$user_id} created content count: " . count($user_created_content));
-
-        if (!empty($user_created_content)) {
-            error_log("Spiral Tower: Awarding Writer achievement to user {$user_id}");
-            $result = $this->award_achievement($user_id, 'writer', 'User created their first floor or room');
-            error_log("Spiral Tower: Award result: " . ($result ? 'SUCCESS' : 'FAILED'));
-        } else {
-            error_log("Spiral Tower: User {$user_id} has not created any floors or rooms yet");
-        }
     }
 
     /**
