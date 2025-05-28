@@ -965,45 +965,82 @@ class Spiral_Tower_Floor_Manager
      */
     public function exclude_hidden_floors_from_frontend($query)
     {
-        // Only run on frontend, never in admin
-        if (is_admin()) {
+        // Only affect frontend, main queries
+        if (is_admin() || !$query->is_main_query()) {
             return;
         }
-
-        // Check if it's a frontend query and it's the main query or a search query
-        if ($query->is_main_query() || $query->is_search()) {
-            // Check if the query is for floors or if it's a search query
-            $post_type = $query->get('post_type');
-            if (is_array($post_type)) {
-                $is_floor_query = in_array('floor', $post_type);
-            } else {
-                $is_floor_query = ($post_type === 'floor' || empty($post_type));
+    
+        // CRITICAL: If WordPress has determined this is a query for a single 'floor' page,
+        // this function should NOT add any 'meta_query' that would hide it.
+        // The floor should be findable by its permalink if it's published.
+        if ($query->is_singular('floor')) {
+            // Uncomment the next line for debugging if issues persist after this change:
+            // error_log('Spiral Tower: Singular floor view detected, exclude_hidden_floors_from_frontend is bailing out. Query vars: ' . print_r($query->query_vars, true));
+            return;
+        }
+    
+        // For other types of queries (like archives, search results, or potentially the main blog
+        // page if floors are mixed in), we want to exclude hidden floors.
+        // Determine if the current query *could* include 'floor' posts in a list/archive context.
+    
+        $apply_filter = false;
+    
+        if ($query->is_post_type_archive('floor')) {
+            // This is an archive page for the 'floor' post type (e.g., /floor/)
+            $apply_filter = true;
+        } elseif ($query->is_tax(get_object_taxonomies('floor'))) {
+            // This is a taxonomy archive page for a taxonomy associated with 'floor'
+            $apply_filter = true;
+        } elseif ($query->is_search()) {
+            // For any search results page.
+            // Hidden floors should not appear in search results.
+            $apply_filter = true;
+        } else {
+            // This handles other general queries (e.g., home page, date archives, author archives).
+            // Only apply the filter if 'floor' is explicitly part of the query's post types,
+            // or if the query's post_type is empty (which might include 'floor' if modified by other code).
+            $queried_post_type = $query->get('post_type');
+            $can_include_floors = false;
+    
+            if (empty($queried_post_type)) { // Could be main blog loop, potentially modified to include floors
+                // Be cautious here. If floors are not meant to appear on main blog, this might be too broad.
+                // For now, let's assume if post_type is empty, we don't interfere unless explicitly told.
+                // To include this case if floors can appear on home/blog:
+                // $can_include_floors = true; // (if you mix floors into the main blog loop for example)
+            } elseif ($queried_post_type === 'floor') {
+                $can_include_floors = true;
+            } elseif (is_array($queried_post_type) && in_array('floor', $queried_post_type)) {
+                $can_include_floors = true;
             }
-
-            // Apply exclusion if it's a floor query OR a general search, but NOT if viewing a single floor directly
-            if (($is_floor_query || $query->is_search()) && !$query->is_singular('floor')) {
-                // Get existing meta query
-                $meta_query = $query->get('meta_query');
-                if (!is_array($meta_query)) {
-                    $meta_query = array();
-                }
-
-                // Add the condition to exclude hidden floors
-                $meta_query[] = array(
-                    'relation' => 'OR',
-                    array(
-                        'key' => '_floor_hidden',
-                        'value' => '1',
-                        'compare' => '!=',
-                    ),
-                    array(
-                        'key' => '_floor_hidden',
-                        'compare' => 'NOT EXISTS',
-                    )
-                );
-
-                $query->set('meta_query', $meta_query);
+    
+            if ($can_include_floors && !$query->is_singular()) { // Double check it's not any other singular page
+                $apply_filter = true;
             }
+        }
+    
+        if ($apply_filter) {
+            // error_log('Spiral Tower: Applying hidden floor filter for a list/archive/search query. Query vars: ' . print_r($query->query_vars, true));
+    
+            $meta_query_args = $query->get('meta_query');
+            if (!is_array($meta_query_args)) {
+                $meta_query_args = array();
+            }
+    
+            // Add the clause to exclude hidden floors.
+            // This clause will be ANDed by default with other top-level clauses in the meta_query.
+            $meta_query_args[] = array(
+                'relation' => 'OR',
+                array(
+                    'key' => '_floor_hidden',
+                    'value' => '1',
+                    'compare' => '!=',
+                ),
+                array(
+                    'key' => '_floor_hidden',
+                    'compare' => 'NOT EXISTS',
+                )
+            );
+            $query->set('meta_query', $meta_query_args);
         }
     }
 

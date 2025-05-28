@@ -10,6 +10,8 @@
  * Text Domain: spiral-tower
  */
 
+// the-spiral-tower.php
+
 // If this file is called directly, abort.
 if (!defined('WPINC')) {
     die;
@@ -18,6 +20,7 @@ if (!defined('WPINC')) {
 // Define plugin constants for easier path management (Optional but recommended)
 define('SPIRAL_TOWER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SPIRAL_TOWER_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('SPIRAL_TOWER_VERSION', '1.0.0');
 
 // Include component files
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-floor-manager.php';
@@ -79,6 +82,11 @@ class Spiral_Tower_Plugin
         $this->like_manager = new Spiral_Tower_Like_Manager();
         $this->log_manager = new Spiral_Tower_Log_Manager();
         $this->user_profile_manager = new Spiral_Tower_User_Profile_Manager();
+
+        // Inject Log_Manager into User_Profile_Manager
+        if (method_exists($this->user_profile_manager, 'set_log_manager')) {
+            $this->user_profile_manager->set_log_manager($this->log_manager);
+        }
 
         // Register activation and deactivation hooks
         register_activation_hook(__FILE__, array($this, 'activate'));
@@ -708,24 +716,6 @@ function spiral_tower_add_floor_id_to_body($classes)
 add_filter('body_class', 'spiral_tower_add_floor_id_to_body');
 
 
-add_action('admin_menu', 'spiral_tower_add_settings_page');
-
-function spiral_tower_add_settings_page()
-{
-    add_submenu_page(
-        'edit.php?post_type=floor',
-        'Spiral Tower Settings',
-        'Spiral Tower Settings',
-        'manage_options',
-        'spiral-tower-settings',
-        'spiral_tower_settings_page'
-    );
-
-    // Register settings
-    register_setting('spiral_tower_settings', 'spiral_tower_dalle_api_key');
-    register_setting('spiral_tower_settings', 'spiral_tower_dalle_api_endpoint');
-}
-
 function spiral_tower_settings_page()
 {
     ?>
@@ -764,26 +754,75 @@ function spiral_tower_settings_page()
 /**
  * Enqueue and localize the admin scripts
  */
-function spiral_tower_enqueue_admin_scripts($hook)
-{
+function spiral_tower_enqueue_admin_scripts($hook) {
     global $post;
 
-    // Only on post edit screens for our post types
-    if (
-        ('post.php' === $hook || 'post-new.php' === $hook) &&
-        ($post && (get_post_type($post) === 'floor' || get_post_type($post) === 'room'))
-    ) {
+    error_log("Spiral Tower: spiral_tower_enqueue_admin_scripts called with hook: {$hook}");
 
-        // Enqueue the loader script
-        wp_enqueue_script(
-            'spiral-tower-loader-admin',
-            SPIRAL_TOWER_PLUGIN_URL . 'assets/js/spiral-tower-loader.js',
-            array('jquery'),
-            '1.0.0',
-            true
-        );
+    // Define on which hooks the main admin loader script should be loaded
+    $load_loader_script_on_hooks = array(
+        'post.php', 
+        'post-new.php', 
+        'profile.php',      // User's own profile
+        'user-edit.php'     // Editing another user's profile
+    );
 
-        // Localize script with data
+    // Only proceed if we're on one of the specified admin pages
+    if (!in_array($hook, $load_loader_script_on_hooks)) {
+        error_log("Spiral Tower: Skipping hook {$hook} - not in allowed hooks list");
+        return;
+    }
+
+    error_log("Spiral Tower: Processing hook {$hook}");
+
+    // Additional checks for post edit screens
+    if (($hook === 'post.php' || $hook === 'post-new.php')) {
+        // Only proceed if it's a floor or room, or if $post is not set yet (new post)
+        if ($post && !in_array(get_post_type($post), array('floor', 'room'))) {
+            error_log("Spiral Tower: Skipping {$hook} - not a floor or room post type: " . get_post_type($post));
+            return; // Skip for other post types
+        }
+    }
+
+    // Check if required constants are defined
+    if (!defined('SPIRAL_TOWER_PLUGIN_URL') || !defined('SPIRAL_TOWER_VERSION')) {
+        error_log('Spiral Tower: Cannot enqueue admin loader - URL/Version constants missing.');
+        error_log('SPIRAL_TOWER_PLUGIN_URL defined: ' . (defined('SPIRAL_TOWER_PLUGIN_URL') ? 'YES' : 'NO'));
+        error_log('SPIRAL_TOWER_VERSION defined: ' . (defined('SPIRAL_TOWER_VERSION') ? 'YES' : 'NO'));
+        return;
+    }
+
+    // For profile pages, enqueue jQuery UI components FIRST
+    if ($hook === 'profile.php' || $hook === 'user-edit.php') {
+        wp_enqueue_script('jquery-ui-core');
+        wp_enqueue_script('jquery-ui-widget');
+        wp_enqueue_script('jquery-ui-accordion');
+        wp_enqueue_style('wp-jquery-ui-dialog'); // This includes accordion styles
+        
+        error_log("Spiral Tower: Enqueued jQuery UI components for profile page");
+    }
+
+    // Set up dependencies
+    $dependencies = array('jquery');
+    
+    // Add jQuery UI dependencies for profile pages
+    if ($hook === 'profile.php' || $hook === 'user-edit.php') {
+        $dependencies = array('jquery', 'jquery-ui-core', 'jquery-ui-widget', 'jquery-ui-accordion');
+    }
+
+    // Enqueue the main loader script
+    wp_enqueue_script(
+        'spiral-tower-loader-admin',
+        SPIRAL_TOWER_PLUGIN_URL . 'assets/js/spiral-tower-loader.js',
+        $dependencies,
+        SPIRAL_TOWER_VERSION, 
+        true // Load in footer
+    );
+
+    error_log("Spiral Tower: Enqueued spiral-tower-loader-admin on {$hook} with dependencies: " . implode(', ', $dependencies));
+
+    // Localize data for image generator (only on post edit screens)
+    if (($hook === 'post.php' || $hook === 'post-new.php') && $post && in_array(get_post_type($post), array('floor', 'room'))) {
         wp_localize_script(
             'spiral-tower-loader-admin',
             'spiralTowerImageGenerator',
@@ -791,16 +830,172 @@ function spiral_tower_enqueue_admin_scripts($hook)
                 'nonce' => wp_create_nonce('spiral_tower_generate_image_nonce')
             )
         );
+        error_log("Spiral Tower: Localized spiralTowerImageGenerator data for post edit");
     }
+
+    // The User Profile Manager will handle localizing spiralTowerProfileData
+    // for profile.php and user-edit.php pages
 }
-add_action('admin_enqueue_scripts', 'spiral_tower_enqueue_admin_scripts');
+
 
 // Initialize the plugin
 $spiral_tower_plugin = new Spiral_Tower_Plugin();
 
-// Add these after initializing $spiral_tower_plugin
+// AJAX Calls
 add_action('wp_ajax_spiral_tower_generate_image', array($spiral_tower_plugin->image_generator, 'handle_generate_image_ajax'));
 add_action('wp_ajax_spiral_tower_set_featured_image', array($spiral_tower_plugin->image_generator, 'set_featured_image_ajax'));
+add_action('wp_ajax_spiral_tower_navigate_floor', 'spiral_tower_handle_floor_navigation');
+add_action('wp_ajax_nopriv_spiral_tower_navigate_floor', 'spiral_tower_handle_floor_navigation');
+
+/**
+ * Handle floor navigation AJAX requests
+ */
+function spiral_tower_handle_floor_navigation()
+{
+    // Verify nonce
+    if (!wp_verify_nonce($_POST['nonce'], 'spiral_tower_floor_navigation')) {
+        wp_send_json_error(array('message' => 'Security check failed'));
+        return;
+    }
+
+    $direction = sanitize_text_field($_POST['direction']);
+    $current_floor = intval($_POST['current_floor']);
+
+    if (!in_array($direction, array('up', 'down'))) {
+        wp_send_json_error(array('message' => 'Invalid direction'));
+        return;
+    }
+
+    // Get all valid floors (excluding hidden, no transport, void, and numberless floors)
+    $args = array(
+        'post_type' => 'floor',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'meta_query' => array(
+            'relation' => 'AND',
+            // Must have a floor number
+            array(
+                'key' => '_floor_number',
+                'value' => '',
+                'compare' => '!='
+            ),
+            // Not hidden
+            array(
+                'relation' => 'OR',
+                array(
+                    'key' => '_floor_hidden',
+                    'value' => '1',
+                    'compare' => '!='
+                ),
+                array(
+                    'key' => '_floor_hidden',
+                    'compare' => 'NOT EXISTS'
+                )
+            ),
+            // Not no public transport
+            array(
+                'relation' => 'OR',
+                array(
+                    'key' => '_floor_no_public_transport',
+                    'value' => '1',
+                    'compare' => '!='
+                ),
+                array(
+                    'key' => '_floor_no_public_transport',
+                    'compare' => 'NOT EXISTS'
+                )
+            ),
+            // Not send to void
+            array(
+                'relation' => 'OR',
+                array(
+                    'key' => '_floor_send_to_void',
+                    'value' => '1',
+                    'compare' => '!='
+                ),
+                array(
+                    'key' => '_floor_send_to_void',
+                    'compare' => 'NOT EXISTS'
+                )
+            )
+        )
+    );
+
+    $floors = get_posts($args);
+
+    if (empty($floors)) {
+        wp_send_json_error(array('message' => 'No accessible floors found'));
+        return;
+    }
+
+    // Extract floor numbers and sort them
+    $floor_numbers = array();
+    $floor_map = array(); // floor_number => post object
+
+    foreach ($floors as $floor) {
+        $floor_number = get_post_meta($floor->ID, '_floor_number', true);
+        if (!empty($floor_number) && is_numeric($floor_number)) {
+            $floor_number = intval($floor_number);
+            $floor_numbers[] = $floor_number;
+            $floor_map[$floor_number] = $floor;
+        }
+    }
+
+    if (empty($floor_numbers)) {
+        wp_send_json_error(array('message' => 'No numbered floors found'));
+        return;
+    }
+
+    // Remove duplicates and sort
+    $floor_numbers = array_unique($floor_numbers);
+    sort($floor_numbers);
+
+    // Find the target floor
+    $target_floor_number = null;
+
+    if ($direction === 'up') {
+        // Find the next higher floor number
+        foreach ($floor_numbers as $floor_num) {
+            if ($floor_num > $current_floor) {
+                $target_floor_number = $floor_num;
+                break;
+            }
+        }
+
+        // If no higher floor found, wrap to the lowest
+        if ($target_floor_number === null) {
+            $target_floor_number = min($floor_numbers);
+        }
+    } else { // down
+        // Find the next lower floor number
+        $reversed_floors = array_reverse($floor_numbers);
+        foreach ($reversed_floors as $floor_num) {
+            if ($floor_num < $current_floor) {
+                $target_floor_number = $floor_num;
+                break;
+            }
+        }
+
+        // If no lower floor found, wrap to the highest
+        if ($target_floor_number === null) {
+            $target_floor_number = max($floor_numbers);
+        }
+    }
+
+    // Get the target floor post
+    if (isset($floor_map[$target_floor_number])) {
+        $target_floor = $floor_map[$target_floor_number];
+        $redirect_url = get_permalink($target_floor->ID);
+
+        wp_send_json_success(array(
+            'redirect_url' => $redirect_url,
+            'target_floor' => $target_floor_number,
+            'message' => "Navigating to floor {$target_floor_number}"
+        ));
+    } else {
+        wp_send_json_error(array('message' => 'Target floor not found'));
+    }
+}
 
 // Global helper functions for like system
 function spiral_tower_get_like_count($post_id)
@@ -848,7 +1043,333 @@ function spiral_tower_get_user_profile_url($user_id)
     return false;
 }
 
+function spiral_tower_debug_admin_scripts() {
+    if (!is_admin() || !current_user_can('manage_options')) {
+        return;
+    }
+    
+    $current_screen = get_current_screen();
+    $hook_suffix = $current_screen ? $current_screen->id : 'unknown';
+    
+    error_log("=== Spiral Tower Debug Info ===");
+    error_log("Current hook: " . $hook_suffix);
+    error_log("Current URL: " . (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'unknown'));
+    error_log("SPIRAL_TOWER_PLUGIN_URL: " . (defined('SPIRAL_TOWER_PLUGIN_URL') ? SPIRAL_TOWER_PLUGIN_URL : 'NOT DEFINED'));
+    error_log("SPIRAL_TOWER_VERSION: " . (defined('SPIRAL_TOWER_VERSION') ? SPIRAL_TOWER_VERSION : 'NOT DEFINED'));
+    
+    // Check what scripts are enqueued
+    global $wp_scripts;
+    if (isset($wp_scripts->registered['spiral-tower-loader-admin'])) {
+        error_log("spiral-tower-loader-admin is registered");
+        $script = $wp_scripts->registered['spiral-tower-loader-admin'];
+        error_log("Script src: " . $script->src);
+        error_log("Script deps: " . implode(', ', $script->deps));
+    } else {
+        error_log("spiral-tower-loader-admin is NOT registered");
+    }
+    
+    if (isset($wp_scripts->queue) && in_array('spiral-tower-loader-admin', $wp_scripts->queue)) {
+        error_log("spiral-tower-loader-admin is in queue");
+    } else {
+        error_log("spiral-tower-loader-admin is NOT in queue");
+    }
+    
+    // Check jQuery UI scripts
+    $jquery_ui_scripts = ['jquery-ui-core', 'jquery-ui-widget', 'jquery-ui-accordion'];
+    foreach ($jquery_ui_scripts as $script) {
+        if (wp_script_is($script, 'enqueued')) {
+            error_log("{$script} is enqueued");
+        } else {
+            error_log("{$script} is NOT enqueued");
+        }
+    }
+    
+    error_log("=== End Debug Info ===");
+}
+
+/**
+ * Add Spiral Tower as a top-level admin menu with Settings and Logs submenus
+ * Replace the existing spiral_tower_add_settings_page function with this
+ */
+function spiral_tower_add_admin_menu() {
+    // Add Spiral Tower as a top-level menu
+    add_menu_page(
+        'Spiral Tower',                  // Page title
+        'Spiral Tower',                  // Menu title
+        'manage_options',                // Capability required
+        'spiral-tower',                  // Menu slug
+        'spiral_tower_main_page',        // Callback function (main dashboard)
+        'dashicons-admin-multisite',     // Icon (tower-like icon)
+        30                               // Position (30 puts it after Comments)
+    );
+    
+    // Add Settings submenu
+    add_submenu_page(
+        'spiral-tower',                  // Parent menu slug
+        'Spiral Tower Settings',         // Page title
+        'Settings',                      // Menu title
+        'manage_options',                // Capability required
+        'spiral-tower-settings',         // Menu slug
+        'spiral_tower_settings_page'     // Callback function
+    );
+    
+    // Add Logs submenu
+    add_submenu_page(
+        'spiral-tower',                  // Parent menu slug
+        'Tower Logs',                    // Page title
+        'Tower Logs',                    // Menu title
+        'manage_options',                // Capability required
+        'spiral-tower-logs',             // Menu slug
+        'spiral_tower_logs_page'         // Callback function
+    );
+
+    // Register settings (moved from the old function)
+    register_setting('spiral_tower_settings', 'spiral_tower_dalle_api_key');
+    register_setting('spiral_tower_settings', 'spiral_tower_dalle_api_endpoint');
+}
+
+/**
+ * Display the main Spiral Tower dashboard page
+ */
+function spiral_tower_main_page() {
+    global $spiral_tower_plugin;
+    
+    if (!current_user_can('manage_options')) {
+        wp_die(__('You do not have sufficient permissions to access this page.'));
+    }
+    
+    // Get some basic stats
+    $floor_count = wp_count_posts('floor');
+    $room_count = wp_count_posts('room');
+    $portal_count = wp_count_posts('portal');
+    
+    ?>
+    <div class="wrap">
+        <h1>Spiral Tower Dashboard</h1>
+        <p>Welcome to the Spiral Tower administration center.</p>
+        
+        <div class="tower-dashboard-stats">
+            <div class="dashboard-stat-box">
+                <h3>Published Floors</h3>
+                <p class="stat-number"><?php echo $floor_count->publish ?? 0; ?></p>
+                <a href="<?php echo admin_url('edit.php?post_type=floor'); ?>" class="button">Manage Floors</a>
+            </div>
+            
+            <div class="dashboard-stat-box">
+                <h3>Published Rooms</h3>
+                <p class="stat-number"><?php echo $room_count->publish ?? 0; ?></p>
+                <a href="<?php echo admin_url('edit.php?post_type=room'); ?>" class="button">Manage Rooms</a>
+            </div>
+            
+            <div class="dashboard-stat-box">
+                <h3>Published Portals</h3>
+                <p class="stat-number"><?php echo $portal_count->publish ?? 0; ?></p>
+                <a href="<?php echo admin_url('edit.php?post_type=portal'); ?>" class="button">Manage Portals</a>
+            </div>
+        </div>
+        
+        <div class="tower-dashboard-actions">
+            <h2>Quick Actions</h2>
+            <div class="dashboard-actions-grid">
+                <div class="action-card">
+                    <h3>Tower Settings</h3>
+                    <p>Configure DALL-E API settings and other plugin options.</p>
+                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-settings'); ?>" class="button button-primary">Open Settings</a>
+                </div>
+                
+                <div class="action-card">
+                    <h3>Tower Logs</h3>
+                    <p>View activity logs and user statistics for all tower locations.</p>
+                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-logs'); ?>" class="button button-primary">View Logs</a>
+                </div>
+                
+                <div class="action-card">
+                    <h3>User Management</h3>
+                    <p>View user profiles with detailed activity tracking.</p>
+                    <a href="<?php echo admin_url('users.php'); ?>" class="button">Manage Users</a>
+                </div>
+            </div>
+        </div>
+        
+        <style>
+        .tower-dashboard-stats {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .dashboard-stat-box {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            flex: 1;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+        }
+        .dashboard-stat-box h3 {
+            margin: 0 0 10px 0;
+            color: #23282d;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0 0 15px 0;
+            color: #0073aa;
+        }
+        .dashboard-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .action-card {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+        }
+        .action-card h3 {
+            margin: 0 0 10px 0;
+            color: #23282d;
+        }
+        .action-card p {
+            margin: 0 0 15px 0;
+            color: #646970;
+        }
+        </style>
+    </div>
+    <?php
+}
+
+/**
+ * Display the Tower Logs page
+ */
+function spiral_tower_logs_page() {
+    global $spiral_tower_plugin;
+    
+    if (!current_user_can('manage_options')) {
+        wp_die(__('You do not have sufficient permissions to access this page.'));
+    }
+    
+    // Get the log manager
+    $log_manager = isset($spiral_tower_plugin) ? $spiral_tower_plugin->log_manager : null;
+    
+    if (!$log_manager) {
+        echo '<div class="wrap"><h1>Tower Logs</h1><p>Log manager not available.</p></div>';
+        return;
+    }
+    
+    ?>
+    <div class="wrap">
+        <h1>Tower Logs</h1>
+        <p>Activity logs for all floors and rooms in the Spiral Tower.</p>
+        
+        <div class="tower-logs-dashboard">
+            <h2>Activity Statistics</h2>
+            
+            <div class="tower-logs-stats">
+                <div class="logs-stat-box">
+                    <h3>Total Floor Visits</h3>
+                    <p class="stat-number">
+                        <?php 
+                        // Get total floor visits if the method exists
+                        if (method_exists($log_manager, 'get_total_visits')) {
+                            echo $log_manager->get_total_visits('floor');
+                        } else {
+                            echo '—';
+                        }
+                        ?>
+                    </p>
+                </div>
+                
+                <div class="logs-stat-box">
+                    <h3>Total Room Visits</h3>
+                    <p class="stat-number">
+                        <?php 
+                        // Get total room visits if the method exists
+                        if (method_exists($log_manager, 'get_total_visits')) {
+                            echo $log_manager->get_total_visits('room');
+                        } else {
+                            echo '—';
+                        }
+                        ?>
+                    </p>
+                </div>
+                
+                <div class="logs-stat-box">
+                    <h3>Unique Visitors</h3>
+                    <p class="stat-number">
+                        <?php 
+                        // Get unique visitors if the method exists
+                        if (method_exists($log_manager, 'get_unique_visitors_count')) {
+                            echo $log_manager->get_unique_visitors_count();
+                        } else {
+                            echo '—';
+                        }
+                        ?>
+                    </p>
+                </div>
+            </div>
+            
+            <h2>User Activity Management</h2>
+            <p>Detailed user activity tracking is available in individual user profiles. Each user's profile shows:</p>
+            <ul>
+                <li>Floors visited and not visited</li>
+                <li>Rooms visited and not visited</li>
+                <li>Activity timeline and statistics</li>
+            </ul>
+            <p><a href="<?php echo admin_url('users.php'); ?>" class="button button-primary">View Users</a></p>
+            
+        </div>
+        
+        <style>
+        .tower-logs-stats {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .logs-stat-box {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            flex: 1;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+        }
+        .logs-stat-box h3 {
+            margin: 0 0 10px 0;
+            color: #23282d;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0;
+            color: #0073aa;
+        }
+        </style>
+    </div>
+    <?php
+}
+
+/**
+ * Keep the existing settings page function as-is
+ * (spiral_tower_settings_page function remains unchanged)
+ */
+
+// Hook the new menu function - REPLACE the old add_action call
+add_action('admin_menu', 'spiral_tower_add_admin_menu');
+
+
 // Add these after initializing $spiral_tower_plugin
+add_action('admin_enqueue_scripts', 'spiral_tower_enqueue_admin_scripts', 10); // Make sure it runs first
 add_action('wp_ajax_spiral_tower_generate_image', array($spiral_tower_plugin->image_generator, 'handle_generate_image_ajax'));
 add_action('wp_ajax_spiral_tower_set_featured_image', array($spiral_tower_plugin->image_generator, 'set_featured_image_ajax'));
+add_action('admin_enqueue_scripts', 'spiral_tower_enqueue_admin_scripts');
+
 

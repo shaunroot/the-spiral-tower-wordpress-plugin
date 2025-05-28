@@ -1,21 +1,28 @@
 /**
  * Spiral Tower - Core Module
- * Main initialization and coordination between modules.
+ * Main initialization for frontend floor interactions and admin user profile activity.
+ * spiral-tower-core.js
  */
 
 // Ensure the global namespace and logger exist
 window.SpiralTower = window.SpiralTower || {};
-window.SpiralTower.logger = window.SpiralTower.logger || { log: console.log, warn: console.warn, error: console.error };
+window.SpiralTower.logger = window.SpiralTower.logger || {
+    // Basic fallback logger if the main one from spiral-tower-loader.js isn't fully set up yet
+    // The main loader should define a more sophisticated one.
+    log: function(module, ...args) { console.log(`[SpiralTower/${module}]`, ...args); },
+    warn: function(module, ...args) { console.warn(`[SpiralTower/${module}] WARN:`, ...args); },
+    error: function(module, ...args) { console.error(`[SpiralTower/${module}] ERROR:`, ...args); }
+};
 
 SpiralTower.core = (function () {
     const MODULE_NAME = 'core';
     const logger = SpiralTower.logger;
 
-    // --- State Variables ---
-    let isContentVisible; // Loaded from localStorage during init
-    let isTextOnlyActive; // Loaded from localStorage during init
+    // --- State Variables (primarily for frontend floor view) ---
+    let isContentVisible; // Loaded from localStorage during init for frontend
+    let isTextOnlyActive; // Loaded from localStorage during init for frontend
 
-    // --- Private Functions ---
+    // --- Private Functions for Frontend Floor UI ---
 
     /**
      * Applies visibility styling to the content container and updates the toggle button
@@ -24,21 +31,19 @@ SpiralTower.core = (function () {
      * @param {HTMLElement|null} [container=document] - The parent container to search within.
      */
     function applyContentVisibilityUI(shouldBeVisible, container = document) {
-        // logger.log(MODULE_NAME, `Applying content visibility UI for state: ${shouldBeVisible}`); // Verbose log
         const contentContainer = container.querySelector('.spiral-tower-floor-container');
         const toggleButton = document.getElementById('button-content-toggle');
         const visibleIcon = document.getElementById('content-visible-icon');
         const hiddenIcon = document.getElementById('content-hidden-icon');
 
         if (!contentContainer) {
-            // logger.warn(MODULE_NAME, "applyContentVisibilityUI: '.spiral-tower-floor-container' not found."); // Less verbose
             return;
         }
 
         if (shouldBeVisible) { // Show content UI
             contentContainer.classList.remove('content-hidden');
-            contentContainer.classList.add('content-visible'); // Add this class for visibility
-            contentContainer.style.display = ''; // Reset potential inline style from hover
+            contentContainer.classList.add('content-visible');
+            contentContainer.style.display = '';
             if (toggleButton) {
                 toggleButton.classList.remove('active');
                 toggleButton.dataset.tooltip = "Hide Content";
@@ -47,7 +52,7 @@ SpiralTower.core = (function () {
             if (hiddenIcon) hiddenIcon.style.display = 'none';
         } else { // Hide content UI
             contentContainer.classList.add('content-hidden');
-            contentContainer.classList.remove('content-visible'); // Remove the visible class
+            contentContainer.classList.remove('content-visible');
             if (toggleButton) {
                 toggleButton.classList.add('active');
                 toggleButton.dataset.tooltip = "Show Content";
@@ -69,13 +74,11 @@ SpiralTower.core = (function () {
         const textToggleButton = document.getElementById('button-text-toggle');
         const textIcon = document.getElementById('text-only-icon');
         const fullViewIcon = document.getElementById('full-view-icon');
-        const contentToggleButton = document.getElementById('button-content-toggle'); // Get the content toggle button
+        const contentToggleButton = document.getElementById('button-content-toggle');
 
-        // Update module-level state
-        isTextOnlyActive = isEnabled;
+        isTextOnlyActive = isEnabled; // Update module-level state
 
         if (isEnabled) {
-            // Enable Text Only Mode
             body.classList.add('text-only-mode');
             if (textToggleButton) {
                 textToggleButton.classList.add('active');
@@ -84,18 +87,12 @@ SpiralTower.core = (function () {
             if (textIcon) textIcon.style.display = 'none';
             if (fullViewIcon) fullViewIcon.style.display = 'inline-block';
 
-            // --- Force content visible and hide content toggle button ---
-            logger.log(MODULE_NAME, "Text-only active: Forcing content visible and hiding content toggle button.");
             applyContentVisibilityUI(true); // Force content to be visible
             if (contentToggleButton) {
-                contentToggleButton.classList.add('hidden-by-text-mode'); // Hide content toggle button using CSS class
+                contentToggleButton.classList.add('hidden-by-text-mode');
             }
-            // --- End ---
-
             logger.log(MODULE_NAME, "Enabled text-only mode.");
-
         } else {
-            // Disable Text Only Mode
             body.classList.remove('text-only-mode');
             if (textToggleButton) {
                 textToggleButton.classList.remove('active');
@@ -104,130 +101,107 @@ SpiralTower.core = (function () {
             if (textIcon) textIcon.style.display = 'inline-block';
             if (fullViewIcon) fullViewIcon.style.display = 'none';
 
-            // --- Show content toggle button and restore saved content visibility ---
-            logger.log(MODULE_NAME, "Text-only inactive: Showing content toggle button and restoring saved content visibility.");
             if (contentToggleButton) {
-                contentToggleButton.classList.remove('hidden-by-text-mode'); // Show content toggle button
+                contentToggleButton.classList.remove('hidden-by-text-mode');
             }
-            // Restore content visibility based on its saved state (isContentVisible)
-            applyContentVisibilityUI(isContentVisible);
-            // --- End ---
-
+            applyContentVisibilityUI(isContentVisible); // Restore based on its saved state
             logger.log(MODULE_NAME, "Disabled text-only mode.");
         }
     }
 
-
     /**
      * Sets up hover listeners for the floor title to temporarily SHOW content.
-     * Disables effect if text-only mode is active.
      * @param {HTMLElement|null} [container=document] - The parent container to search within.
      */
     function setupTitleHoverListeners(container = document) {
-        // logger.log(MODULE_NAME, "Attempting to set up title hover listeners (hover SHOWS content) in container:", container); // Verbose
         const titleElement = container.querySelector('.spiral-tower-floor-title');
         const contentContainer = container.querySelector('.spiral-tower-floor-container');
-    
-        if (!titleElement) {
-            logger.error(MODULE_NAME, "setupTitleHoverListeners: FAILED TO FIND '.spiral-tower-floor-title'");
+
+        if (!titleElement || !contentContainer) {
+            if (!titleElement) logger.warn(MODULE_NAME, "setupTitleHoverListeners: '.spiral-tower-floor-title' not found.");
+            if (!contentContainer) logger.warn(MODULE_NAME, "setupTitleHoverListeners: '.spiral-tower-floor-container' not found.");
             return;
         }
-        if (!contentContainer) {
-            logger.warn(MODULE_NAME, "setupTitleHoverListeners: Could not find '.spiral-tower-floor-container'. Hover effect cannot work.");
-            return;
-        }
-    
+
         titleElement.addEventListener('mouseenter', () => {
-            // Disable hover effect if text-only mode is active
-            if (isTextOnlyActive) {
-                return;
-            }
+            if (isTextOnlyActive) return;
             contentContainer.classList.remove('content-hidden');
-            contentContainer.classList.add('content-visible'); // Add visible class
+            contentContainer.classList.add('content-visible');
             contentContainer.style.display = '';
         });
-    
+
         titleElement.addEventListener('mouseleave', () => {
-            // Disable hover effect if text-only mode is active
-            if (isTextOnlyActive) {
-                return;
-            }
-            applyContentVisibilityUI(isContentVisible, container);
+            if (isTextOnlyActive) return;
+            applyContentVisibilityUI(isContentVisible, container); // Revert to saved state
         });
         logger.log(MODULE_NAME, "Title hover listeners attached successfully.");
     }
 
-
-    // Setup global click listeners
+    // Setup global click listeners for frontend buttons
     function setupClickListeners() {
-        // logger.log(MODULE_NAME, "Setting up global click listeners."); // Verbose
         document.body.addEventListener('click', function (event) {
-
-            // --- Text Only Toggle Button Listener ---
             const textToggleButton = event.target.closest('#button-text-toggle');
             if (textToggleButton) {
                 logger.log(MODULE_NAME, "Text Only toggle button clicked.");
                 if (SpiralTower.utils?.isTextOnly && SpiralTower.utils?.setTextOnly) {
-                    const newIsEnabled = !SpiralTower.utils.isTextOnly(); // Read current state before toggling
-                    SpiralTower.utils.setTextOnly(newIsEnabled); // Save
-                    applyTextOnlyMode(newIsEnabled); // Update UI (this now handles content visibility too)
+                    const newIsEnabled = !SpiralTower.utils.isTextOnly();
+                    SpiralTower.utils.setTextOnly(newIsEnabled);
+                    applyTextOnlyMode(newIsEnabled);
                 } else {
-                    logger.warn(MODULE_NAME, "Text Only toggle clicked, but Utils module or functions not found.");
+                    logger.warn(MODULE_NAME, "Text Only toggle clicked, but Utils module/functions not found.");
                 }
             }
 
-            // --- Sound Toggle Button Listener ---
             const soundToggleButton = event.target.closest('#button-sound-toggle');
             if (soundToggleButton) {
-                // logger.log(MODULE_NAME, "Sound toggle button clicked."); // Verbose
                 if (SpiralTower.youtube?.toggleSound) {
                     SpiralTower.youtube.toggleSound();
                 } else {
-                    logger.warn(MODULE_NAME, "Sound toggle clicked, but YouTube module or function not found.");
+                    logger.warn(MODULE_NAME, "Sound toggle clicked, but YouTube module/function not found.");
                 }
             }
 
-            // --- Content Toggle Button Listener ---
-            // This listener will only fire if the button is visible (i.e., text-only is OFF)
             const contentToggleButton = event.target.closest('#button-content-toggle');
-            // Check if the button exists AND text-only mode is not active
             if (contentToggleButton && !isTextOnlyActive) {
                 logger.log(MODULE_NAME, "Content toggle button clicked.");
                 const newState = !isContentVisible;
                 if (SpiralTower.utils?.saveSetting) {
                     SpiralTower.utils.saveSetting('contentVisible', newState);
-                    isContentVisible = newState; // Update state variable
-                    applyContentVisibilityUI(isContentVisible); // Update UI
+                    isContentVisible = newState;
+                    applyContentVisibilityUI(isContentVisible);
                 } else {
-                    logger.warn(MODULE_NAME, "Content toggle clicked, but Utils module or saveSetting function not found.");
+                    logger.warn(MODULE_NAME, "Content toggle clicked, but Utils module/saveSetting function not found.");
                 }
             }
-
         });
-        // logger.log(MODULE_NAME, "Global click listeners attached."); // Verbose
     }
 
-    // Load YouTube IFrame Player API script if needed
+    // Load YouTube IFrame Player API script if needed (frontend)
     function loadYouTubeAPI() {
         if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
-            if (document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
-                logger.log(MODULE_NAME, "YouTube API script tag already exists, waiting..."); return;
+            if (document.querySelector('script[src*="youtube.com/iframe_api"]') || document.querySelector('script[src*="googleusercontent.com/youtube.com"]')) {
+                 logger.log(MODULE_NAME, "YouTube API script tag seems to already exist or is loading."); return;
             }
             logger.log(MODULE_NAME, "YouTube API not found. Injecting script tag.");
             var tag = document.createElement('script');
-            tag.src = "https://www.youtube.com/iframe_api";
+            tag.src = "https://www.youtube.com/iframe_api"; // Official source
             tag.onerror = () => logger.error(MODULE_NAME, "Failed to load YouTube API script: " + tag.src);
             var firstScriptTag = document.getElementsByTagName('script')[0];
-            if (firstScriptTag?.parentNode) { firstScriptTag.parentNode.insertBefore(tag, firstScriptTag); }
-            else { document.head.appendChild(tag); }
-        } else { logger.log(MODULE_NAME, "YouTube API already available."); }
+            if (firstScriptTag && firstScriptTag.parentNode) {
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+            } else {
+                document.head.appendChild(tag);
+            }
+        } else {
+            logger.log(MODULE_NAME, "YouTube API already available.");
+        }
     }
 
-    // Content display support functions (Scrollable/Long Content)
+    // Content display support functions for scrollable/long content (frontend)
     function setupContentDisplayChecks() {
-        logger.log(MODULE_NAME, "Setting up content display checks...");
         const contentElement = document.querySelector('.spiral-tower-floor-content');
-        if (!contentElement) { logger.warn(MODULE_NAME, "Content element not found for display checks."); return; }
+        if (!contentElement) return;
+
         function checkScrollable() {
             const isScroll = contentElement.scrollHeight > contentElement.clientHeight;
             contentElement.classList.toggle('is-scrollable', isScroll);
@@ -237,161 +211,264 @@ SpiralTower.core = (function () {
             const threshold = 1200;
             contentElement.classList.toggle('has-long-content', text.length > threshold);
         }
+
         checkScrollable(); checkContentLength();
         let resizeTimeout;
-        window.addEventListener('resize', () => { clearTimeout(resizeTimeout); resizeTimeout = setTimeout(() => { checkScrollable(); checkContentLength(); }, 250); });
-        if (SpiralTower.utils?.waitForImages) { SpiralTower.utils.waitForImages(contentElement).then(() => { checkScrollable(); checkContentLength(); }); }
-        else { window.addEventListener('load', () => { checkScrollable(); checkContentLength(); }); }
-        logger.log(MODULE_NAME, "Content display checks initialized.");
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => { checkScrollable(); checkContentLength(); }, 250);
+        });
+
+        // Check after images load as they affect scrollHeight
+        if (SpiralTower.utils?.waitForImages) {
+            SpiralTower.utils.waitForImages(contentElement).then(() => { checkScrollable(); checkContentLength(); });
+        } else {
+            // Fallback if waitForImages is not available
+            window.addEventListener('load', () => { setTimeout(() => { checkScrollable(); checkContentLength(); }, 100); });
+        }
     }
 
-    // Check if all REQUIRED modules are loaded AND have init functions
-    function checkRequiredModules() {
-        logger.log(MODULE_NAME, "Checking readiness of required modules...");
+    // Check if all REQUIRED frontend modules are loaded AND have init functions
+    function checkRequiredFrontendModules() {
+        logger.log(MODULE_NAME, "Checking readiness of required frontend modules...");
         const required = [
             { key: 'utils', checkInit: true },
             { key: 'background', checkInit: true },
             { key: 'youtube', checkInit: true },
             { key: 'transitions', checkInit: true },
-            { key: 'scrollArrows', checkInit: true }
+            // { key: 'scrollArrows', checkInit: true } // Assuming this is for frontend
         ];
         let allReady = true;
         required.forEach(mod => {
             if (!SpiralTower[mod.key] || (mod.checkInit && typeof SpiralTower[mod.key].init !== 'function')) {
-                logger.error(MODULE_NAME, `REQUIRED module missing or invalid: SpiralTower.${mod.key}`); allReady = false;
+                logger.error(MODULE_NAME, `REQUIRED frontend module missing or invalid: SpiralTower.${mod.key}`);
+                allReady = false;
             }
         });
-        if (!SpiralTower.gizmos?.init) { logger.warn(MODULE_NAME, "Optional module 'gizmos' missing or invalid."); }
-        if (!allReady) { logger.error(MODULE_NAME, "Required modules not ready."); }
+        // Optional modules for frontend
+        if (SpiralTower.gizmos && !SpiralTower.gizmos.init) { logger.warn(MODULE_NAME, "Optional module 'gizmos' loaded but missing init."); }
+        if (SpiralTower.scrollArrows && !SpiralTower.scrollArrows.init) { logger.warn(MODULE_NAME, "Optional module 'scrollArrows' loaded but missing init.");}
+
+        if (!allReady) { logger.error(MODULE_NAME, "Required frontend modules not ready."); }
         return allReady;
+    }
+
+    /**
+     * NEW: Initializes the User Profile Activity Accordion if present on the page (WP Admin).
+     */
+    function initUserProfileActivityAccordion() {
+        const ACCORDION_MODULE_NAME = 'userProfileActivity';
+        
+        // Check if we're in an admin environment with jQuery
+        if (typeof jQuery === 'undefined') {
+            logger.warn(ACCORDION_MODULE_NAME, "jQuery not available, skipping accordion init.");
+            return;
+        }
+    
+        const $ = jQuery;
+        const accordionElement = $("#tower-activity-accordion");
+    
+        // Exit early if accordion element doesn't exist
+        if (accordionElement.length === 0) {
+            logger.log(ACCORDION_MODULE_NAME, "Accordion element not found, skipping init (not on profile page).");
+            return;
+        }
+    
+        // Check if jQuery UI and accordion widget are available
+        if (typeof $.ui === 'undefined' || typeof $.ui.accordion === 'undefined') {
+            logger.error(ACCORDION_MODULE_NAME, "jQuery UI Accordion not available. Required for user profile activity.");
+            accordionElement.prepend('<div style="color:red; padding:10px; border:1px solid red; margin-bottom:10px;">Error: jQuery UI Accordion component is not loaded. Activity section will not work correctly.</div>');
+            return;
+        }
+    
+        // Check if spiralTowerProfileData is available
+        if (typeof spiralTowerProfileData === 'undefined') {
+            logger.error(ACCORDION_MODULE_NAME, 'spiralTowerProfileData is not defined. Cannot initialize accordion.');
+            accordionElement.prepend('<div style="color:red; padding:10px; border:1px solid red; margin-bottom:10px;">Error: Profile data not available. Activity section cannot load.</div>');
+            return;
+        }
+    
+        logger.log(ACCORDION_MODULE_NAME, "Initializing user profile activity accordion.");
+    
+        // Initialize the accordion
+        accordionElement.accordion({
+            collapsible: true,
+            active: false, // All sections collapsed by default
+            heightStyle: "content",
+            beforeActivate: function(event, ui) {
+                var panel = ui.newPanel;
+                
+                // If panel is being closed (newPanel is empty), do nothing
+                if (!panel || panel.length === 0) {
+                    return; 
+                }
+    
+                // Check if this panel has already loaded data
+                if (!panel.data('loaded')) { 
+                    var postType = panel.data('posttype');
+                    var fetchType = panel.data('fetchtype');
+                    var profileUserID = spiralTowerProfileData.profile_user_id;
+                    
+                    var loadingText = spiralTowerProfileData.text_loading || 'Loading...';
+                    var errorText = spiralTowerProfileData.text_error || 'An error occurred.';
+                    var noDataText = spiralTowerProfileData.text_no_data || 'No activity data found for this section.';
+    
+                    // Validate required data
+                    if (!postType || !fetchType || !profileUserID) {
+                        logger.error(ACCORDION_MODULE_NAME, 'Missing data attributes or profile UserID for AJAX call.', 
+                                     { postType: postType, fetchType: fetchType, profileUserID: profileUserID });
+                        panel.html('<p class="error-message">' + errorText + ' (Missing parameters for request)</p>');
+                        return;
+                    }
+    
+                    // Show loading message
+                    panel.html('<p class="loading-message">' + loadingText + '</p>');
+    
+                    // Make AJAX request
+                    $.ajax({
+                        url: spiralTowerProfileData.ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'spiral_tower_get_user_activity',
+                            nonce: spiralTowerProfileData.nonce,
+                            target_user_id: profileUserID,
+                            post_type: postType,
+                            fetch_type: fetchType
+                        },
+                        success: function(response) {
+                            if (response.success && response.data && response.data.html) {
+                                panel.html(response.data.html);
+                                panel.data('loaded', true);
+                                logger.log(ACCORDION_MODULE_NAME, `Data loaded for ${fetchType} ${postType}.`);
+                            } else {
+                                // Handle various error conditions
+                                var message = errorText;
+                                if (response.data && response.data.message) {
+                                    message = response.data.message;
+                                } else if (response.success) {
+                                    // Successful response but no html means no data
+                                    message = noDataText;
+                                }
+                                panel.html('<p class="error-message">' + message + '</p>');
+                                panel.data('loaded', true); 
+                                logger.warn(ACCORDION_MODULE_NAME, `Failed to load data or no data for ${fetchType} ${postType}. Response:`, response);
+                            }
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            logger.error(ACCORDION_MODULE_NAME, `AJAX Error for ${fetchType} ${postType}: `, textStatus, errorThrown);
+                            panel.html('<p class="error-message">' + errorText + ' (Network error)</p>');
+                            panel.data('loaded', true); // Mark as loaded to prevent retry
+                        }
+                    });
+                }
+            }
+        });
+    
+        logger.log(ACCORDION_MODULE_NAME, "User profile activity accordion initialized successfully.");
     }
 
     // --- Main Initialization Function ---
     async function init() {
-        logger.log(MODULE_NAME, `Initialization sequence starting...`);
+        logger.log(MODULE_NAME, `Core initialization sequence starting...`);
 
-        if (!checkRequiredModules()) return;
-
-        try {
-            // Initialize Modules first
-            logger.log(MODULE_NAME, "Initializing: utils...");
-            await SpiralTower.utils.init();
-            logger.log(MODULE_NAME, "Initialized: utils.");
-            logger.log(MODULE_NAME, "Initializing: background...");
-            await SpiralTower.background.init();
-            logger.log(MODULE_NAME, "Initialized: background.");
-            if (SpiralTower.gizmos?.init) {
-                logger.log(MODULE_NAME, "Initializing: gizmos...");
-                await SpiralTower.gizmos.init();
-                logger.log(MODULE_NAME, "Initialized: gizmos.");
-            }
-            if (SpiralTower.colorExtractor?.init) {
-                logger.log(MODULE_NAME, "Initializing: colorExtractor...");
-                await SpiralTower.colorExtractor.init();
-                logger.log(MODULE_NAME, "Initialized: colorExtractor.");
-            }
-            logger.log(MODULE_NAME, "Initializing: youtube...");
-            await SpiralTower.youtube.init();
-            logger.log(MODULE_NAME, "Initialized: youtube.");
-            logger.log(MODULE_NAME, "Initializing: transitions...");
-            await SpiralTower.transitions.init();
-            logger.log(MODULE_NAME, "Initialized: transitions.");
-            logger.log(MODULE_NAME, "--- All Module Initializations Attempted ---");
-
-            if (SpiralTower.scrollArrows?.init) {
-                logger.log(MODULE_NAME, "Initializing: scrollArrows...");
-                await SpiralTower.scrollArrows.init();
-                logger.log(MODULE_NAME, "Initialized: scrollArrows.");
-            }
-
-            logger.log(MODULE_NAME, "--- Setting up Core Features ---");
-
-            // --- Load Initial States ---
-            // Load text-only state first
-            if (SpiralTower.utils?.isTextOnly) {
-                isTextOnlyActive = SpiralTower.utils.isTextOnly();
-                logger.log(MODULE_NAME, `Initial 'textOnly' state loaded: ${isTextOnlyActive}`);
+        // Initialize frontend specific modules and UI only if on a frontend floor page
+        if (document.querySelector('.spiral-tower-floor-container')) {
+            logger.log(MODULE_NAME, "Frontend floor page detected. Initializing frontend components.");
+            if (!checkRequiredFrontendModules()) {
+                logger.error(MODULE_NAME, "Halting frontend initialization due to missing required modules.");
+                // Potentially initialize admin features even if frontend fails
             } else {
-                logger.warn(MODULE_NAME, "Utils module or isTextOnly function not found. Defaulting textOnly to false.");
-                isTextOnlyActive = false;
+                try {
+                    logger.log(MODULE_NAME, "Initializing: utils...");
+                    if (SpiralTower.utils?.init) await SpiralTower.utils.init(); else logger.warn(MODULE_NAME, "Utils module or init not found.");
+                    
+                    logger.log(MODULE_NAME, "Initializing: background...");
+                    if (SpiralTower.background?.init) await SpiralTower.background.init(); else logger.warn(MODULE_NAME, "Background module or init not found.");
+                    
+                    if (SpiralTower.gizmos?.init) {
+                        logger.log(MODULE_NAME, "Initializing: gizmos...");
+                        await SpiralTower.gizmos.init();
+                    }
+                    if (SpiralTower.colorExtractor?.init) {
+                        logger.log(MODULE_NAME, "Initializing: colorExtractor...");
+                        await SpiralTower.colorExtractor.init();
+                    }
+                    logger.log(MODULE_NAME, "Initializing: youtube...");
+                    if (SpiralTower.youtube?.init) await SpiralTower.youtube.init(); else logger.warn(MODULE_NAME, "YouTube module or init not found.");
+                    
+                    logger.log(MODULE_NAME, "Initializing: transitions...");
+                    if (SpiralTower.transitions?.init) await SpiralTower.transitions.init(); else logger.warn(MODULE_NAME, "Transitions module or init not found.");
+                    
+                    if (SpiralTower.scrollArrows?.init) {
+                        logger.log(MODULE_NAME, "Initializing: scrollArrows...");
+                        await SpiralTower.scrollArrows.init();
+                    }
+
+                    // Load Initial Frontend States
+                    isTextOnlyActive = SpiralTower.utils?.isTextOnly ? SpiralTower.utils.isTextOnly() : false;
+                    isContentVisible = SpiralTower.utils?.loadSetting ? SpiralTower.utils.loadSetting('contentVisible', false) : false;
+                    logger.log(MODULE_NAME, `Initial frontend states: textOnly=${isTextOnlyActive}, contentVisible=${isContentVisible}`);
+
+                    // Apply Initial Frontend UI
+                    applyTextOnlyMode(isTextOnlyActive);
+                    setupTitleHoverListeners();
+                    setupClickListeners();
+                    loadYouTubeAPI(); // Ensure this is called for frontend pages
+                    setupContentDisplayChecks();
+                    if (SpiralTower.youtube?.updateSoundToggleVisuals) {
+                        SpiralTower.youtube.updateSoundToggleVisuals();
+                    }
+                    logger.log(MODULE_NAME, "Frontend components initialized.");
+
+                } catch (error) {
+                    logger.error(MODULE_NAME, "Error during frontend component initialization:", error);
+                }
             }
-            // Load content visibility state (This is the only place it should be loaded)
-            if (SpiralTower.utils?.loadSetting) {
-                isContentVisible = SpiralTower.utils.loadSetting('contentVisible', false); // Default false (hidden)
-                logger.log(MODULE_NAME, `Initial 'contentVisible' state loaded: ${isContentVisible}`);
-            } else {
-                logger.warn(MODULE_NAME, "Utils module or loadSetting function not found. Defaulting contentVisible to false.");
-                isContentVisible = false;
-            }
-            // --- End Load Initial States ---
-
-            // --- Apply Initial UI ---
-            // Apply text-only mode UI *first* as it overrides content visibility
-            applyTextOnlyMode(isTextOnlyActive);
-            // Note: applyTextOnlyMode now handles the initial content visibility
-            // and the visibility of the content toggle button based on isTextOnlyActive.
-
-            // Setup hover listeners AFTER initial state is known
-            setupTitleHoverListeners();
-
-            // Setup click listeners AFTER initial states are applied
-            setupClickListeners();
-
-            // Other setups
-            loadYouTubeAPI();
-            setupContentDisplayChecks();
-            if (SpiralTower.youtube?.updateSoundToggleVisuals) {
-                SpiralTower.youtube.updateSoundToggleVisuals();
-            }
-
-            logger.log(MODULE_NAME, "*** Spiral Tower Core Initialized Successfully ***");
-
-        } catch (error) {
-            logger.error(MODULE_NAME, "Critical error during Core initialization sequence:", error);
+        } else {
+            logger.log(MODULE_NAME, "Not a frontend floor page, skipping frontend components initialization.");
         }
+        
+        // Initialize Admin Profile Activity Accordion (it will check internally if its HTML exists)
+        // This needs jQuery and jQuery UI accordion to be loaded, which PHP should handle on profile admin pages.
+        initUserProfileActivityAccordion();
+
+        logger.log(MODULE_NAME, "*** Spiral Tower Core Initialized Successfully (Frontend and/or Admin) ***");
     } // --- End of init() function ---
 
-    // --- Event Listener ---
+    // Event Listener for when all modules from spiral-tower-loader.js are ready
     document.addEventListener('spiralTowerModulesLoaded', init);
 
     // --- Public API ---
     return {
-        init: init,
-        handlePageTransition: function () {
-            logger.log(MODULE_NAME, "Handling page transition...");
+        init: init, // This will be called by the 'spiralTowerModulesLoaded' event
+        handlePageTransition: function () { // For Barba or similar frontend transitions
+            logger.log(MODULE_NAME, "Handling page transition (frontend)...");
+            
+            // This function is primarily for frontend transitions.
+            // Check if we are on a new floor page after transition.
             const nextContainer = document.querySelector('[data-barba="container"]');
+            if (nextContainer && nextContainer.querySelector('.spiral-tower-floor-container')) {
+                logger.log(MODULE_NAME, "New frontend floor container detected after transition.");
+                
+                // Re-apply states that might have been reset or need re-evaluation for new content
+                applyTextOnlyMode(isTextOnlyActive); // isTextOnlyActive should be from utils or persisted state
+                setupTitleHoverListeners(nextContainer); // Re-attach to new container's elements
+                setupContentDisplayChecks(); // Re-run for new content dimensions
 
-            // --- Re-apply states on transition ---
-            // Note: State variables isTextOnlyActive and isContentVisible should persist
-            applyTextOnlyMode(isTextOnlyActive); // Apply text mode first
-
-            // Re-attach hover listeners for the new container
-            setupTitleHoverListeners(nextContainer);
-
-            // --- Other transition handling ---
-            if (SpiralTower.background?.reinit) {
-                SpiralTower.background.reinit(nextContainer);
+                // Re-initialize or update modules that depend on page content
+                if (SpiralTower.background?.reinit) SpiralTower.background.reinit(nextContainer);
+                if (SpiralTower.colorExtractor?.reinit) SpiralTower.colorExtractor.reinit();
+                if (SpiralTower.youtube?.destroyPlayer) SpiralTower.youtube.destroyPlayer(); // Destroy old
+                if (SpiralTower.youtube?.initializePlayerForContainer) SpiralTower.youtube.initializePlayerForContainer(nextContainer); // Init new
+                if (SpiralTower.scrollArrows?.reinit) SpiralTower.scrollArrows.reinit(nextContainer);
+                
+                logger.log(MODULE_NAME, "Frontend page transition handling complete.");
+            } else {
+                logger.log(MODULE_NAME, "Transition to a non-floor page or no specific container found, minimal transition handling.");
             }
-
-            if (SpiralTower.colorExtractor?.reinit) {
-                SpiralTower.colorExtractor.reinit();
-            }
-
-            if (SpiralTower.youtube?.destroyPlayer) {
-                SpiralTower.youtube.destroyPlayer();
-            }
-
-            if (SpiralTower.youtube?.initializePlayerForContainer) {
-                SpiralTower.youtube.initializePlayerForContainer(nextContainer);
-            }
-
-            if (SpiralTower.scrollArrows?.reinit) {
-                SpiralTower.scrollArrows.reinit(nextContainer);
-            }
-            setupContentDisplayChecks(); // Re-run checks for new content
-
-            logger.log(MODULE_NAME, "Page transition handling complete.");
+            // Admin profile accordion does not need handling here as it's not subject to these frontend transitions.
         }
+        // Add other methods to the public API if needed
     };
 
 })(); // End of Core Module IIFE
