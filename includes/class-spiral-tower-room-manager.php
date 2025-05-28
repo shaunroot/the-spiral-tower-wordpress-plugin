@@ -393,6 +393,8 @@ class Spiral_Tower_Room_Manager
         $floor_number_color = get_post_meta($post->ID, '_floor_number_color', true);
         $bg_position_x = get_post_meta($post->ID, '_starting_background_position_x', true) ?: 'center';
         $bg_position_y = get_post_meta($post->ID, '_starting_background_position_y', true) ?: 'center';
+        $achievement_title = get_post_meta($post->ID, '_room_achievement_title', true);
+        $achievement_image = get_post_meta($post->ID, '_room_achievement_image', true);
 
         $user = wp_get_current_user();
         $is_floor_author = in_array('floor_author', (array) $user->roles);
@@ -489,6 +491,73 @@ class Spiral_Tower_Room_Manager
             echo '<option value="' . $pos . '" ' . selected($bg_position_y, $pos, false) . '>' . ucfirst($pos) . '</option>';
         }
         echo '</select></p>';
+
+        if (current_user_can('administrator')) {
+            echo '<hr>';
+            echo '<p><strong>Custom Achievement (Admin Only):</strong><br>';
+            echo '<small>If set, visitors will earn this achievement when they visit this room.</small></p>';
+            
+            // Achievement Title
+            echo '<p>';
+            echo '<label for="room_achievement_title">Achievement Title:</label>';
+            echo '<input type="text" id="room_achievement_title" name="room_achievement_title" value="' . esc_attr($achievement_title) . '" style="width:100%" placeholder="e.g., Guardian of the Secret Chamber">';
+            echo '</p>';
+            
+            // Achievement Image Upload
+            echo '<p>';
+            echo '<label for="room_achievement_image">Achievement Image:</label><br>';
+            echo '<input type="text" id="room_achievement_image" name="room_achievement_image" value="' . esc_attr($achievement_image) . '" style="width:80%" placeholder="Image URL or select from media library" />';
+            echo '<button type="button" class="button" id="room_achievement_image_button" style="margin-left:5px;">Select Image</button>';
+            
+            // Image preview
+            if (!empty($achievement_image)) {
+                echo '<br><img src="' . esc_url($achievement_image) . '" style="max-width:100px; max-height:100px; margin-top:10px; border:1px solid #ddd;" />';
+            }
+            echo '</p>';
+            
+            // Add JavaScript for media uploader (similar to floor version)
+            ?>
+            <script type="text/javascript">
+            jQuery(document).ready(function($) {
+                var mediaUploader;
+                
+                $('#room_achievement_image_button').click(function(e) {
+                    e.preventDefault();
+                    
+                    if (mediaUploader) {
+                        mediaUploader.open();
+                        return;
+                    }
+                    
+                    mediaUploader = wp.media({
+                        title: 'Select Achievement Image',
+                        button: {
+                            text: 'Use This Image'
+                        },
+                        multiple: false,
+                        library: {
+                            type: 'image'
+                        }
+                    });
+                    
+                    mediaUploader.on('select', function() {
+                        var attachment = mediaUploader.state().get('selection').first().toJSON();
+                        $('#room_achievement_image').val(attachment.url);
+                        
+                        var $preview = $('#room_achievement_image').siblings('img');
+                        if ($preview.length) {
+                            $preview.attr('src', attachment.url);
+                        } else {
+                            $('#room_achievement_image').after('<br><img src="' + attachment.url + '" style="max-width:100px; max-height:100px; margin-top:10px; border:1px solid #ddd;" />');
+                        }
+                    });
+                    
+                    mediaUploader.open();
+                });
+            });
+            </script>
+            <?php
+        }        
 
         // Enqueue color picker scripts if needed for admin
         wp_enqueue_style('wp-color-picker');
@@ -681,6 +750,27 @@ class Spiral_Tower_Room_Manager
                 delete_post_meta($post_id, '_room_custom_script_outside');
             }
         }
+
+        // Save achievement settings
+        if (current_user_can('administrator')) {
+            if (isset($_POST['room_achievement_title'])) {
+                $achievement_title = sanitize_text_field($_POST['room_achievement_title']);
+                if (!empty($achievement_title)) {
+                    update_post_meta($post_id, '_room_achievement_title', $achievement_title);
+                } else {
+                    delete_post_meta($post_id, '_room_achievement_title');
+                }
+            }
+            
+            if (isset($_POST['room_achievement_image'])) {
+                $achievement_image = esc_url_raw($_POST['room_achievement_image']);
+                if (!empty($achievement_image)) {
+                    update_post_meta($post_id, '_room_achievement_image', $achievement_image);
+                } else {
+                    delete_post_meta($post_id, '_room_achievement_image');
+                }
+            }
+        }        
     }
 
     /**

@@ -297,7 +297,9 @@ class Spiral_Tower_Floor_Manager
         $floor_number_color = get_post_meta($post->ID, '_floor_number_color', true);
         $bg_position_x = get_post_meta($post->ID, '_starting_background_position_x', true) ?: 'center';
         $bg_position_y = get_post_meta($post->ID, '_starting_background_position_y', true) ?: 'center';
-
+        $achievement_title = get_post_meta($post->ID, '_floor_achievement_title', true);
+        $achievement_image = get_post_meta($post->ID, '_floor_achievement_image', true);
+    
 
         // --- Floor Number ---
         echo '<p>';
@@ -399,6 +401,79 @@ class Spiral_Tower_Floor_Manager
         echo '<option value="bottom" ' . selected($bg_position_y, 'bottom', false) . '>Bottom</option>';
         echo '</select>';
         echo '</p>';
+
+        // --- Achievement Settings --- 
+        if (current_user_can('administrator')) {
+            echo '<hr>';
+            echo '<p><strong>Custom Achievement (Admin Only):</strong><br>';
+            echo '<small>If set, visitors will earn this achievement when they visit this floor.</small></p>';
+            
+            // Achievement Title
+            echo '<p>';
+            echo '<label for="floor_achievement_title">Achievement Title:</label>';
+            echo '<input type="text" id="floor_achievement_title" name="floor_achievement_title" value="' . esc_attr($achievement_title) . '" style="width:100%" placeholder="e.g., Explorer of the Mystic Library">';
+            echo '</p>';
+            
+            // Achievement Image Upload
+            echo '<p>';
+            echo '<label for="floor_achievement_image">Achievement Image:</label><br>';
+            echo '<input type="text" id="floor_achievement_image" name="floor_achievement_image" value="' . esc_attr($achievement_image) . '" style="width:80%" placeholder="Image URL or select from media library" />';
+            echo '<button type="button" class="button" id="floor_achievement_image_button" style="margin-left:5px;">Select Image</button>';
+            
+            // Image preview
+            if (!empty($achievement_image)) {
+                echo '<br><img src="' . esc_url($achievement_image) . '" style="max-width:100px; max-height:100px; margin-top:10px; border:1px solid #ddd;" />';
+            }
+            echo '</p>';
+            
+            // Add JavaScript for media uploader
+            ?>
+            <script type="text/javascript">
+            jQuery(document).ready(function($) {
+                var mediaUploader;
+                
+                $('#floor_achievement_image_button').click(function(e) {
+                    e.preventDefault();
+                    
+                    // If the uploader object has already been created, reopen the dialog
+                    if (mediaUploader) {
+                        mediaUploader.open();
+                        return;
+                    }
+                    
+                    // Create the media uploader
+                    mediaUploader = wp.media({
+                        title: 'Select Achievement Image',
+                        button: {
+                            text: 'Use This Image'
+                        },
+                        multiple: false,
+                        library: {
+                            type: 'image'
+                        }
+                    });
+                    
+                    // When an image is selected, run a callback
+                    mediaUploader.on('select', function() {
+                        var attachment = mediaUploader.state().get('selection').first().toJSON();
+                        $('#floor_achievement_image').val(attachment.url);
+                        
+                        // Update or add preview image
+                        var $preview = $('#floor_achievement_image').siblings('img');
+                        if ($preview.length) {
+                            $preview.attr('src', attachment.url);
+                        } else {
+                            $('#floor_achievement_image').after('<br><img src="' + attachment.url + '" style="max-width:100px; max-height:100px; margin-top:10px; border:1px solid #ddd;" />');
+                        }
+                    });
+                    
+                    // Open the uploader dialog
+                    mediaUploader.open();
+                });
+            });
+            </script>
+            <?php
+        }        
     }
 
 
@@ -519,6 +594,11 @@ class Spiral_Tower_Floor_Manager
             '_starting_background_position_x' => isset($_POST['starting_background_position_x']) ? sanitize_text_field($_POST['starting_background_position_x']) : null,
             '_starting_background_position_y' => isset($_POST['starting_background_position_y']) ? sanitize_text_field($_POST['starting_background_position_y']) : null,
         ];
+
+        if (current_user_can('administrator')) {
+            $fields_to_save['_floor_achievement_title'] = isset($_POST['floor_achievement_title']) ? sanitize_text_field($_POST['floor_achievement_title']) : null;
+            $fields_to_save['_floor_achievement_image'] = isset($_POST['floor_achievement_image']) ? esc_url_raw($_POST['floor_achievement_image']) : null;
+        }        
 
         foreach ($fields_to_save as $meta_key => $value) {
             if ($value !== null) { // Field was submitted

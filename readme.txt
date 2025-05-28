@@ -46,6 +46,9 @@ A WordPress plugin that creates an immersive full-screen display for tower floor
 
 ```
 spiral-tower-plugin/
+├── assets
+│   └── images/
+│       └── achievements           # Images for achievements
 ├── dist/                          # Compiled assets
 │   └── css/
 │       └── floor-template.css     # Compiled CSS

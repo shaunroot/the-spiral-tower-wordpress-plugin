@@ -10,12 +10,12 @@ class Spiral_Tower_Achievement_Manager
      * Predefined achievements - add new ones here
      */
     private $achievements = array();
-    
+
     /**
      * Cache for user achievements to avoid DB hits
      */
     private $user_achievement_cache = array();
-    
+
     /**
      * Queue of achievements awarded during this page load
      */
@@ -28,23 +28,28 @@ class Spiral_Tower_Achievement_Manager
     {
         // Define achievements in code
         $this->define_achievements();
-        
+
         // Create database table for user achievement awards
         add_action('init', array($this, 'create_user_achievements_table'));
-        
+
         // Add admin menu for achievement log (with higher priority than parent menu)
         add_action('admin_menu', array($this, 'add_achievement_log_menu'), 25);
-        
+
         // Add AJAX handlers
         add_action('wp_ajax_spiral_tower_get_achievement_log', array($this, 'ajax_get_achievement_log'));
         add_action('wp_ajax_spiral_tower_delete_achievement', array($this, 'ajax_delete_achievement'));
         add_action('wp_ajax_spiral_tower_update_achievement_table', array($this, 'ajax_update_achievement_table'));
-        
-        // Hook into floor viewing to check for Writer achievement
+
+        // Hook into floor and room viewing to check for achievements
         add_action('template_redirect', array($this, 'check_writer_achievement'));
-        
+        add_action('template_redirect', array($this, 'check_floor_achievement'));
+        add_action('template_redirect', array($this, 'check_room_achievement')); // Make sure this is here!
+
         // Add achievement data to frontend - use wp_head instead of wp_footer
         add_action('wp_head', array($this, 'add_achievement_data_to_frontend'), 20);
+
+        // Debug logging to confirm hooks are registered
+        error_log("Spiral Tower Achievement Manager: Hooks registered for floor and room achievement checking");
     }
 
     /**
@@ -62,7 +67,7 @@ class Spiral_Tower_Achievement_Manager
                 'repeatable' => false
             )
         );
-        
+
         // Add image URLs after defining achievements
         foreach ($this->achievements as $key => &$achievement) {
             $achievement['image'] = $this->get_achievement_image_url($key);
@@ -81,10 +86,10 @@ class Spiral_Tower_Achievement_Manager
             // If called during initialization, use the key as fallback
             $achievement_title = ucfirst(str_replace('_', ' ', $achievement_key));
         }
-        
+
         // Convert title to filename format
         $filename = $this->title_to_filename($achievement_title);
-        
+
         // Return the full URL to the image
         return SPIRAL_TOWER_PLUGIN_URL . 'assets/images/achievements/' . $filename . '.png';
     }
@@ -96,19 +101,19 @@ class Spiral_Tower_Achievement_Manager
     {
         // Convert to lowercase
         $filename = strtolower($title);
-        
+
         // Replace spaces with hyphens
         $filename = str_replace(' ', '-', $filename);
-        
+
         // Remove special characters (keep only letters, numbers, hyphens)
         $filename = preg_replace('/[^a-z0-9\-]/', '', $filename);
-        
+
         // Remove multiple consecutive hyphens
         $filename = preg_replace('/-+/', '-', $filename);
-        
+
         // Trim hyphens from start/end
         $filename = trim($filename, '-');
-        
+
         return $filename;
     }
 
@@ -121,11 +126,215 @@ class Spiral_Tower_Achievement_Manager
     }
 
     /**
-     * Get a specific achievement definition
+     * Get achievement definition, including dynamic floor/room achievements
+     * Updated version that checks for dynamic achievements
      */
     public function get_achievement($key)
     {
-        return isset($this->achievements[$key]) ? $this->achievements[$key] : null;
+        error_log("Spiral Tower: Looking for achievement with key: '{$key}'");
+        
+        // Check static achievements first
+        if (isset($this->achievements[$key])) {
+            error_log("Spiral Tower: Found static achievement: '{$key}'");
+            return $this->achievements[$key];
+        }
+        
+        // Check for dynamic floor/room achievements
+        $dynamic_achievement = $this->get_dynamic_achievement($key);
+        if ($dynamic_achievement) {
+            error_log("Spiral Tower: Found dynamic achievement: '{$key}' - " . print_r($dynamic_achievement, true));
+            return $dynamic_achievement;
+        }
+        
+        error_log("Spiral Tower: Achievement '{$key}' not found in static or dynamic achievements");
+        return null;
+    }
+
+    /**
+     * Get dynamic achievement definition for floors and rooms
+     */
+    private function get_dynamic_achievement($achievement_key)
+    {
+        // Check if this is a floor or room achievement key
+        if (strpos($achievement_key, 'floor_') === 0) {
+            $post_id = (int) str_replace('floor_', '', $achievement_key);
+            return $this->get_floor_achievement($post_id);
+        } elseif (strpos($achievement_key, 'room_') === 0) {
+            $post_id = (int) str_replace('room_', '', $achievement_key);
+            return $this->get_room_achievement($post_id);
+        }
+
+        return null;
+    }
+
+    /**
+     * Get floor achievement definition
+     */
+    private function get_floor_achievement($floor_id)
+    {
+        $floor = get_post($floor_id);
+        if (!$floor || $floor->post_type !== 'floor') {
+            return null;
+        }
+
+        $achievement_title = get_post_meta($floor_id, '_floor_achievement_title', true);
+        if (empty($achievement_title)) {
+            return null;
+        }
+
+        $achievement_image = get_post_meta($floor_id, '_floor_achievement_image', true);
+
+        return array(
+            'title' => $achievement_title,
+            'description' => 'Visited ' . $floor->post_title,
+            'points' => 1,
+            'icon' => 'dashicons-building',
+            'image' => !empty($achievement_image) ? $achievement_image : $this->get_default_floor_achievement_image(),
+            'hidden' => false,
+            'repeatable' => false,
+            'post_id' => $floor_id,
+            'post_type' => 'floor'
+        );
+    }
+
+    /**
+     * Get default achievement image for floors
+     */
+    private function get_default_floor_achievement_image()
+    {
+        return SPIRAL_TOWER_PLUGIN_URL . 'assets/images/achievements/default-floor.png';
+    }
+
+    /**
+     * Get default achievement image for rooms
+     */
+    private function get_default_room_achievement_image()
+    {
+        return SPIRAL_TOWER_PLUGIN_URL . 'assets/images/achievements/default-room.png';
+    }
+
+    /**
+     * Check for floor achievement when user visits a floor
+     * Add this method to replace/supplement the existing check_writer_achievement
+     */
+    public function check_floor_achievement()
+    {
+        error_log("Spiral Tower: check_floor_achievement called");
+        
+        if (!is_singular('floor')) {
+            error_log("Spiral Tower: Not on a singular floor page");
+            return;
+        }
+        
+        if (!is_user_logged_in()) {
+            error_log("Spiral Tower: User not logged in");
+            return;
+        }
+        
+        $user_id = get_current_user_id();
+        $floor_id = get_the_ID();
+        
+        error_log("Spiral Tower: Checking floor achievement for user {$user_id} on floor {$floor_id}");
+        
+        // Check if this floor has a custom achievement
+        $achievement_title = get_post_meta($floor_id, '_floor_achievement_title', true);
+        error_log("Spiral Tower: Floor achievement title: " . ($achievement_title ?: 'EMPTY'));
+        
+        if (empty($achievement_title)) {
+            error_log("Spiral Tower: No achievement title set for floor {$floor_id}");
+            return;
+        }
+        
+        $achievement_key = 'floor_' . $floor_id;
+        error_log("Spiral Tower: Achievement key: {$achievement_key}");
+        
+        // Check if user already has this achievement
+        if ($this->user_has_achievement($user_id, $achievement_key)) {
+            error_log("Spiral Tower: User {$user_id} already has achievement {$achievement_key}");
+            return;
+        }
+        
+        // Award the achievement
+        error_log("Spiral Tower: Awarding achievement {$achievement_key} to user {$user_id}");
+        $result = $this->award_achievement($user_id, $achievement_key, 'Visited floor: ' . get_the_title($floor_id));
+        error_log("Spiral Tower: Award result: " . ($result ? 'SUCCESS' : 'FAILED'));
+    }
+
+    /**
+     * Check for room achievement when user visits a room
+     */
+    public function check_room_achievement()
+    {
+        error_log("Spiral Tower: check_room_achievement called");
+
+        if (!is_singular('room')) {
+            error_log("Spiral Tower: Not on a singular room page");
+            return;
+        }
+
+        if (!is_user_logged_in()) {
+            error_log("Spiral Tower: User not logged in");
+            return;
+        }
+
+        $user_id = get_current_user_id();
+        $room_id = get_the_ID();
+
+        error_log("Spiral Tower: Checking room achievement for user {$user_id} on room {$room_id}");
+
+        // Check if this room has a custom achievement
+        $achievement_title = get_post_meta($room_id, '_room_achievement_title', true);
+        error_log("Spiral Tower: Room achievement title: " . ($achievement_title ?: 'EMPTY'));
+
+        if (empty($achievement_title)) {
+            error_log("Spiral Tower: No achievement title set for room {$room_id}");
+            return;
+        }
+
+        $achievement_key = 'room_' . $room_id;
+        error_log("Spiral Tower: Achievement key: {$achievement_key}");
+
+        // Check if user already has this achievement
+        if ($this->user_has_achievement($user_id, $achievement_key)) {
+            error_log("Spiral Tower: User {$user_id} already has achievement {$achievement_key}");
+            return;
+        }
+
+        // Award the achievement
+        error_log("Spiral Tower: Awarding achievement {$achievement_key} to user {$user_id}");
+        $result = $this->award_achievement($user_id, $achievement_key, 'Visited room: ' . get_the_title($room_id));
+        error_log("Spiral Tower: Award result: " . ($result ? 'SUCCESS' : 'FAILED'));
+    }
+
+
+    /**
+     * Get room achievement definition
+     */
+    private function get_room_achievement($room_id)
+    {
+        $room = get_post($room_id);
+        if (!$room || $room->post_type !== 'room') {
+            return null;
+        }
+
+        $achievement_title = get_post_meta($room_id, '_room_achievement_title', true);
+        if (empty($achievement_title)) {
+            return null;
+        }
+
+        $achievement_image = get_post_meta($room_id, '_room_achievement_image', true);
+
+        return array(
+            'title' => $achievement_title,
+            'description' => 'Visited ' . $room->post_title,
+            'points' => 1,
+            'icon' => 'dashicons-layout',
+            'image' => !empty($achievement_image) ? $achievement_image : $this->get_default_room_achievement_image(),
+            'hidden' => false,
+            'repeatable' => false,
+            'post_id' => $room_id,
+            'post_type' => 'room'
+        );
     }
 
     /**
@@ -136,10 +345,10 @@ class Spiral_Tower_Achievement_Manager
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'spiral_tower_user_achievements';
-        
+
         // Check if table exists
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
-        
+
         if ($table_exists) {
             // Check if the table has the correct structure
             $columns = $wpdb->get_results("DESCRIBE $table_name");
@@ -147,44 +356,44 @@ class Spiral_Tower_Achievement_Manager
             foreach ($columns as $column) {
                 $column_names[] = $column->Field;
             }
-            
+
             error_log("Spiral Tower: Existing table columns: " . implode(', ', $column_names));
-            
+
             // Check if achievement_key column exists
             if (!in_array('achievement_key', $column_names)) {
                 error_log("Spiral Tower: Adding missing achievement_key column to existing table");
                 $wpdb->query("ALTER TABLE $table_name ADD COLUMN achievement_key varchar(255) NOT NULL AFTER user_id");
                 $wpdb->query("ALTER TABLE $table_name ADD KEY achievement_key (achievement_key)");
             }
-            
+
             // Check if notes column exists
             if (!in_array('notes', $column_names)) {
                 error_log("Spiral Tower: Adding missing notes column to existing table");
                 $wpdb->query("ALTER TABLE $table_name ADD COLUMN notes text DEFAULT NULL");
             }
-            
+
             // Check if awarded_date column exists
             if (!in_array('awarded_date', $column_names)) {
                 error_log("Spiral Tower: Adding missing awarded_date column to existing table");
                 $wpdb->query("ALTER TABLE $table_name ADD COLUMN awarded_date datetime DEFAULT CURRENT_TIMESTAMP");
                 $wpdb->query("ALTER TABLE $table_name ADD KEY awarded_date (awarded_date)");
             }
-            
+
             // Remove old columns that we don't need anymore
             if (in_array('achievement_id', $column_names)) {
                 error_log("Spiral Tower: Removing old achievement_id column");
                 $wpdb->query("ALTER TABLE $table_name DROP COLUMN achievement_id");
             }
-            
+
             if (in_array('awarded_by', $column_names)) {
                 error_log("Spiral Tower: Removing old awarded_by column");
                 $wpdb->query("ALTER TABLE $table_name DROP COLUMN awarded_by");
             }
-            
+
             // Update the unique key constraint
             $wpdb->query("ALTER TABLE $table_name DROP INDEX IF EXISTS user_achievement");
             $wpdb->query("ALTER TABLE $table_name ADD UNIQUE KEY user_achievement (user_id, achievement_key)");
-            
+
             error_log("Spiral Tower: Updated existing achievement table structure");
         } else {
             // Create new table
@@ -205,7 +414,7 @@ class Spiral_Tower_Achievement_Manager
 
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             dbDelta($sql);
-            
+
             error_log("Spiral Tower: Created new achievement table");
         }
     }
@@ -216,15 +425,16 @@ class Spiral_Tower_Achievement_Manager
     public function award_achievement($user_id, $achievement_key, $notes = '')
     {
         global $wpdb;
-
-        // Check if achievement exists
-        if (!isset($this->achievements[$achievement_key])) {
-            error_log("Spiral Tower: Achievement '{$achievement_key}' not defined");
-            return false; // Achievement not defined
+    
+        // Check if achievement exists (static or dynamic)
+        $achievement = $this->get_achievement($achievement_key);
+        if (!$achievement) {
+            error_log("Spiral Tower: Achievement '{$achievement_key}' not found (neither static nor dynamic)");
+            return false;
         }
-
-        $achievement = $this->achievements[$achievement_key];
-
+    
+        error_log("Spiral Tower: Found achievement definition for '{$achievement_key}': " . print_r($achievement, true));
+    
         // Check if achievement is repeatable
         if (!$achievement['repeatable']) {
             // Check if user already has this achievement
@@ -233,7 +443,7 @@ class Spiral_Tower_Achievement_Manager
                 return false; // User already has this non-repeatable achievement
             }
         }
-
+    
         // Award the achievement
         $table_name = $wpdb->prefix . 'spiral_tower_user_achievements';
         
@@ -248,7 +458,7 @@ class Spiral_Tower_Achievement_Manager
             ),
             array('%d', '%s', '%s')
         );
-
+    
         // Log the achievement award
         if ($result !== false) {
             error_log("Spiral Tower: Achievement '{$achievement_key}' successfully awarded to user {$user_id}");
@@ -265,17 +475,19 @@ class Spiral_Tower_Achievement_Manager
                 'description' => $achievement['description'],
                 'points' => $achievement['points'],
                 'image' => $achievement['image']
-            );
+            );            
+            
+            error_log("Spiral Tower: Added achievement to frontend queue: " . print_r($this->newly_awarded_achievements[count($this->newly_awarded_achievements) - 1], true));
             
             // You could add a hook here for other plugins to listen to
             do_action('spiral_tower_achievement_awarded', $user_id, $achievement_key, $achievement);
         } else {
             error_log("Spiral Tower: Failed to award achievement '{$achievement_key}' to user {$user_id}. DB Error: " . $wpdb->last_error);
         }
-
+    
         return $result !== false;
     }
-    
+
     /**
      * Get newly awarded achievements for this page load
      */
@@ -300,19 +512,19 @@ class Spiral_Tower_Achievement_Manager
         error_log("Spiral Tower: add_achievement_data_to_frontend called");
         error_log("Spiral Tower: newly_awarded_achievements count: " . count($this->newly_awarded_achievements));
         error_log("Spiral Tower: newly_awarded_achievements content: " . wp_json_encode($this->newly_awarded_achievements));
-        
+
         // Only add data if we're on a floor/room page and have newly awarded achievements
         if (!$this->has_newly_awarded_achievements()) {
             error_log("Spiral Tower: No newly awarded achievements to pass to frontend");
             return;
         }
-        
+
         $achievement_data = array(
             'achievements' => $this->get_newly_awarded_achievements()
         );
-        
+
         error_log("Spiral Tower: Passing achievement data to frontend: " . wp_json_encode($achievement_data));
-        
+
         // Output the data directly as inline JavaScript
         echo '<script type="text/javascript">';
         echo 'window.spiralTowerAchievements = ' . wp_json_encode($achievement_data) . ';';
@@ -329,28 +541,28 @@ class Spiral_Tower_Achievement_Manager
         if (isset($this->user_achievement_cache[$user_id][$achievement_key])) {
             return $this->user_achievement_cache[$user_id][$achievement_key];
         }
-        
+
         global $wpdb;
-        
+
         $table_name = $wpdb->prefix . 'spiral_tower_user_achievements';
-        
+
         $count = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM $table_name WHERE user_id = %d AND achievement_key = %s",
             $user_id,
             $achievement_key
         ));
-        
+
         $has_achievement = $count > 0;
-        
+
         // Cache the result
         if (!isset($this->user_achievement_cache[$user_id])) {
             $this->user_achievement_cache[$user_id] = array();
         }
         $this->user_achievement_cache[$user_id][$achievement_key] = $has_achievement;
-        
+
         return $has_achievement;
     }
-    
+
     /**
      * Check for Writer achievement when user views a floor
      */
@@ -360,18 +572,18 @@ class Spiral_Tower_Achievement_Manager
         if (!is_singular('floor') || !is_user_logged_in()) {
             return;
         }
-        
+
         $user_id = get_current_user_id();
-        
+
         // Debug logging
         error_log("Spiral Tower: Checking Writer achievement for user {$user_id}");
-        
+
         // Don't check if user already has this achievement (saves DB hit)
         if ($this->user_has_achievement($user_id, 'writer')) {
             error_log("Spiral Tower: User {$user_id} already has Writer achievement");
             return;
         }
-        
+
         // Check if user has created any floors or rooms
         $user_created_content = get_posts(array(
             'author' => $user_id,
@@ -380,9 +592,9 @@ class Spiral_Tower_Achievement_Manager
             'posts_per_page' => 1,
             'fields' => 'ids'
         ));
-        
+
         error_log("Spiral Tower: User {$user_id} created content count: " . count($user_created_content));
-        
+
         if (!empty($user_created_content)) {
             error_log("Spiral Tower: Awarding Writer achievement to user {$user_id}");
             $result = $this->award_achievement($user_id, 'writer', 'User created their first floor or room');
@@ -398,9 +610,9 @@ class Spiral_Tower_Achievement_Manager
     public function get_user_achievements($user_id, $limit = 100)
     {
         global $wpdb;
-        
+
         $table_name = $wpdb->prefix . 'spiral_tower_user_achievements';
-        
+
         $results = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM $table_name 
              WHERE user_id = %d 
@@ -409,7 +621,7 @@ class Spiral_Tower_Achievement_Manager
             $user_id,
             $limit
         ));
-        
+
         // Add achievement details to each result
         foreach ($results as &$result) {
             $achievement = $this->get_achievement($result->achievement_key);
@@ -420,7 +632,7 @@ class Spiral_Tower_Achievement_Manager
                 $result->icon = $achievement['icon'];
             }
         }
-        
+
         return $results;
     }
 
@@ -431,13 +643,13 @@ class Spiral_Tower_Achievement_Manager
     {
         $user_achievements = $this->get_user_achievements($user_id);
         $total = 0;
-        
+
         foreach ($user_achievements as $award) {
             if (isset($award->points)) {
                 $total += $award->points;
             }
         }
-        
+
         return $total;
     }
 
@@ -447,41 +659,41 @@ class Spiral_Tower_Achievement_Manager
     public function get_achievement_log($achievement_key = '', $user_id = 0, $limit = 50, $offset = 0)
     {
         global $wpdb;
-        
+
         $table_name = $wpdb->prefix . 'spiral_tower_user_achievements';
-        
+
         $where_conditions = array();
         $where_values = array();
-        
+
         if (!empty($achievement_key)) {
             $where_conditions[] = "ua.achievement_key = %s";
             $where_values[] = $achievement_key;
         }
-        
+
         if (!empty($user_id)) {
             $where_conditions[] = "ua.user_id = %d";
             $where_values[] = $user_id;
         }
-        
+
         $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
-        
+
         // Add limit and offset to values
         $where_values[] = $limit;
         $where_values[] = $offset;
-        
+
         $sql = "SELECT ua.*, u.display_name as user_name, u.user_login 
                 FROM $table_name ua 
                 LEFT JOIN {$wpdb->users} u ON ua.user_id = u.ID 
                 $where_clause
                 ORDER BY ua.awarded_date DESC 
                 LIMIT %d OFFSET %d";
-        
+
         if (!empty($where_values)) {
             $results = $wpdb->get_results($wpdb->prepare($sql, $where_values));
         } else {
             $results = $wpdb->get_results($sql);
         }
-        
+
         // Add achievement details to each result
         foreach ($results as &$result) {
             $achievement = $this->get_achievement($result->achievement_key);
@@ -492,7 +704,7 @@ class Spiral_Tower_Achievement_Manager
                 $result->icon = $achievement['icon'];
             }
         }
-        
+
         return $results;
     }
 
@@ -502,26 +714,26 @@ class Spiral_Tower_Achievement_Manager
     public function get_achievement_log_count($achievement_key = '', $user_id = 0)
     {
         global $wpdb;
-        
+
         $table_name = $wpdb->prefix . 'spiral_tower_user_achievements';
-        
+
         $where_conditions = array();
         $where_values = array();
-        
+
         if (!empty($achievement_key)) {
             $where_conditions[] = "achievement_key = %s";
             $where_values[] = $achievement_key;
         }
-        
+
         if (!empty($user_id)) {
             $where_conditions[] = "user_id = %d";
             $where_values[] = $user_id;
         }
-        
+
         $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
-        
+
         $sql = "SELECT COUNT(*) FROM $table_name $where_clause";
-        
+
         if (!empty($where_values)) {
             return $wpdb->get_var($wpdb->prepare($sql, $where_values));
         } else {
@@ -572,21 +784,68 @@ class Spiral_Tower_Achievement_Manager
             <div class="tablenav top">
                 <form method="get" action="">
                     <input type="hidden" name="page" value="spiral-tower-achievements">
-                    
+
                     <label for="achievement-filter">Filter by Achievement:</label>
                     <select name="achievement" id="achievement-filter">
                         <option value="">All Achievements</option>
-                        <?php foreach ($this->achievements as $key => $achievement): ?>
-                            <option value="<?php echo esc_attr($key); ?>" <?php selected($achievement_filter, $key); ?>>
-                                <?php echo esc_html($achievement['title']); ?>
-                            </option>
-                        <?php endforeach; ?>
+                        <?php
+                        $all_achievements = $this->get_all_achievements_for_admin();
+
+                        // Sort achievements by type and title
+                        $static_achievements = array();
+                        $floor_achievements = array();
+                        $room_achievements = array();
+
+                        foreach ($all_achievements as $key => $achievement) {
+                            if (strpos($key, 'floor_') === 0) {
+                                $floor_achievements[$key] = $achievement;
+                            } elseif (strpos($key, 'room_') === 0) {
+                                $room_achievements[$key] = $achievement;
+                            } else {
+                                $static_achievements[$key] = $achievement;
+                            }
+                        }
+
+                        // Display static achievements first
+                        if (!empty($static_achievements)) {
+                            echo '<optgroup label="Static Achievements">';
+                            foreach ($static_achievements as $key => $achievement) {
+                                echo '<option value="' . esc_attr($key) . '" ' . selected($achievement_filter, $key, false) . '>';
+                                echo esc_html($achievement['title']);
+                                echo '</option>';
+                            }
+                            echo '</optgroup>';
+                        }
+
+                        // Display floor achievements
+                        if (!empty($floor_achievements)) {
+                            echo '<optgroup label="Floor Achievements">';
+                            foreach ($floor_achievements as $key => $achievement) {
+                                echo '<option value="' . esc_attr($key) . '" ' . selected($achievement_filter, $key, false) . '>';
+                                echo esc_html($achievement['title']);
+                                echo '</option>';
+                            }
+                            echo '</optgroup>';
+                        }
+
+                        // Display room achievements
+                        if (!empty($room_achievements)) {
+                            echo '<optgroup label="Room Achievements">';
+                            foreach ($room_achievements as $key => $achievement) {
+                                echo '<option value="' . esc_attr($key) . '" ' . selected($achievement_filter, $key, false) . '>';
+                                echo esc_html($achievement['title']);
+                                echo '</option>';
+                            }
+                            echo '</optgroup>';
+                        }
+                        ?>
                     </select>
-                    
+
                     <input type="submit" class="button" value="Filter">
-                    
+
                     <?php if ($achievement_filter || $user_filter): ?>
-                        <a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>" class="button">Clear Filters</a>
+                        <a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>" class="button">Clear
+                            Filters</a>
                     <?php endif; ?>
                 </form>
             </div>
@@ -606,41 +865,64 @@ class Spiral_Tower_Achievement_Manager
                     </thead>
                     <tbody>
                         <?php foreach ($achievement_log as $entry): ?>
-                        <tr>
-                            <td>
-                                <?php 
-                                $user_edit_link = get_edit_user_link($entry->user_id);
-                                $user_name = $entry->user_name ?: $entry->user_login ?: 'Unknown User';
-                                if ($user_edit_link) {
-                                    echo '<a href="' . esc_url($user_edit_link) . '">' . esc_html($user_name) . '</a>';
-                                } else {
-                                    echo esc_html($user_name);
-                                }
-                                ?>
-                            </td>
-                            <td>
-                                <div class="achievement-info">
-                                    <?php if (isset($entry->icon)): ?>
-                                        <span class="dashicons <?php echo esc_attr($entry->icon); ?>" style="margin-right: 5px;"></span>
-                                    <?php endif; ?>
-                                    <strong><?php echo esc_html($entry->title ?? $entry->achievement_key); ?></strong>
-                                    <?php if (isset($entry->description)): ?>
-                                        <br><small class="description"><?php echo esc_html($entry->description); ?></small>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td><?php echo esc_html($entry->points ?? '—'); ?></td>
-                            <td><?php echo esc_html(mysql2date('F j, Y g:i a', $entry->awarded_date)); ?></td>
-                            <td><?php echo esc_html($entry->notes ?: '—'); ?></td>
-                            <td>
-                                <button class="button button-small delete-achievement" 
-                                        data-id="<?php echo esc_attr($entry->id); ?>"
+                            <tr>
+                                <td>
+                                    <?php
+                                    $user_edit_link = get_edit_user_link($entry->user_id);
+                                    $user_name = $entry->user_name ?: $entry->user_login ?: 'Unknown User';
+                                    if ($user_edit_link) {
+                                        echo '<a href="' . esc_url($user_edit_link) . '">' . esc_html($user_name) . '</a>';
+                                    } else {
+                                        echo esc_html($user_name);
+                                    }
+                                    ?>
+                                </td>
+                                <td>
+                                    <div class="achievement-info">
+                                        <?php if (isset($entry->icon)): ?>
+                                            <span class="dashicons <?php echo esc_attr($entry->icon); ?>" style="margin-right: 5px;"></span>
+                                        <?php endif; ?>
+                                        <strong><?php echo esc_html($entry->title ?? $entry->achievement_key); ?></strong>
+
+                                        <?php
+                                        // Show link to source post for dynamic achievements
+                                        if (strpos($entry->achievement_key, 'floor_') === 0 || strpos($entry->achievement_key, 'room_') === 0) {
+                                            $post_id = (int) str_replace(array('floor_', 'room_'), '', $entry->achievement_key);
+                                            $post = get_post($post_id);
+                                            if ($post) {
+                                                $edit_link = get_edit_post_link($post_id);
+                                                $view_link = get_permalink($post_id);
+                                                echo '<br><small>';
+                                                echo 'Source: ';
+                                                if ($edit_link) {
+                                                    echo '<a href="' . esc_url($edit_link) . '">' . esc_html($post->post_title) . '</a>';
+                                                } else {
+                                                    echo esc_html($post->post_title);
+                                                }
+                                                if ($view_link) {
+                                                    echo ' (<a href="' . esc_url($view_link) . '" target="_blank">View</a>)';
+                                                }
+                                                echo '</small>';
+                                            }
+                                        }
+                                        ?>
+
+                                        <?php if (isset($entry->description)): ?>
+                                            <br><small class="description"><?php echo esc_html($entry->description); ?></small>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td><?php echo esc_html($entry->points ?? '—'); ?></td>
+                                <td><?php echo esc_html(mysql2date('F j, Y g:i a', $entry->awarded_date)); ?></td>
+                                <td><?php echo esc_html($entry->notes ?: '—'); ?></td>
+                                <td>
+                                    <button class="button button-small delete-achievement" data-id="<?php echo esc_attr($entry->id); ?>"
                                         data-user="<?php echo esc_attr($user_name); ?>"
                                         data-achievement="<?php echo esc_attr($entry->title ?? $entry->achievement_key); ?>">
-                                    Delete
-                                </button>
-                            </td>
-                        </tr>
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
@@ -673,98 +955,169 @@ class Spiral_Tower_Achievement_Manager
             <?php endif; ?>
 
             <style>
-            .achievement-info {
-                display: flex;
-                align-items: flex-start;
-                flex-direction: column;
-            }
-            .achievement-info .dashicons {
-                color: #0073aa;
-                margin-top: 2px;
-            }
-            .achievement-info .description {
-                color: #666;
-                font-style: italic;
-                margin-top: 2px;
-            }
-            .tablenav {
-                margin: 10px 0;
-                padding: 10px 0;
-            }
-            .tablenav form {
-                display: inline-flex;
-                align-items: center;
-                gap: 10px;
-            }
+                .achievement-info {
+                    display: flex;
+                    align-items: flex-start;
+                    flex-direction: column;
+                }
+
+                .achievement-info .dashicons {
+                    color: #0073aa;
+                    margin-top: 2px;
+                }
+
+                .achievement-info .description {
+                    color: #666;
+                    font-style: italic;
+                    margin-top: 2px;
+                }
+
+                .tablenav {
+                    margin: 10px 0;
+                    padding: 10px 0;
+                }
+
+                .tablenav form {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 10px;
+                }
             </style>
-            
+
             <script type="text/javascript">
-            jQuery(document).ready(function($) {
-                $('.delete-achievement').click(function() {
-                    var button = $(this);
-                    var id = button.data('id');
-                    var user = button.data('user');
-                    var achievement = button.data('achievement');
-                    
-                    if (confirm('Are you sure you want to delete the "' + achievement + '" achievement for ' + user + '?')) {
-                        button.prop('disabled', true).text('Deleting...');
-                        
-                        $.ajax({
-                            url: ajaxurl,
-                            type: 'POST',
-                            data: {
-                                action: 'spiral_tower_delete_achievement',
-                                nonce: '<?php echo wp_create_nonce("spiral_tower_achievement_delete_nonce"); ?>',
-                                id: id
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    button.closest('tr').fadeOut(300, function() {
-                                        $(this).remove();
-                                    });
-                                } else {
-                                    alert('Error: ' + (response.data.message || 'Unknown error'));
+                jQuery(document).ready(function ($) {
+                    $('.delete-achievement').click(function () {
+                        var button = $(this);
+                        var id = button.data('id');
+                        var user = button.data('user');
+                        var achievement = button.data('achievement');
+
+                        if (confirm('Are you sure you want to delete the "' + achievement + '" achievement for ' + user + '?')) {
+                            button.prop('disabled', true).text('Deleting...');
+
+                            $.ajax({
+                                url: ajaxurl,
+                                type: 'POST',
+                                data: {
+                                    action: 'spiral_tower_delete_achievement',
+                                    nonce: '<?php echo wp_create_nonce("spiral_tower_achievement_delete_nonce"); ?>',
+                                    id: id
+                                },
+                                success: function (response) {
+                                    if (response.success) {
+                                        button.closest('tr').fadeOut(300, function () {
+                                            $(this).remove();
+                                        });
+                                    } else {
+                                        alert('Error: ' + (response.data.message || 'Unknown error'));
+                                        button.prop('disabled', false).text('Delete');
+                                    }
+                                },
+                                error: function () {
+                                    alert('Error deleting achievement. Please try again.');
                                     button.prop('disabled', false).text('Delete');
                                 }
-                            },
-                            error: function() {
-                                alert('Error deleting achievement. Please try again.');
-                                button.prop('disabled', false).text('Delete');
-                            }
-                        });
-                    }
+                            });
+                        }
+                    });
                 });
-            });
             </script>
         </div>
         <?php
     }
-    
+
+    /**
+     * Update get_all_achievements to include dynamic achievements
+     * This is used by the admin log page dropdown
+     */
+    public function get_all_achievements_for_admin()
+    {
+        $achievements = $this->achievements;
+
+        // Add floor achievements
+        $floors_with_achievements = get_posts(array(
+            'post_type' => 'floor',
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'meta_query' => array(
+                array(
+                    'key' => '_floor_achievement_title',
+                    'value' => '',
+                    'compare' => '!='
+                )
+            )
+        ));
+
+        foreach ($floors_with_achievements as $floor) {
+            $achievement_title = get_post_meta($floor->ID, '_floor_achievement_title', true);
+            if (!empty($achievement_title)) {
+                $key = 'floor_' . $floor->ID;
+                $achievements[$key] = array(
+                    'title' => $achievement_title . ' (Floor: ' . $floor->post_title . ')',
+                    'description' => 'Visited ' . $floor->post_title,
+                    'points' => 1,
+                    'icon' => 'dashicons-building',
+                    'post_type' => 'floor'
+                );
+            }
+        }
+
+        // Add room achievements
+        $rooms_with_achievements = get_posts(array(
+            'post_type' => 'room',
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'meta_query' => array(
+                array(
+                    'key' => '_room_achievement_title',
+                    'value' => '',
+                    'compare' => '!='
+                )
+            )
+        ));
+
+        foreach ($rooms_with_achievements as $room) {
+            $achievement_title = get_post_meta($room->ID, '_room_achievement_title', true);
+            if (!empty($achievement_title)) {
+                $key = 'room_' . $room->ID;
+                $achievements[$key] = array(
+                    'title' => $achievement_title . ' (Room: ' . $room->post_title . ')',
+                    'description' => 'Visited ' . $room->post_title,
+                    'points' => 1,
+                    'icon' => 'dashicons-layout',
+                    'post_type' => 'room'
+                );
+            }
+        }
+
+        return $achievements;
+    }
+
     /**
      * Delete an achievement record
      */
     public function delete_achievement($id)
     {
         global $wpdb;
-        
+
         $table_name = $wpdb->prefix . 'spiral_tower_user_achievements';
-        
+
         $result = $wpdb->delete(
             $table_name,
             array('id' => $id),
             array('%d')
         );
-        
+
         // Clear cache for this user/achievement
         $achievement_record = $wpdb->get_row($wpdb->prepare(
             "SELECT user_id, achievement_key FROM $table_name WHERE id = %d",
             $id
         ));
-        
+
         if ($achievement_record && isset($this->user_achievement_cache[$achievement_record->user_id][$achievement_record->achievement_key])) {
             unset($this->user_achievement_cache[$achievement_record->user_id][$achievement_record->achievement_key]);
         }
-        
+
         return $result !== false;
     }
 
@@ -774,14 +1127,14 @@ class Spiral_Tower_Achievement_Manager
     public function ajax_delete_achievement()
     {
         check_ajax_referer('spiral_tower_achievement_delete_nonce', 'nonce');
-        
+
         if (!current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Permission denied'));
             return;
         }
 
         $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
-        
+
         if (!$id) {
             wp_send_json_error(array('message' => 'Invalid achievement ID'));
             return;
@@ -794,19 +1147,19 @@ class Spiral_Tower_Achievement_Manager
             "SELECT user_id, achievement_key FROM $table_name WHERE id = %d",
             $id
         ));
-        
+
         $result = $wpdb->delete(
             $table_name,
             array('id' => $id),
             array('%d')
         );
-        
+
         if ($result !== false) {
             // Clear cache for this user/achievement
             if ($achievement_record && isset($this->user_achievement_cache[$achievement_record->user_id][$achievement_record->achievement_key])) {
                 unset($this->user_achievement_cache[$achievement_record->user_id][$achievement_record->achievement_key]);
             }
-            
+
             wp_send_json_success(array('message' => 'Achievement deleted successfully'));
         } else {
             wp_send_json_error(array('message' => 'Failed to delete achievement'));
@@ -819,14 +1172,14 @@ class Spiral_Tower_Achievement_Manager
     public function ajax_update_achievement_table()
     {
         check_ajax_referer('spiral_tower_achievement_update_nonce', 'nonce');
-        
+
         if (!current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Permission denied'));
             return;
         }
 
         $this->create_user_achievements_table();
-        
+
         wp_send_json_success(array('message' => 'Achievement table updated successfully'));
     }
 
@@ -836,7 +1189,7 @@ class Spiral_Tower_Achievement_Manager
     public function ajax_get_achievement_log()
     {
         check_ajax_referer('spiral_tower_achievement_nonce', 'nonce');
-        
+
         if (!current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Permission denied'));
             return;
@@ -850,7 +1203,7 @@ class Spiral_Tower_Achievement_Manager
 
         $log_entries = $this->get_achievement_log($achievement_key, $user_id, $per_page, $offset);
         $total_count = $this->get_achievement_log_count($achievement_key, $user_id);
-        
+
         wp_send_json_success(array(
             'entries' => $log_entries,
             'total_count' => $total_count,

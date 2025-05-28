@@ -679,7 +679,7 @@ class Spiral_Tower_Plugin
         // Register post types first
         $this->floor_manager->register_floor_post_type();
         $this->room_manager->register_room_post_type();
-        $this->portal_manager->register_portal_post_type(); 
+        $this->portal_manager->register_portal_post_type();
         $this->achievement_manager->create_user_achievements_table();
 
         // Add rewrite rules (now done inside floor manager init)
@@ -842,8 +842,15 @@ function spiral_tower_enqueue_admin_scripts($hook)
         error_log("Spiral Tower: Localized spiralTowerImageGenerator data for post edit");
     }
 
-    // The User Profile Manager will handle localizing spiralTowerProfileData
-    // for profile.php and user-edit.php pages
+    // Enqueue media uploader for achievement images on floor/room edit pages
+    if (($hook === 'post.php' || $hook === 'post-new.php') && $post) {
+        $post_type = get_post_type($post);
+        if (in_array($post_type, array('floor', 'room')) && current_user_can('administrator')) {
+            // Enqueue WordPress media uploader
+            wp_enqueue_media();
+            error_log("Spiral Tower: Enqueued media uploader for {$post_type} edit page");
+        }
+    }
 }
 
 
@@ -1145,18 +1152,19 @@ function spiral_tower_add_admin_menu()
 /**
  * Display the main Spiral Tower dashboard page
  */
-function spiral_tower_main_page() {
+function spiral_tower_main_page()
+{
     global $spiral_tower_plugin;
-    
+
     if (!current_user_can('manage_options')) {
         wp_die(__('You do not have sufficient permissions to access this page.'));
     }
-    
+
     // Get some basic stats
     $floor_count = wp_count_posts('floor');
     $room_count = wp_count_posts('room');
     $portal_count = wp_count_posts('portal');
-    
+
     // Get achievement stats
     $total_achievements_awarded = 0;
     $recent_achievement_awards = array();
@@ -1164,110 +1172,115 @@ function spiral_tower_main_page() {
         $total_achievements_awarded = $spiral_tower_plugin->achievement_manager->get_achievement_log_count();
         $recent_achievement_awards = $spiral_tower_plugin->achievement_manager->get_achievement_log('', 0, 10);
     }
-    
+
     ?>
     <div class="wrap">
         <h1>Spiral Tower Dashboard</h1>
         <p>Welcome to the Spiral Tower administration center.</p>
-        
+
         <div class="tower-dashboard-stats">
             <div class="dashboard-stat-box">
                 <h3>Published Floors</h3>
                 <p class="stat-number"><?php echo $floor_count->publish ?? 0; ?></p>
                 <a href="<?php echo admin_url('edit.php?post_type=floor'); ?>" class="button">Manage Floors</a>
             </div>
-            
+
             <div class="dashboard-stat-box">
                 <h3>Published Rooms</h3>
                 <p class="stat-number"><?php echo $room_count->publish ?? 0; ?></p>
                 <a href="<?php echo admin_url('edit.php?post_type=room'); ?>" class="button">Manage Rooms</a>
             </div>
-            
+
             <div class="dashboard-stat-box">
                 <h3>Published Portals</h3>
                 <p class="stat-number"><?php echo $portal_count->publish ?? 0; ?></p>
                 <a href="<?php echo admin_url('edit.php?post_type=portal'); ?>" class="button">Manage Portals</a>
             </div>
-            
+
             <div class="dashboard-stat-box">
                 <h3>Achievements Awarded</h3>
                 <p class="stat-number"><?php echo $total_achievements_awarded; ?></p>
-                <a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>" class="button">View Achievement Log</a>
+                <a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>" class="button">View
+                    Achievement Log</a>
             </div>
         </div>
-        
+
         <?php if (!empty($recent_achievement_awards)): ?>
-        <div class="tower-recent-achievements">
-            <h2>Recent Achievement Awards</h2>
-            <div class="achievement-awards-list">
-                <table class="wp-list-table widefat fixed striped">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Achievement</th>
-                            <th>Points</th>
-                            <th>Date Awarded</th>
-                            <th>Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($recent_achievement_awards as $award): ?>
-                        <tr>
-                            <td>
-                                <?php 
-                                $user_edit_link = get_edit_user_link($award->user_id);
-                                $user_name = $award->user_name ?: $award->user_login ?: 'Unknown User';
-                                if ($user_edit_link) {
-                                    echo '<a href="' . esc_url($user_edit_link) . '">' . esc_html($user_name) . '</a>';
-                                } else {
-                                    echo esc_html($user_name);
-                                }
-                                ?>
-                            </td>
-                            <td>
-                                <div class="achievement-info">
-                                    <?php if (isset($award->icon)): ?>
-                                        <span class="dashicons <?php echo esc_attr($award->icon); ?>"></span>
-                                    <?php endif; ?>
-                                    <strong><?php echo esc_html($award->title ?? $award->achievement_key); ?></strong>
-                                    <?php if (isset($award->description)): ?>
-                                        <br><small><?php echo esc_html($award->description); ?></small>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td><?php echo esc_html($award->points ?? '—'); ?></td>
-                            <td><?php echo esc_html(mysql2date('F j, Y g:i a', $award->awarded_date)); ?></td>
-                            <td><?php echo esc_html($award->notes ?: '—'); ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-                <p><a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>">View Full Achievement Log →</a></p>
+            <div class="tower-recent-achievements">
+                <h2>Recent Achievement Awards</h2>
+                <div class="achievement-awards-list">
+                    <table class="wp-list-table widefat fixed striped">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Achievement</th>
+                                <th>Points</th>
+                                <th>Date Awarded</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recent_achievement_awards as $award): ?>
+                                <tr>
+                                    <td>
+                                        <?php
+                                        $user_edit_link = get_edit_user_link($award->user_id);
+                                        $user_name = $award->user_name ?: $award->user_login ?: 'Unknown User';
+                                        if ($user_edit_link) {
+                                            echo '<a href="' . esc_url($user_edit_link) . '">' . esc_html($user_name) . '</a>';
+                                        } else {
+                                            echo esc_html($user_name);
+                                        }
+                                        ?>
+                                    </td>
+                                    <td>
+                                        <div class="achievement-info">
+                                            <?php if (isset($award->icon)): ?>
+                                                <span class="dashicons <?php echo esc_attr($award->icon); ?>"></span>
+                                            <?php endif; ?>
+                                            <strong><?php echo esc_html($award->title ?? $award->achievement_key); ?></strong>
+                                            <?php if (isset($award->description)): ?>
+                                                <br><small><?php echo esc_html($award->description); ?></small>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                    <td><?php echo esc_html($award->points ?? '—'); ?></td>
+                                    <td><?php echo esc_html(mysql2date('F j, Y g:i a', $award->awarded_date)); ?></td>
+                                    <td><?php echo esc_html($award->notes ?: '—'); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <p><a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>">View Full Achievement Log
+                            →</a></p>
+                </div>
             </div>
-        </div>
         <?php endif; ?>
-        
+
         <div class="tower-dashboard-actions">
             <h2>Quick Actions</h2>
             <div class="dashboard-actions-grid">
                 <div class="action-card">
                     <h3>Tower Settings</h3>
                     <p>Configure DALL-E API settings and other plugin options.</p>
-                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-settings'); ?>" class="button button-primary">Open Settings</a>
+                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-settings'); ?>"
+                        class="button button-primary">Open Settings</a>
                 </div>
-                
+
                 <div class="action-card">
                     <h3>Tower Logs</h3>
                     <p>View activity logs and user statistics for all tower locations.</p>
-                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-logs'); ?>" class="button button-primary">View Logs</a>
+                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-logs'); ?>"
+                        class="button button-primary">View Logs</a>
                 </div>
-                
+
                 <div class="action-card">
                     <h3>Achievement Log</h3>
                     <p>View all achievement awards and filter by achievement type.</p>
-                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>" class="button button-primary">View Achievement Log</a>
+                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>"
+                        class="button button-primary">View Achievement Log</a>
                 </div>
-                
+
                 <div class="action-card">
                     <h3>User Management</h3>
                     <p>View user profiles with detailed activity tracking.</p>
@@ -1275,97 +1288,113 @@ function spiral_tower_main_page() {
                 </div>
             </div>
         </div>
-        
+
         <style>
-        .tower-dashboard-stats {
-            display: flex;
-            gap: 20px;
-            margin: 20px 0;
-        }
-        .dashboard-stat-box {
-            background: #fff;
-            border: 1px solid #ccd0d4;
-            border-radius: 4px;
-            padding: 20px;
-            text-align: center;
-            flex: 1;
-            box-shadow: 0 1px 1px rgba(0,0,0,.04);
-        }
-        .dashboard-stat-box h3 {
-            margin: 0 0 10px 0;
-            color: #23282d;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            margin: 0 0 15px 0;
-            color: #0073aa;
-        }
-        .dashboard-actions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin: 20px 0;
-        }
-        .action-card {
-            background: #fff;
-            border: 1px solid #ccd0d4;
-            border-radius: 4px;
-            padding: 20px;
-            box-shadow: 0 1px 1px rgba(0,0,0,.04);
-        }
-        .action-card h3 {
-            margin: 0 0 10px 0;
-            color: #23282d;
-        }
-        .action-card p {
-            margin: 0 0 15px 0;
-            color: #646970;
-        }
-        .tower-recent-achievements {
-            margin: 30px 0;
-            background: #fff;
-            border: 1px solid #ccd0d4;
-            border-radius: 4px;
-            padding: 20px;
-            box-shadow: 0 1px 1px rgba(0,0,0,.04);
-        }
-        .tower-recent-achievements h2 {
-            margin: 0 0 15px 0;
-            color: #23282d;
-        }
-        .achievement-awards-list {
-            overflow-x: auto;
-        }
-        .achievement-awards-list table {
-            min-width: 600px;
-        }
-        .achievement-awards-list th,
-        .achievement-awards-list td {
-            padding: 8px 12px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        .achievement-awards-list th {
-            background-color: #f9f9f9;
-            font-weight: 600;
-        }
-        .achievement-info {
-            display: flex;
-            align-items: flex-start;
-            gap: 5px;
-        }
-        .achievement-info .dashicons {
-            color: #0073aa;
-            margin-top: 2px;
-            flex-shrink: 0;
-        }
-        .achievement-info small {
-            color: #666;
-            font-style: italic;
-        }
+            .tower-dashboard-stats {
+                display: flex;
+                gap: 20px;
+                margin: 20px 0;
+            }
+
+            .dashboard-stat-box {
+                background: #fff;
+                border: 1px solid #ccd0d4;
+                border-radius: 4px;
+                padding: 20px;
+                text-align: center;
+                flex: 1;
+                box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+            }
+
+            .dashboard-stat-box h3 {
+                margin: 0 0 10px 0;
+                color: #23282d;
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            .stat-number {
+                font-size: 32px;
+                font-weight: bold;
+                margin: 0 0 15px 0;
+                color: #0073aa;
+            }
+
+            .dashboard-actions-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
+                margin: 20px 0;
+            }
+
+            .action-card {
+                background: #fff;
+                border: 1px solid #ccd0d4;
+                border-radius: 4px;
+                padding: 20px;
+                box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+            }
+
+            .action-card h3 {
+                margin: 0 0 10px 0;
+                color: #23282d;
+            }
+
+            .action-card p {
+                margin: 0 0 15px 0;
+                color: #646970;
+            }
+
+            .tower-recent-achievements {
+                margin: 30px 0;
+                background: #fff;
+                border: 1px solid #ccd0d4;
+                border-radius: 4px;
+                padding: 20px;
+                box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+            }
+
+            .tower-recent-achievements h2 {
+                margin: 0 0 15px 0;
+                color: #23282d;
+            }
+
+            .achievement-awards-list {
+                overflow-x: auto;
+            }
+
+            .achievement-awards-list table {
+                min-width: 600px;
+            }
+
+            .achievement-awards-list th,
+            .achievement-awards-list td {
+                padding: 8px 12px;
+                text-align: left;
+                border-bottom: 1px solid #eee;
+            }
+
+            .achievement-awards-list th {
+                background-color: #f9f9f9;
+                font-weight: 600;
+            }
+
+            .achievement-info {
+                display: flex;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .achievement-info .dashicons {
+                color: #0073aa;
+                margin-top: 2px;
+                flex-shrink: 0;
+            }
+
+            .achievement-info small {
+                color: #666;
+                font-style: italic;
+            }
         </style>
     </div>
     <?php
