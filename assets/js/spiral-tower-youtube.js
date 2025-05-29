@@ -101,8 +101,29 @@ SpiralTower.youtube = (function() {
     }
 
     function onPlayerStateChange(event) {
-        // logger.log("Player state changed:", event.data);
-        if (event.data === YT.PlayerState.ENDED && ytPlayer) { /* Loop logic if needed */ }
+        if (event.data === YT.PlayerState.ENDED && ytPlayer) {
+            ytPlayer.seekTo(0.02, true);
+            ytPlayer.playVideo();
+        }
+        
+        // Preemptive restart - begins 0.2 seconds before video ends
+        if (event.data === YT.PlayerState.PLAYING && ytPlayer) {
+            const duration = ytPlayer.getDuration();
+            if (duration > 1) {
+                setTimeout(() => {
+                    if (ytPlayer && isPlayerReady) {
+                        try {
+                            const timeLeft = duration - ytPlayer.getCurrentTime();
+                            if (timeLeft <= 0.3 && timeLeft > 0) {
+                                ytPlayer.seekTo(0.02, true);
+                            }
+                        } catch (e) {
+                            console.error('LOG: Preemptive loop error:', e);
+                        }
+                    }
+                }, (duration - 0.2) * 1000);
+            }
+        }
     }
 
     function onPlayerError(event) {

@@ -28,27 +28,24 @@ class Spiral_Tower_Achievement_Manager
     {
         // Define achievements in code
         $this->define_achievements();
-
-        // Create database table for user achievement awards
-        add_action('init', array($this, 'create_user_achievements_table'));
-
+        
+        // DON'T create table on every init - remove this line:
+        // add_action('init', array($this, 'create_user_achievements_table'));
+        
         // Add admin menu for achievement log (with higher priority than parent menu)
         add_action('admin_menu', array($this, 'add_achievement_log_menu'), 25);
-
+        
         // Add AJAX handlers
         add_action('wp_ajax_spiral_tower_get_achievement_log', array($this, 'ajax_get_achievement_log'));
         add_action('wp_ajax_spiral_tower_delete_achievement', array($this, 'ajax_delete_achievement'));
         add_action('wp_ajax_spiral_tower_update_achievement_table', array($this, 'ajax_update_achievement_table'));
-
+        
         // Hook into floor and room viewing to check for achievements
         add_action('template_redirect', array($this, 'check_floor_achievement'));
-        add_action('template_redirect', array($this, 'check_room_achievement')); // Make sure this is here!
-
+        add_action('template_redirect', array($this, 'check_room_achievement'));
+        
         // Add achievement data to frontend - use wp_head instead of wp_footer
         add_action('wp_head', array($this, 'add_achievement_data_to_frontend'), 20);
-
-        // Debug logging to confirm hooks are registered
-        error_log("Spiral Tower Achievement Manager: Hooks registered for floor and room achievement checking");
     }
 
     /**
@@ -278,18 +275,14 @@ class Spiral_Tower_Achievement_Manager
      */
     public function get_achievement($key)
     {
-        error_log("Spiral Tower: Looking for achievement with key: '{$key}'");
-
         // Check static achievements first
         if (isset($this->achievements[$key])) {
-            error_log("Spiral Tower: Found static achievement: '{$key}'");
             return $this->achievements[$key];
         }
 
         // Check for dynamic floor/room achievements
         $dynamic_achievement = $this->get_dynamic_achievement($key);
         if ($dynamic_achievement) {
-            error_log("Spiral Tower: Found dynamic achievement: '{$key}' - " . print_r($dynamic_achievement, true));
             return $dynamic_achievement;
         }
 
@@ -458,62 +451,16 @@ class Spiral_Tower_Achievement_Manager
     public function create_user_achievements_table()
     {
         global $wpdb;
-
+    
         $table_name = $wpdb->prefix . 'spiral_tower_user_achievements';
-
+        
         // Check if table exists
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
-
-        if ($table_exists) {
-            // Check if the table has the correct structure
-            $columns = $wpdb->get_results("DESCRIBE $table_name");
-            $column_names = array();
-            foreach ($columns as $column) {
-                $column_names[] = $column->Field;
-            }
-
-            error_log("Spiral Tower: Existing table columns: " . implode(', ', $column_names));
-
-            // Check if achievement_key column exists
-            if (!in_array('achievement_key', $column_names)) {
-                error_log("Spiral Tower: Adding missing achievement_key column to existing table");
-                $wpdb->query("ALTER TABLE $table_name ADD COLUMN achievement_key varchar(255) NOT NULL AFTER user_id");
-                $wpdb->query("ALTER TABLE $table_name ADD KEY achievement_key (achievement_key)");
-            }
-
-            // Check if notes column exists
-            if (!in_array('notes', $column_names)) {
-                error_log("Spiral Tower: Adding missing notes column to existing table");
-                $wpdb->query("ALTER TABLE $table_name ADD COLUMN notes text DEFAULT NULL");
-            }
-
-            // Check if awarded_date column exists
-            if (!in_array('awarded_date', $column_names)) {
-                error_log("Spiral Tower: Adding missing awarded_date column to existing table");
-                $wpdb->query("ALTER TABLE $table_name ADD COLUMN awarded_date datetime DEFAULT CURRENT_TIMESTAMP");
-                $wpdb->query("ALTER TABLE $table_name ADD KEY awarded_date (awarded_date)");
-            }
-
-            // Remove old columns that we don't need anymore
-            if (in_array('achievement_id', $column_names)) {
-                error_log("Spiral Tower: Removing old achievement_id column");
-                $wpdb->query("ALTER TABLE $table_name DROP COLUMN achievement_id");
-            }
-
-            if (in_array('awarded_by', $column_names)) {
-                error_log("Spiral Tower: Removing old awarded_by column");
-                $wpdb->query("ALTER TABLE $table_name DROP COLUMN awarded_by");
-            }
-
-            // Update the unique key constraint
-            $wpdb->query("ALTER TABLE $table_name DROP INDEX IF EXISTS user_achievement");
-            $wpdb->query("ALTER TABLE $table_name ADD UNIQUE KEY user_achievement (user_id, achievement_key)");
-
-            error_log("Spiral Tower: Updated existing achievement table structure");
-        } else {
+        
+        if (!$table_exists) {
             // Create new table
             $charset_collate = $wpdb->get_charset_collate();
-
+    
             $sql = "CREATE TABLE $table_name (
                 id bigint(20) NOT NULL AUTO_INCREMENT,
                 user_id bigint(20) NOT NULL,
@@ -526,11 +473,13 @@ class Spiral_Tower_Achievement_Manager
                 KEY awarded_date (awarded_date),
                 UNIQUE KEY user_achievement (user_id, achievement_key)
             ) $charset_collate;";
-
+    
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             dbDelta($sql);
-
+            
             error_log("Spiral Tower: Created new achievement table");
+        } else {
+            error_log("Spiral Tower: Achievement table already exists, skipping creation");
         }
     }
 
@@ -548,8 +497,6 @@ class Spiral_Tower_Achievement_Manager
             return false;
         }
 
-        error_log("Spiral Tower: Found achievement definition for '{$achievement_key}': " . print_r($achievement, true));
-
         // Check if achievement is repeatable
         if (!$achievement['repeatable']) {
             // Check if user already has this achievement
@@ -561,8 +508,6 @@ class Spiral_Tower_Achievement_Manager
 
         // Award the achievement
         $table_name = $wpdb->prefix . 'spiral_tower_user_achievements';
-
-        error_log("Spiral Tower: Inserting achievement '{$achievement_key}' for user {$user_id} into table {$table_name}");
 
         $result = $wpdb->insert(
             $table_name,
@@ -576,8 +521,6 @@ class Spiral_Tower_Achievement_Manager
 
         // Log the achievement award
         if ($result !== false) {
-            error_log("Spiral Tower: Achievement '{$achievement_key}' successfully awarded to user {$user_id}");
-
             // Clear cache for this user/achievement
             if (isset($this->user_achievement_cache[$user_id][$achievement_key])) {
                 unset($this->user_achievement_cache[$user_id][$achievement_key]);
@@ -591,8 +534,6 @@ class Spiral_Tower_Achievement_Manager
                 'points' => $achievement['points'],
                 'image' => $achievement['image']
             );
-
-            error_log("Spiral Tower: Added achievement to frontend queue: " . print_r($this->newly_awarded_achievements[count($this->newly_awarded_achievements) - 1], true));
 
             // You could add a hook here for other plugins to listen to
             do_action('spiral_tower_achievement_awarded', $user_id, $achievement_key, $achievement);
@@ -624,21 +565,14 @@ class Spiral_Tower_Achievement_Manager
      */
     public function add_achievement_data_to_frontend()
     {
-        error_log("Spiral Tower: add_achievement_data_to_frontend called");
-        error_log("Spiral Tower: newly_awarded_achievements count: " . count($this->newly_awarded_achievements));
-        error_log("Spiral Tower: newly_awarded_achievements content: " . wp_json_encode($this->newly_awarded_achievements));
-
         // Only add data if we're on a floor/room page and have newly awarded achievements
         if (!$this->has_newly_awarded_achievements()) {
-            error_log("Spiral Tower: No newly awarded achievements to pass to frontend");
             return;
         }
 
         $achievement_data = array(
             'achievements' => $this->get_newly_awarded_achievements()
         );
-
-        error_log("Spiral Tower: Passing achievement data to frontend: " . wp_json_encode($achievement_data));
 
         // Output the data directly as inline JavaScript
         echo '<script type="text/javascript">';

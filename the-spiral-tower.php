@@ -766,8 +766,6 @@ function spiral_tower_enqueue_admin_scripts($hook)
 {
     global $post;
 
-    error_log("Spiral Tower: spiral_tower_enqueue_admin_scripts called with hook: {$hook}");
-
     // Define on which hooks the main admin loader script should be loaded
     $load_loader_script_on_hooks = array(
         'post.php',
@@ -807,8 +805,6 @@ function spiral_tower_enqueue_admin_scripts($hook)
         wp_enqueue_script('jquery-ui-widget');
         wp_enqueue_script('jquery-ui-accordion');
         wp_enqueue_style('wp-jquery-ui-dialog'); // This includes accordion styles
-
-        error_log("Spiral Tower: Enqueued jQuery UI components for profile page");
     }
 
     // Set up dependencies
@@ -828,8 +824,6 @@ function spiral_tower_enqueue_admin_scripts($hook)
         true // Load in footer
     );
 
-    error_log("Spiral Tower: Enqueued spiral-tower-loader-admin on {$hook} with dependencies: " . implode(', ', $dependencies));
-
     // Localize data for image generator (only on post edit screens)
     if (($hook === 'post.php' || $hook === 'post-new.php') && $post && in_array(get_post_type($post), array('floor', 'room'))) {
         wp_localize_script(
@@ -839,7 +833,6 @@ function spiral_tower_enqueue_admin_scripts($hook)
                 'nonce' => wp_create_nonce('spiral_tower_generate_image_nonce')
             )
         );
-        error_log("Spiral Tower: Localized spiralTowerImageGenerator data for post edit");
     }
 
     // Enqueue media uploader for achievement images on floor/room edit pages
@@ -848,7 +841,6 @@ function spiral_tower_enqueue_admin_scripts($hook)
         if (in_array($post_type, array('floor', 'room')) && current_user_can('administrator')) {
             // Enqueue WordPress media uploader
             wp_enqueue_media();
-            error_log("Spiral Tower: Enqueued media uploader for {$post_type} edit page");
         }
     }
 }
@@ -1060,51 +1052,6 @@ function spiral_tower_get_user_profile_url($user_id)
         return $spiral_tower_plugin->user_profile_manager->get_user_profile_url($user_id);
     }
     return false;
-}
-
-function spiral_tower_debug_admin_scripts()
-{
-    if (!is_admin() || !current_user_can('manage_options')) {
-        return;
-    }
-
-    $current_screen = get_current_screen();
-    $hook_suffix = $current_screen ? $current_screen->id : 'unknown';
-
-    error_log("=== Spiral Tower Debug Info ===");
-    error_log("Current hook: " . $hook_suffix);
-    error_log("Current URL: " . (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'unknown'));
-    error_log("SPIRAL_TOWER_PLUGIN_URL: " . (defined('SPIRAL_TOWER_PLUGIN_URL') ? SPIRAL_TOWER_PLUGIN_URL : 'NOT DEFINED'));
-    error_log("SPIRAL_TOWER_VERSION: " . (defined('SPIRAL_TOWER_VERSION') ? SPIRAL_TOWER_VERSION : 'NOT DEFINED'));
-
-    // Check what scripts are enqueued
-    global $wp_scripts;
-    if (isset($wp_scripts->registered['spiral-tower-loader-admin'])) {
-        error_log("spiral-tower-loader-admin is registered");
-        $script = $wp_scripts->registered['spiral-tower-loader-admin'];
-        error_log("Script src: " . $script->src);
-        error_log("Script deps: " . implode(', ', $script->deps));
-    } else {
-        error_log("spiral-tower-loader-admin is NOT registered");
-    }
-
-    if (isset($wp_scripts->queue) && in_array('spiral-tower-loader-admin', $wp_scripts->queue)) {
-        error_log("spiral-tower-loader-admin is in queue");
-    } else {
-        error_log("spiral-tower-loader-admin is NOT in queue");
-    }
-
-    // Check jQuery UI scripts
-    $jquery_ui_scripts = ['jquery-ui-core', 'jquery-ui-widget', 'jquery-ui-accordion'];
-    foreach ($jquery_ui_scripts as $script) {
-        if (wp_script_is($script, 'enqueued')) {
-            error_log("{$script} is enqueued");
-        } else {
-            error_log("{$script} is NOT enqueued");
-        }
-    }
-
-    error_log("=== End Debug Info ===");
 }
 
 /**

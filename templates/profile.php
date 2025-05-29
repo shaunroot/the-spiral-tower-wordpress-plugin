@@ -120,6 +120,77 @@ $avatar_url = $spiral_tower_plugin->user_profile_manager->get_user_avatar_url($u
             }
         }
         ?>
+
+
+
+
+
+
+            <?php
+            // Achievement Grid
+            if (isset($spiral_tower_plugin->achievement_manager)) {
+                $achievement_manager = $spiral_tower_plugin->achievement_manager;
+                $user_achievements = $achievement_manager->get_user_achievements($user->ID);
+                $all_achievements = $achievement_manager->get_achievements();
+
+                // Add any dynamic achievements the user has earned
+                foreach ($user_achievements as $user_achievement) {
+                    if (!isset($all_achievements[$user_achievement->achievement_key])) {
+                        // This is a dynamic achievement, get its definition
+                        $dynamic_achievement = $achievement_manager->get_achievement($user_achievement->achievement_key);
+                        if ($dynamic_achievement) {
+                            // Don't show description for floor/room achievements to keep them mysterious
+                            if (
+                                strpos($user_achievement->achievement_key, 'floor_') === 0 ||
+                                strpos($user_achievement->achievement_key, 'room_') === 0
+                            ) {
+                                $dynamic_achievement['description'] = '';
+                            }
+                            $all_achievements[$user_achievement->achievement_key] = $dynamic_achievement;
+                        }
+                    }
+                }
+
+                // Create array of earned achievement keys for quick lookup
+                $earned_keys = array();
+                foreach ($user_achievements as $achievement) {
+                    $earned_keys[] = $achievement->achievement_key;
+                }
+
+                if (!empty($all_achievements)) {
+                    ?>
+                    <h2>
+                        Achievements
+                    </h2>
+                    <div class="profile-achievements">
+                        <div class="achievements-grid">
+                            <?php foreach ($all_achievements as $key => $achievement): ?>
+                                <?php $is_earned = in_array($key, $earned_keys); ?>
+                                <div class="achievement-item <?php echo $is_earned ? 'earned' : 'locked'; ?>">
+
+                                    <div class="achievement-image">
+                                        <?php if ($is_earned): ?>
+                                            <img src="<?php echo esc_url($achievement['image']); ?>" 
+                                                data-description="<?php echo esc_html($achievement['description']); ?>" />
+                                        <?php else: ?>
+                                            <img src="<?php echo esc_url(SPIRAL_TOWER_PLUGIN_URL . 'assets/images/achievements/locked.png'); ?>"
+                                                alt="Locked Achievement" />
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php
+                }
+            }
+            ?>
+
+
+
+
+
+
             <div class="profile-floors">
                 <h2>
                     Floors Created (<?php echo $user_floors->found_posts; ?>)

@@ -38,7 +38,6 @@ class Spiral_Tower_Floor_Manager
 
         // Floor author specific features
         add_filter('user_has_cap', array($this, 'restrict_floor_editing'), 10, 3);
-        add_filter('acf/load_field', array($this, 'restrict_floor_number_field')); // Keep original ACF filter if needed
         add_action('pre_get_posts', array($this, 'filter_floors_for_authors'));
         add_action('wp_dashboard_setup', array($this, 'add_floor_author_dashboard_widget'));
         add_filter('get_edit_post_link', array($this, 'add_edit_link_for_floor_authors'), 10, 2);
@@ -907,22 +906,6 @@ class Spiral_Tower_Floor_Manager
             }
         }
         return $allcaps;
-    }
-
-    /**
-     * Restrict access to floor number field in the editor (Original ACF method)
-     */
-    public function restrict_floor_number_field($field)
-    {
-        if (!isset($field['name']) || $field['name'] !== '_floor_number') {
-            return $field;
-        }
-        $user = wp_get_current_user();
-        if (in_array('administrator', (array) $user->roles) || in_array('editor', (array) $user->roles)) {
-            return $field;
-        }
-        $field['readonly'] = true;
-        return $field;
     }
 
     /**

@@ -34,12 +34,17 @@ class Spiral_Tower_User_Profile_Manager
         add_action('wp_ajax_upload_profile_avatar', array($this, 'handle_avatar_upload'));
         add_action('init', array($this, 'create_avatar_upload_directory'));
 
-        // --- NEW: Hooks for Tower Activity Section ---
+        // Hooks for Tower Activity Section
         add_action('show_user_profile', array($this, 'display_user_tower_activity_section'));
         add_action('edit_user_profile', array($this, 'display_user_tower_activity_section'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_profile_activity_scripts_styles'), 20); // Higher priority number = runs later
         add_action('wp_ajax_spiral_tower_get_user_activity', array($this, 'handle_ajax_get_user_activity'));
-        // --- END NEW ---
+
+
+        // Achievements
+        add_action('show_user_profile', array($this, 'display_user_achievements_section'), 5);
+        add_action('edit_user_profile', array($this, 'display_user_achievements_section'), 5);
+
     }
 
     /**
@@ -47,7 +52,8 @@ class Spiral_Tower_User_Profile_Manager
      * Call this from your main plugin file after both managers are instantiated.
      * Example in main plugin: $this->user_profile_manager->set_log_manager($this->log_manager);
      */
-    public function set_log_manager($log_manager) {
+    public function set_log_manager($log_manager)
+    {
         $this->log_manager_instance = $log_manager;
     }
 
@@ -83,10 +89,11 @@ class Spiral_Tower_User_Profile_Manager
      * Enqueue scripts and styles for the profile activity accordion.
      * FIXED: Better dependency management and error handling
      */
-    public function enqueue_profile_activity_scripts_styles($hook_suffix) {
+    public function enqueue_profile_activity_scripts_styles($hook_suffix)
+    {
         // DEBUG: Log that this function is called
         file_put_contents(WP_CONTENT_DIR . '/spiral-tower-debug.txt', date('Y-m-d H:i:s') . " - User Profile Manager enqueue function called with hook: {$hook_suffix}\n", FILE_APPEND);
-        
+
         // Only load on profile pages
         if ($hook_suffix !== 'profile.php' && $hook_suffix !== 'user-edit.php') {
             file_put_contents(WP_CONTENT_DIR . '/spiral-tower-debug.txt', date('Y-m-d H:i:s') . " - Skipping User Profile Manager - not a profile page\n", FILE_APPEND);
@@ -119,9 +126,9 @@ class Spiral_Tower_User_Profile_Manager
                 $profile_user_id = isset($_GET['user_id']) ? absint($_GET['user_id']) : 0;
             }
         }
-        
+
         error_log("Spiral Tower Profile Manager: Profile user ID determined as: {$profile_user_id}");
-        
+
         // Localize data for the AJAX calls
         wp_localize_script(
             $main_admin_script_handle,
@@ -177,7 +184,7 @@ class Spiral_Tower_User_Profile_Manager
                 margin-bottom: 6px; 
             }
         ";
-        
+
         // Try to add inline CSS to jQuery UI style if it exists
         if (wp_style_is('wp-jquery-ui-dialog', 'enqueued')) {
             wp_add_inline_style('wp-jquery-ui-dialog', $custom_css);
@@ -238,27 +245,33 @@ class Spiral_Tower_User_Profile_Manager
         <h3><?php esc_html_e('Spiral Tower Profile Avatar', 'spiral-tower'); ?></h3>
         <table class="form-table">
             <tr>
-                <th><label for="spiral_tower_avatar_upload_field"><?php esc_html_e('Profile Avatar', 'spiral-tower'); ?></label></th>
+                <th><label for="spiral_tower_avatar_upload_field"><?php esc_html_e('Profile Avatar', 'spiral-tower'); ?></label>
+                </th>
                 <td>
                     <div id="spiral-tower-avatar-preview"
-                         style="width: 96px; height: 96px; margin-bottom: 10px; background-size: cover; background-position: center; border-radius: 50%; border: 1px solid #ddd; <?php echo $avatar_url && $avatar_url !== SPIRAL_TOWER_PLUGIN_URL . 'assets/images/default-avatar.jpg' ? "background-image: url('" . esc_url($avatar_url) . "');" : "background-color: #f0f0f0;"; ?>">
+                        style="width: 96px; height: 96px; margin-bottom: 10px; background-size: cover; background-position: center; border-radius: 50%; border: 1px solid #ddd; <?php echo $avatar_url && $avatar_url !== SPIRAL_TOWER_PLUGIN_URL . 'assets/images/default-avatar.jpg' ? "background-image: url('" . esc_url($avatar_url) . "');" : "background-color: #f0f0f0;"; ?>">
                     </div>
-                    <input type="hidden" name="spiral_tower_avatar" id="spiral_tower_avatar_path_hidden" 
-                           value="<?php echo esc_attr(get_user_meta($user->ID, 'spiral_tower_avatar', true)); ?>" />
-                    <input type="file" id="spiral_tower_avatar_upload_field" name="spiral_tower_avatar_upload_field_name" accept="image/jpeg, image/png, image/gif" />
-                    <p class="description"><?php esc_html_e('Select an image for your Spiral Tower profile (JPG, PNG or GIF). Image will upload automatically when selected.', 'spiral-tower'); ?></p>
+                    <input type="hidden" name="spiral_tower_avatar" id="spiral_tower_avatar_path_hidden"
+                        value="<?php echo esc_attr(get_user_meta($user->ID, 'spiral_tower_avatar', true)); ?>" />
+                    <input type="file" id="spiral_tower_avatar_upload_field" name="spiral_tower_avatar_upload_field_name"
+                        accept="image/jpeg, image/png, image/gif" />
+                    <p class="description">
+                        <?php esc_html_e('Select an image for your Spiral Tower profile (JPG, PNG or GIF). Image will upload automatically when selected.', 'spiral-tower'); ?>
+                    </p>
 
                     <div id="spiral_tower_avatar_upload_status" style="margin-top: 10px; display: none;">
                         <span class="spinner is-active" style="float: left; margin-right: 5px;"></span>
                         <span class="status-text"><?php esc_html_e('Uploading image...', 'spiral-tower'); ?></span>
                     </div>
 
-                    <?php 
+                    <?php
                     $current_avatar_path = get_user_meta($user->ID, 'spiral_tower_avatar', true);
                     if (!empty($current_avatar_path)): ?>
-                        <button type="button" class="button" id="spiral_tower_remove_avatar_button" style="margin-top:5px;"><?php esc_html_e('Remove Avatar', 'spiral-tower'); ?></button>
+                        <button type="button" class="button" id="spiral_tower_remove_avatar_button"
+                            style="margin-top:5px;"><?php esc_html_e('Remove Avatar', 'spiral-tower'); ?></button>
                     <?php else: ?>
-                        <button type="button" class="button" id="spiral_tower_remove_avatar_button" style="display:none; margin-top:5px;"><?php esc_html_e('Remove Avatar', 'spiral-tower'); ?></button>
+                        <button type="button" class="button" id="spiral_tower_remove_avatar_button"
+                            style="display:none; margin-top:5px;"><?php esc_html_e('Remove Avatar', 'spiral-tower'); ?></button>
                     <?php endif; ?>
 
                     <script type="text/javascript">
@@ -304,7 +317,7 @@ class Spiral_Tower_User_Profile_Manager
                                             } else { alert(response.data.message || '<?php echo esc_js(__('Removal failed', 'spiral-tower')); ?>'); }
                                         },
                                         error: function () {
-                                            $('#spiral_tower_avatar_upload_status').hide(); 
+                                            $('#spiral_tower_avatar_upload_status').hide();
                                             alert('<?php echo esc_js(__('Removal failed. Please try again.', 'spiral-tower')); ?>');
                                         }
                                     });
@@ -327,10 +340,10 @@ class Spiral_Tower_User_Profile_Manager
         check_ajax_referer('spiral_tower_upload_avatar', 'security');
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
         if (!current_user_can('edit_user', $user_id) && !current_user_can('upload_files')) {
-             if(get_current_user_id() !== $user_id || !current_user_can('read') ){
+            if (get_current_user_id() !== $user_id || !current_user_can('read')) {
                 wp_send_json_error(array('message' => 'You do not have permission to edit this user or upload files.'));
                 return;
-             }
+            }
         }
 
         $upload_dir_info = wp_upload_dir();
@@ -345,7 +358,7 @@ class Spiral_Tower_User_Profile_Manager
                 }
             }
             delete_user_meta($user_id, 'spiral_tower_avatar');
-            wp_send_json_success(array('message' => 'Avatar removed successfully.', 'avatar_url' => $this->get_user_avatar_url($user_id) ));
+            wp_send_json_success(array('message' => 'Avatar removed successfully.', 'avatar_url' => $this->get_user_avatar_url($user_id)));
             return;
         }
 
@@ -405,7 +418,7 @@ class Spiral_Tower_User_Profile_Manager
             return false;
         }
         if (isset($_POST['spiral_tower_avatar_path_hidden'])) {
-             // update_user_meta($user_id, 'spiral_tower_avatar', sanitize_text_field($_POST['spiral_tower_avatar_path_hidden']));
+            // update_user_meta($user_id, 'spiral_tower_avatar', sanitize_text_field($_POST['spiral_tower_avatar_path_hidden']));
         }
         return true;
     }
@@ -485,7 +498,8 @@ class Spiral_Tower_User_Profile_Manager
     /**
      * Display the Tower Activity accordion section on the user profile page.
      */
-    public function display_user_tower_activity_section($user) {
+    public function display_user_tower_activity_section($user)
+    {
         // Show only to users who can manage options (typically Admins)
         if (!current_user_can('manage_options')) {
             return;
@@ -495,7 +509,9 @@ class Spiral_Tower_User_Profile_Manager
         ?>
         <hr>
         <h2><?php esc_html_e('Spiral Tower Activity', 'spiral-tower'); ?></h2>
-        <p class="description"><?php esc_html_e('Activity records for Floors and Rooms visited by this user.', 'spiral-tower'); ?></p>
+        <p class="description">
+            <?php esc_html_e('Activity records for Floors and Rooms visited by this user.', 'spiral-tower'); ?>
+        </p>
         <div id="tower-activity-accordion" data-userid="<?php echo esc_attr($profile_user_id); ?>">
             <h3><a href="#"><?php esc_html_e('Floors Visited', 'spiral-tower'); ?></a></h3>
             <div class="tower-activity-panel" id="visited-floors-content" data-posttype="floor" data-fetchtype="visited">
@@ -518,19 +534,19 @@ class Spiral_Tower_User_Profile_Manager
             </div>
         </div>
         <script type="text/javascript">
-        // DEBUG: Check what's available in the browser
-        jQuery(document).ready(function($) {
-            console.log('=== Spiral Tower Profile Debug ===');
-            console.log('jQuery available:', typeof jQuery !== 'undefined');
-            console.log('jQuery UI available:', typeof jQuery.ui !== 'undefined');
-            console.log('jQuery UI Accordion available:', typeof jQuery.ui !== 'undefined' && typeof jQuery.ui.accordion !== 'undefined');
-            console.log('spiralTowerProfileData available:', typeof spiralTowerProfileData !== 'undefined');
-            if (typeof spiralTowerProfileData !== 'undefined') {
-                console.log('spiralTowerProfileData contents:', spiralTowerProfileData);
-            }
-            console.log('SpiralTower available:', typeof SpiralTower !== 'undefined');
-            console.log('=== End Debug ===');
-        });
+            // DEBUG: Check what's available in the browser
+            jQuery(document).ready(function ($) {
+                console.log('=== Spiral Tower Profile Debug ===');
+                console.log('jQuery available:', typeof jQuery !== 'undefined');
+                console.log('jQuery UI available:', typeof jQuery.ui !== 'undefined');
+                console.log('jQuery UI Accordion available:', typeof jQuery.ui !== 'undefined' && typeof jQuery.ui.accordion !== 'undefined');
+                console.log('spiralTowerProfileData available:', typeof spiralTowerProfileData !== 'undefined');
+                if (typeof spiralTowerProfileData !== 'undefined') {
+                    console.log('spiralTowerProfileData contents:', spiralTowerProfileData);
+                }
+                console.log('SpiralTower available:', typeof SpiralTower !== 'undefined');
+                console.log('=== End Debug ===');
+            });
         </script>
         <?php
     }
@@ -538,7 +554,8 @@ class Spiral_Tower_User_Profile_Manager
     /**
      * Handle AJAX request to get user activity data.
      */
-    public function handle_ajax_get_user_activity() {
+    public function handle_ajax_get_user_activity()
+    {
         check_ajax_referer('spiral_tower_user_activity_nonce', 'nonce');
 
         if (!current_user_can('manage_options')) {
@@ -587,7 +604,7 @@ class Spiral_Tower_User_Profile_Manager
             }
             $post_permalink = get_permalink($post_item->ID);
             $post_edit_link = get_edit_post_link($post_item->ID);
-            
+
             $html_list .= '<li>';
             if ($post_permalink) {
                 $html_list .= '<a href="' . esc_url($post_permalink) . '" target="_blank">' . esc_html($post_item->post_title) . '</a>';
@@ -596,13 +613,382 @@ class Spiral_Tower_User_Profile_Manager
             }
 
             if (current_user_can('edit_post', $post_item->ID) && $post_edit_link) {
-                 $html_list .= ' (<a href="' . esc_url($post_edit_link) . '" target="_blank">' . __('Edit', 'spiral-tower') . '</a>)';
+                $html_list .= ' (<a href="' . esc_url($post_edit_link) . '" target="_blank">' . __('Edit', 'spiral-tower') . '</a>)';
             }
             $html_list .= '</li>';
         }
         $html_list .= '</ul>';
 
         wp_send_json_success(array('html' => $html_list));
+    }
+
+    public function display_user_achievements_section($user)
+    {
+        global $spiral_tower_plugin;
+
+        if (!isset($spiral_tower_plugin->achievement_manager)) {
+            return;
+        }
+
+        $achievement_manager = $spiral_tower_plugin->achievement_manager;
+        $user_achievements = $achievement_manager->get_user_achievements($user->ID);
+        $all_achievements = $achievement_manager->get_achievements();
+        $total_points = $achievement_manager->get_user_total_points($user->ID);
+
+        // Create array of earned achievement keys for quick lookup
+        $earned_keys = array();
+        foreach ($user_achievements as $achievement) {
+            $earned_keys[] = $achievement->achievement_key;
+        }
+
+        ?>
+        <h3>Spiral Tower Achievements</h3>
+        <table class="form-table">
+            <tr>
+                <th scope="row">Achievement Progress</th>
+                <td>
+                    <div class="spiral-tower-achievements-container">
+                        <div class="achievements-summary">
+                            <p><strong><?php echo count($user_achievements); ?></strong> achievements earned •
+                                <strong><?php echo $total_points; ?></strong> total points
+                            </p>
+                        </div>
+
+                        <div class="achievements-grid">
+                            <?php foreach ($all_achievements as $key => $achievement): ?>
+                                <?php $is_earned = in_array($key, $earned_keys); ?>
+                                <div class="achievement-item <?php echo $is_earned ? 'earned' : 'locked'; ?>">
+                                    <?php if ($is_earned): ?>
+                                        <img src="<?php echo esc_url($achievement['image']); ?>"
+                                            alt="<?php echo esc_attr($achievement['title']); ?>"
+                                            title="<?php echo esc_attr($achievement['title'] . ' - ' . $achievement['description']); ?>" />
+                                        <div class="achievement-info">
+                                            <div class="achievement-title"><?php echo esc_html($achievement['title']); ?></div>
+                                            <div class="achievement-description"><?php echo esc_html($achievement['description']); ?>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <img src="<?php echo esc_url(SPIRAL_TOWER_PLUGIN_URL . 'assets/images/achievements/locked.png'); ?>"
+                                            alt="Locked Achievement" title="Hidden Achievement" />
+                                        <div class="achievement-info">
+                                            <div class="achievement-title">???</div>
+                                            <div class="achievement-description">Hidden Achievement</div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <style>
+                        .spiral-tower-achievements-container {
+                            max-width: 600px;
+                        }
+
+                        .achievements-summary {
+                            margin-bottom: 15px;
+                            padding: 10px;
+                            background: #f9f9f9;
+                            border-left: 4px solid #0073aa;
+                        }
+
+                        .achievements-grid {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                            gap: 15px;
+                            margin-top: 10px;
+                        }
+
+                        .achievement-item {
+                            text-align: center;
+                            padding: 10px;
+                            border: 1px solid #ddd;
+                            border-radius: 8px;
+                            background: #fff;
+                            transition: transform 0.2s, box-shadow 0.2s;
+                        }
+
+                        .achievement-item.earned {
+                            border-color: #00a32a;
+                            background: #f0fff4;
+                        }
+
+                        .achievement-item.earned:hover {
+                            transform: translateY(-2px);
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                        }
+
+                        .achievement-item.locked {
+                            opacity: 0.5;
+                            background: #f5f5f5;
+                        }
+
+                        .achievement-item img {
+                            width: 64px;
+                            height: 64px;
+                            display: block;
+                            margin: 0 auto 8px;
+                            border-radius: 4px;
+                        }
+
+                        .achievement-info {
+                            font-size: 12px;
+                        }
+
+                        .achievement-title {
+                            font-weight: bold;
+                            margin-bottom: 4px;
+                            color: #333;
+                        }
+
+                        .achievement-description {
+                            color: #666;
+                            line-height: 1.3;
+                        }
+
+                        .achievement-item.locked .achievement-title,
+                        .achievement-item.locked .achievement-description {
+                            color: #999;
+                        }
+                    </style>
+                </td>
+            </tr>
+        </table>
+        <?php
+    }
+
+    /**
+     * Get user achievements data for frontend profile template
+     * Add this method to be used in your profile.php template
+     */
+    public function get_user_achievements_data($user_id)
+    {
+        global $spiral_tower_plugin;
+
+        if (!isset($spiral_tower_plugin->achievement_manager)) {
+            return array(
+                'achievements' => array(),
+                'all_achievements' => array(),
+                'total_points' => 0,
+                'earned_count' => 0
+            );
+        }
+
+        $achievement_manager = $spiral_tower_plugin->achievement_manager;
+        $user_achievements = $achievement_manager->get_user_achievements($user_id);
+        $all_achievements = $achievement_manager->get_achievements();
+        $total_points = $achievement_manager->get_user_total_points($user_id);
+
+        // Create array of earned achievement keys for quick lookup
+        $earned_keys = array();
+        foreach ($user_achievements as $achievement) {
+            $earned_keys[] = $achievement->achievement_key;
+        }
+
+        return array(
+            'achievements' => $user_achievements,
+            'all_achievements' => $all_achievements,
+            'earned_keys' => $earned_keys,
+            'total_points' => $total_points,
+            'earned_count' => count($user_achievements)
+        );
+    }
+
+    /**
+     * Render achievements grid HTML (can be used in templates)
+     */
+    public function render_achievements_grid($user_id, $show_summary = true)
+    {
+        $data = $this->get_user_achievements_data($user_id);
+
+        if (empty($data['all_achievements'])) {
+            return;
+        }
+
+        ?>
+        <div class="spiral-tower-achievements-section">
+            <?php if ($show_summary): ?>
+                <div class="achievements-summary">
+                    <h3>Achievements</h3>
+                    <p><strong><?php echo $data['earned_count']; ?></strong> achievements earned •
+                        <strong><?php echo $data['total_points']; ?></strong> total points</p>
+                </div>
+            <?php endif; ?>
+
+            <div class="achievements-grid">
+                <?php foreach ($data['all_achievements'] as $key => $achievement): ?>
+                    <?php $is_earned = in_array($key, $data['earned_keys']); ?>
+                    <div class="achievement-item <?php echo $is_earned ? 'earned' : 'locked'; ?>">
+                        <?php if ($is_earned): ?>
+                            <img src="<?php echo esc_url($achievement['image']); ?>"
+                                alt="<?php echo esc_attr($achievement['title']); ?>"
+                                title="<?php echo esc_attr($achievement['title'] . ' - ' . $achievement['description']); ?>" />
+                            <div class="achievement-info">
+                                <div class="achievement-title"><?php echo esc_html($achievement['title']); ?></div>
+                                <div class="achievement-description"><?php echo esc_html($achievement['description']); ?></div>
+                            </div>
+                        <?php else: ?>
+                            <img src="<?php echo esc_url(SPIRAL_TOWER_PLUGIN_URL . 'assets/images/achievements/locked.png'); ?>"
+                                alt="Locked Achievement" title="Hidden Achievement" />
+                            <div class="achievement-info">
+                                <div class="achievement-title">???</div>
+                                <div class="achievement-description">Hidden Achievement</div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <style>
+            .spiral-tower-achievements-section {
+                margin: 20px 0;
+            }
+
+            .achievements-summary {
+                margin-bottom: 20px;
+                padding: 15px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border-radius: 8px;
+                text-align: center;
+            }
+
+            .achievements-summary h3 {
+                margin: 0 0 10px 0;
+                color: white;
+            }
+
+            .achievements-summary p {
+                margin: 0;
+                font-size: 16px;
+            }
+
+            .achievements-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 20px;
+                margin-top: 20px;
+            }
+
+            .achievement-item {
+                text-align: center;
+                padding: 15px;
+                border: 2px solid #ddd;
+                border-radius: 12px;
+                background: #fff;
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .achievement-item.earned {
+                border-color: #00a32a;
+                background: linear-gradient(145deg, #f0fff4, #e8f5e8);
+                box-shadow: 0 4px 12px rgba(0, 163, 42, 0.2);
+            }
+
+            .achievement-item.earned:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0, 163, 42, 0.3);
+            }
+
+            .achievement-item.locked {
+                opacity: 0.4;
+                background: #f8f8f8;
+                border-color: #ccc;
+            }
+
+            .achievement-item.locked:hover {
+                opacity: 0.6;
+            }
+
+            .achievement-item img {
+                width: 80px;
+                height: 80px;
+                display: block;
+                margin: 0 auto 12px;
+                border-radius: 8px;
+                transition: transform 0.2s ease;
+            }
+
+            .achievement-item.earned img:hover {
+                transform: scale(1.1);
+            }
+
+            .achievement-info {
+                font-size: 13px;
+            }
+
+            .achievement-title {
+                font-weight: bold;
+                margin-bottom: 6px;
+                color: #333;
+                font-size: 14px;
+            }
+
+            .achievement-description {
+                color: #666;
+                line-height: 1.4;
+                font-size: 12px;
+            }
+
+            .achievement-item.locked .achievement-title,
+            .achievement-item.locked .achievement-description {
+                color: #999;
+            }
+
+            .achievement-item.earned::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+                transform: rotate(45deg);
+                transition: all 0.5s;
+                opacity: 0;
+            }
+
+            .achievement-item.earned:hover::before {
+                animation: shine 0.5s ease-in-out;
+            }
+
+            @keyframes shine {
+                0% {
+                    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+                    opacity: 0;
+                }
+
+                50% {
+                    opacity: 1;
+                }
+
+                100% {
+                    transform: translateX(100%) translateY(100%) rotate(45deg);
+                    opacity: 0;
+                }
+            }
+
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .achievements-grid {
+                    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                    gap: 15px;
+                }
+
+                .achievement-item {
+                    padding: 12px;
+                }
+
+                .achievement-item img {
+                    width: 60px;
+                    height: 60px;
+                }
+            }
+        </style>
+        <?php
     }
 }
 ?>
