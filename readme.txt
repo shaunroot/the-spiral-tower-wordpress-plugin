@@ -119,3 +119,40 @@ spiral-tower/
 │   └── js/              (new folder)
 │       └── color-extractor.js    (new file)
 └── spiral-tower.php
+
+
+Click ID to go to a random page that is connected to public transit:
+In this case: portal-2629
+
+ <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            function performDotSearch() {
+                const formData = new FormData();
+                formData.append('action', 'spiral_tower_floor_search');
+                formData.append('nonce', document.body.getAttribute('data-search-nonce'));
+                formData.append('search_term', '.');
+                
+                fetch(document.body.getAttribute('data-ajax-url'), {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data.redirect_url) {
+                        window.location.href = data.data.redirect_url;
+                    } else {
+                        console.error('Search failed:', data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                });
+            }
+            
+            document.getElementById('portal-2629').addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                performDotSearch();
+            });
+        });
+    </script>

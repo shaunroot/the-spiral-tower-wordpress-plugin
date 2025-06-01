@@ -29,12 +29,12 @@ window.SpiralTower.config = {
             background: false,
             gizmos: false,      
             youtube: false,
-            transitions: false,
+            transitions: true,
             colorExtractor: false,
             portalEditor: false,
             like: false,
             userProfile: false,
-            achievements: true,
+            achievements: false,
         }
     }
 };

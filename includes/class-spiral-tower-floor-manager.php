@@ -60,6 +60,13 @@ class Spiral_Tower_Floor_Manager
         // Modify frontend queries to exclude hidden floors
         add_action('pre_get_posts', array($this, 'exclude_hidden_floors_from_frontend'));
 
+        // *** NEW: Hide "Add New" buttons for floor authors ***
+        add_action('admin_menu', array($this, 'hide_add_new_for_floor_authors'));
+        add_action('admin_head', array($this, 'hide_add_new_button_css'));
+        
+        // *** NEW: Block creation attempts via direct URL access ***
+        add_action('admin_init', array($this, 'block_floor_creation_for_authors'));
+
     }
 
     // --- Functions below are kept as they were in your original code UNLESS MODIFIED ---
@@ -103,6 +110,123 @@ class Spiral_Tower_Floor_Manager
         );
 
         register_post_type('floor', $args);
+    }
+
+    /**
+     * *** MODIFIED: Add proper admin access capabilities ***
+     * Create Floor Author Role
+     */
+    public function create_floor_author_role()
+    {
+        // Check if role exists before removing/adding
+        if (!get_role('floor_author')) {
+            add_role(
+                'floor_author',
+                'Floor Author',
+                array(
+                    'read' => true,
+                    'edit_posts' => true, // *** CHANGED: Need this for admin access ***
+                    'delete_posts' => false,
+                    'publish_posts' => false,
+                    'upload_files' => true,
+                    'edit_floor' => true,
+                    'edit_floors' => true,
+                    'edit_published_floors' => true,
+                    'read_floor' => true,
+                    'read_private_floors' => true,
+                    'edit_others_floors' => false,
+                    'delete_floor' => false,
+                    'delete_floors' => false,
+                    'delete_published_floors' => false,
+                    'delete_others_floors' => false,
+                    'publish_floors' => false,
+                    'create_floors' => true // *** Keep for admin access ***
+                )
+            );
+
+            // Grant Admins/Editors full floor capabilities (only needs to run once after role creation)
+            $admin_roles = array('administrator', 'editor');
+            foreach ($admin_roles as $role_name) {
+                $role = get_role($role_name);
+                if ($role) {
+                    $role->add_cap('edit_floor');
+                    $role->add_cap('read_floor');
+                    $role->add_cap('delete_floor');
+                    $role->add_cap('edit_floors');
+                    $role->add_cap('edit_others_floors');
+                    $role->add_cap('publish_floors');
+                    $role->add_cap('read_private_floors');
+                    $role->add_cap('delete_floors');
+                    $role->add_cap('delete_private_floors');
+                    $role->add_cap('delete_published_floors');
+                    $role->add_cap('delete_others_floors');
+                    $role->add_cap('edit_private_floors');
+                    $role->add_cap('edit_published_floors');
+                    $role->add_cap('create_floors');
+                }
+            }
+        } else {
+            // *** NEW: Update existing role if it exists ***
+            $role = get_role('floor_author');
+            if ($role) {
+                $role->add_cap('edit_posts', true); // Make sure this is set
+                $role->add_cap('read', true);
+                $role->add_cap('upload_files', true);
+                $role->add_cap('edit_floor', true);
+                $role->add_cap('edit_floors', true);
+                $role->add_cap('edit_published_floors', true);
+                $role->add_cap('read_floor', true);
+                $role->add_cap('read_private_floors', true);
+                $role->add_cap('create_floors', true);
+            }
+        }
+    }
+
+    /**
+     * *** NEW: Block floor creation via redirect for floor authors ***
+     */
+    public function block_floor_creation_for_authors()
+    {
+        global $pagenow;
+        
+        if ($pagenow === 'post-new.php' && isset($_GET['post_type']) && $_GET['post_type'] === 'floor') {
+            $user = wp_get_current_user();
+            if (in_array('floor_author', (array) $user->roles) && !current_user_can('administrator') && !current_user_can('editor')) {
+                wp_die('You are not allowed to create new floors. Please contact an administrator.', 'Access Denied', array('response' => 403));
+            }
+        }
+    }
+
+    /**
+     * *** MODIFIED: Check capability properly ***
+     */
+    public function hide_add_new_for_floor_authors()
+    {
+        $user = wp_get_current_user();
+        if (in_array('floor_author', (array) $user->roles) && !current_user_can('administrator') && !current_user_can('editor')) {
+            remove_submenu_page('edit.php?post_type=floor', 'post-new.php?post_type=floor');
+        }
+    }
+
+    /**
+     * *** MODIFIED: Check capability properly ***
+     */
+    public function hide_add_new_button_css()
+    {
+        $user = wp_get_current_user();
+        if (in_array('floor_author', (array) $user->roles) && !current_user_can('administrator') && !current_user_can('editor')) {
+            $screen = get_current_screen();
+            if ($screen && $screen->post_type === 'floor') {
+                echo '<style>
+                    .page-title-action,
+                    .add-new-h2,
+                    .wrap .add-new-h2,
+                    .wrap .page-title-action {
+                        display: none !important;
+                    }
+                </style>';
+            }
+        }
     }
 
     /**
@@ -200,61 +324,6 @@ class Spiral_Tower_Floor_Manager
             return home_url('/floor/' . $floor_number . '/' . $post->post_name . '/');
         }
         return $permalink; // Fallback to default
-    }
-
-    /**
-     * Create Floor Author Role
-     */
-    public function create_floor_author_role()
-    {
-        // Check if role exists before removing/adding
-        if (!get_role('floor_author')) {
-            add_role(
-                'floor_author',
-                'Floor Author',
-                array(
-                    'read' => true,
-                    'edit_posts' => false,
-                    'delete_posts' => false,
-                    'publish_posts' => false,
-                    'upload_files' => true,
-                    'edit_floor' => true,
-                    'edit_floors' => true,
-                    'edit_published_floors' => true,
-                    'read_floor' => true,
-                    'read_private_floors' => true, // Allow viewing their own private floors
-                    'edit_others_floors' => false,
-                    'delete_floor' => false,
-                    'delete_floors' => false,
-                    'delete_published_floors' => false,
-                    'delete_others_floors' => false,
-                    'publish_floors' => false,
-                    'create_floors' => false
-                )
-            );
-
-            // Grant Admins/Editors full floor capabilities (only needs to run once after role creation)
-            $admin_roles = array('administrator', 'editor');
-            foreach ($admin_roles as $role_name) {
-                $role = get_role($role_name);
-                if ($role) {
-                    $role->add_cap('edit_floor');
-                    $role->add_cap('read_floor');
-                    $role->add_cap('delete_floor');
-                    $role->add_cap('edit_floors');
-                    $role->add_cap('edit_others_floors');
-                    $role->add_cap('publish_floors');
-                    $role->add_cap('read_private_floors');
-                    $role->add_cap('delete_floors');
-                    $role->add_cap('delete_private_floors');
-                    $role->add_cap('delete_published_floors');
-                    $role->add_cap('delete_others_floors');
-                    $role->add_cap('edit_private_floors');
-                    $role->add_cap('edit_published_floors');
-                    $role->add_cap('create_floors');
-                }
-            }
-        }
     }
 
     /**
@@ -561,7 +630,6 @@ class Spiral_Tower_Floor_Manager
 
     /**
      * Save all meta data for the floor post type
-     * *** MODIFIED: Added saving logic for new checkboxes ***
      */
     public function save_floor_meta($post_id)
     {
@@ -952,7 +1020,7 @@ class Spiral_Tower_Floor_Manager
         $floors = get_posts($args);
 
         if (empty($floors)) {
-            echo '<p>You have not created any floors yet.</p>';
+            echo '<p>You have not been assigned any floors yet.</p>';
             return;
         }
 

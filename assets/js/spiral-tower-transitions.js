@@ -419,21 +419,12 @@ SpiralTower.transitions = (function () {
         'wipe-reveal': {
             enter: (wrapper, title, tl) => {
                 if (wrapper) {
-                    // Set visibility first without changing opacity
-                    gsap.set(wrapper, { visibility: 'visible' });
-
-                    if (!isBackNavigation || wrapper.style.opacity !== '1') {
-                        gsap.set(wrapper, { opacity: 0, filter: 'brightness(1.2)' });
-                        tl.to(wrapper, {
-                            opacity: 1,
-                            filter: 'brightness(1)',
-                            duration: durations.enter,
-                            ease: 'power2.out'
-                        }, 0);
-                    }
+                    gsap.set(wrapper, { visibility: 'visible', opacity: 1 });
                 }
 
                 if (title) {
+                    // Always show the title, not just when needsAnimation
+                    gsap.set(title, { visibility: 'visible' }); // Add this line
                     if (!isBackNavigation || title.style.opacity !== '1') {
                         gsap.set(title, {
                             opacity: 1,
@@ -444,12 +435,15 @@ SpiralTower.transitions = (function () {
                             duration: durations.enter * 0.7,
                             ease: 'power2.inOut'
                         }, 0.2);
+                    } else {
+                        // Ensure title is visible even for back navigation
+                        gsap.set(title, { visibility: 'visible', opacity: 1 });
                     }
                 }
 
-                // Wipe content from right to left
                 const content = document.querySelector('.spiral-tower-floor-content');
                 if (content) {
+                    gsap.set(content, { visibility: 'visible' }); // Add this line
                     if (!isBackNavigation || content.style.opacity !== '1') {
                         gsap.set(content, {
                             opacity: 1,
@@ -459,39 +453,14 @@ SpiralTower.transitions = (function () {
                             clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
                             duration: durations.enter * 0.8,
                             ease: 'power2.inOut'
-                        }, 0.4); // Start after title begins wiping
+                        }, 0.4);
+                    } else {
+                        // Ensure content is visible even for back navigation
+                        gsap.set(content, { visibility: 'visible', opacity: 1 });
                     }
                 }
             },
 
-            exit: (wrapper, title, tl) => {
-                if (title) {
-                    tl.to(title, {
-                        clipPath: 'polygon(100% 0%, 100% 0%, 100% 100%, 100% 100%)',
-                        duration: durations.exit * 0.7,
-                        ease: 'power2.inOut'
-                    }, 0);
-                }
-
-                // Wipe content from left to right (opposite direction)
-                const content = document.querySelector('.spiral-tower-floor-content');
-                if (content) {
-                    tl.to(content, {
-                        clipPath: 'polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%)',
-                        duration: durations.exit * 0.7,
-                        ease: 'power2.inOut'
-                    }, 0.1);
-                }
-
-                if (wrapper) {
-                    tl.to(wrapper, {
-                        opacity: 0,
-                        filter: 'brightness(1.2)',
-                        duration: durations.exit,
-                        ease: 'power2.in'
-                    }, 0.3);
-                }
-            }
         },
 
         'staggered-letters': {
@@ -511,43 +480,74 @@ SpiralTower.transitions = (function () {
                 }
 
                 if (title) {
-                    // Need to wrap letters for staggered animation
-                    // Check if already processed to avoid multiple wrapping
-                    if (!title.classList.contains('letters-processed')) {
-                        let titleText = title.querySelector('h1').innerHTML;
-                        let newHTML = '';
+                    // ALWAYS make title visible first
+                    gsap.set(title, { visibility: 'visible' });
 
-                        // Wrap each letter in a span
-                        for (let i = 0; i < titleText.length; i++) {
-                            if (titleText[i] === ' ') {
-                                newHTML += ' ';
-                            } else {
-                                newHTML += `<span class="letter" style="opacity:0; display:inline-block;">${titleText[i]}</span>`;
+                    if (!isBackNavigation || title.style.opacity !== '1') {
+                        // Check if we need to wrap letters for staggered animation
+                        let titleH1 = title.querySelector('h1');
+                        if (!titleH1 || !title.classList.contains('letters-processed')) {
+
+                            if (titleH1) {
+                                let titleText = titleH1.textContent || titleH1.innerText; // Use textContent to avoid HTML
+                                let newHTML = '';
+
+                                // Wrap each letter in a span
+                                for (let i = 0; i < titleText.length; i++) {
+                                    if (titleText[i] === ' ') {
+                                        newHTML += ' ';
+                                    } else {
+                                        newHTML += `<span class="letter" style="display:inline-block;">${titleText[i]}</span>`;
+                                    }
+                                }
+
+                                titleH1.innerHTML = newHTML;
+                                title.classList.add('letters-processed');
+
+                                console.log('Staggered letters: wrapped', titleText.length, 'characters');
                             }
                         }
 
-                        title.querySelector('h1').innerHTML = newHTML;
-                        title.classList.add('letters-processed');
-                    }
-
-                    // Animate each letter if needed
-                    if (!isBackNavigation || title.style.opacity !== '1') {
                         // Animate each letter
                         const letters = title.querySelectorAll('.letter');
-                        gsap.set(letters, { opacity: 0, y: -20 });
-                        tl.to(letters, {
-                            opacity: 1,
-                            y: 0,
-                            duration: 0.8,
-                            stagger: 0.03,
-                            ease: 'back.out(1.5)'
-                        }, 0.2);
+                        console.log('Staggered letters: found', letters.length, 'letter elements');
+
+                        if (letters.length > 0) {
+                            // Set initial state for letters
+                            gsap.set(letters, { opacity: 0, y: -20 });
+                            // Make sure title container is visible and opaque
+                            gsap.set(title, { opacity: 1 });
+
+                            tl.to(letters, {
+                                opacity: 1,
+                                y: 0,
+                                duration: 0.8,
+                                stagger: 0.03,
+                                ease: 'back.out(1.5)'
+                            }, 0.2);
+
+                            console.log('Staggered letters: animation added to timeline');
+                        } else {
+                            console.log('Staggered letters: no letters found, using fallback');
+                            // Fallback animation
+                            gsap.set(title, { opacity: 0 });
+                            tl.to(title, {
+                                opacity: 1,
+                                duration: durations.enter,
+                                ease: 'power2.out'
+                            }, 0.2);
+                        }
+                    } else {
+                        // Back navigation - just make sure it's visible
+                        gsap.set(title, { visibility: 'visible', opacity: 1 });
                     }
                 }
 
                 // Staggered fade in for content paragraphs
                 const content = document.querySelector('.spiral-tower-floor-content');
                 if (content) {
+                    gsap.set(content, { visibility: 'visible' }); // Make sure content is visible
+
                     if (!isBackNavigation || content.style.opacity !== '1') {
                         // Create stagger effect by paragraph or element
                         const paragraphs = content.querySelectorAll('p, h2, h3, ul, ol, blockquote');
@@ -570,6 +570,9 @@ SpiralTower.transitions = (function () {
                                 ease: 'power2.out'
                             }, 0.5);
                         }
+                    } else {
+                        // Back navigation - ensure content is visible
+                        gsap.set(content, { visibility: 'visible', opacity: 1 });
                     }
                 }
             },
@@ -626,7 +629,7 @@ SpiralTower.transitions = (function () {
                 }
             }
         },
-
+        
         //// Makes scroll bars appear?
         // 'perspective-shift': {
         //     enter: (wrapper, title, tl) => {
@@ -926,79 +929,53 @@ SpiralTower.transitions = (function () {
                 }
 
                 // Title animation - fade in with text blur and soft reveal
-                if (title && (!isBackNavigation || title.style.opacity !== '1')) {
-                    gsap.set(title, {
-                        opacity: 0,
-                        filter: 'blur(15px)',
-                        textShadow: '0 0 10px rgba(255,255,255,0.8)'
-                    });
+                if (title) {
+                    gsap.set(title, { visibility: 'visible' }); // Add this line
+                    if (!isBackNavigation || title.style.opacity !== '1') {
+                        gsap.set(title, {
+                            opacity: 0,
+                            filter: 'blur(15px)',
+                            textShadow: '0 0 10px rgba(255,255,255,0.8)'
+                        });
 
-                    tl.to(title, {
-                        opacity: 1,
-                        filter: 'blur(0px)',
-                        textShadow: '0 0 0px rgba(255,255,255,0)',
-                        duration: durations.enter * 0.8,
-                        ease: 'power2.out'
-                    }, 0.2);
+                        tl.to(title, {
+                            opacity: 1,
+                            filter: 'blur(0px)',
+                            textShadow: '0 0 0px rgba(255,255,255,0)',
+                            duration: durations.enter * 0.8,
+                            ease: 'power2.out'
+                        }, 0.2);
+                    } else {
+                        // Ensure title is visible for back navigation
+                        gsap.set(title, { visibility: 'visible', opacity: 1 });
+                    }
                 }
 
                 // Content animation - smoky reveal from opacity and blur
                 const content = document.querySelector('.spiral-tower-floor-content');
-                if (content && (!isBackNavigation || content.style.opacity !== '1')) {
-                    gsap.set(content, {
-                        opacity: 0,
-                        filter: 'blur(20px)',
-                        y: 30
-                    });
+                if (content) {
+                    gsap.set(content, { visibility: 'visible' }); // Add this line
+                    if (!isBackNavigation || content.style.opacity !== '1') {
+                        gsap.set(content, {
+                            opacity: 0,
+                            filter: 'blur(20px)',
+                            y: 30
+                        });
 
-                    tl.to(content, {
-                        opacity: 1,
-                        filter: 'blur(0px)',
-                        y: 0,
-                        duration: durations.enter,
-                        ease: 'power2.out'
-                    }, 0.4);
+                        tl.to(content, {
+                            opacity: 1,
+                            filter: 'blur(0px)',
+                            y: 0,
+                            duration: durations.enter,
+                            ease: 'power2.out'
+                        }, 0.4);
+                    } else {
+                        // Ensure content is visible for back navigation
+                        gsap.set(content, { visibility: 'visible', opacity: 1 });
+                    }
                 }
             },
 
-            exit: (wrapper, title, tl) => {
-                // Title animation - smoke away
-                if (title) {
-                    tl.to(title, {
-                        opacity: 0,
-                        filter: 'blur(15px)',
-                        textShadow: '0 0 10px rgba(255,255,255,0.8)',
-                        y: -20,
-                        scale: 1.1,
-                        duration: durations.exit * 0.7,
-                        ease: 'power2.in'
-                    }, 0);
-                }
-
-                // Content animation 
-                const content = document.querySelector('.spiral-tower-floor-content');
-                if (content) {
-                    tl.to(content, {
-                        opacity: 0,
-                        filter: 'blur(20px)',
-                        y: 30,
-                        scale: 0.95,
-                        duration: durations.exit * 0.8,
-                        ease: 'power2.in'
-                    }, 0.1);
-                }
-
-                // Wrapper animation
-                if (wrapper) {
-                    tl.to(wrapper, {
-                        opacity: 0,
-                        filter: 'blur(15px) brightness(1.3)',
-                        scale: 0.9,
-                        duration: durations.exit,
-                        ease: 'power3.in'
-                    }, 0.3);
-                }
-            }
         },
 
         'liquid-morph': {
@@ -1022,63 +999,76 @@ SpiralTower.transitions = (function () {
                     }
                 }
 
-                // Title animation - liquid wave effect without scaling
-                if (title && (!isBackNavigation || title.style.opacity !== '1')) {
-                    gsap.set(title, {
-                        opacity: 0,
-                        y: -30,
-                        scaleY: 0.7,
-                        transformOrigin: 'center top',
-                        filter: 'brightness(1.3) saturate(1.5)'
-                    });
+                // Title animation - liquid wave effect WITH proper scaleY reset
+                if (title) {
+                    gsap.set(title, { visibility: 'visible' });
+                    if (!isBackNavigation || title.style.opacity !== '1') {
+                        gsap.set(title, {
+                            opacity: 0,
+                            y: -30,
+                            scaleY: 0.7,
+                            transformOrigin: 'center top',
+                            filter: 'brightness(1.3) saturate(1.5)'
+                        });
 
-                    // Create wave-like animation
-                    tl.to(title, {
-                        opacity: 1,
-                        y: 0,
-                        scaleY: 1.2,
-                        filter: 'brightness(1.1) saturate(1.2)',
-                        duration: durations.enter * 0.6,
-                        ease: 'power2.out'
-                    }, 0.2);
+                        // Create wave-like animation with proper ending
+                        tl.to(title, {
+                            opacity: 1,
+                            y: 0,
+                            scaleY: 1.2,
+                            filter: 'brightness(1.1) saturate(1.2)',
+                            duration: durations.enter * 0.6,
+                            ease: 'power2.out'
+                        }, 0.2);
 
-                    tl.to(title, {
-                        scaleY: 0.9,
-                        duration: durations.enter * 0.3,
-                        ease: 'power1.inOut'
-                    }, 0.4);
+                        tl.to(title, {
+                            scaleY: 0.9,
+                            duration: durations.enter * 0.3,
+                            ease: 'power1.inOut'
+                        }, 0.4);
 
-                    tl.to(title, {
-                        scaleY: 1,
-                        filter: 'brightness(1) saturate(1)',
-                        duration: durations.enter * 0.3,
-                        ease: 'elastic.out(1, 0.3)'
-                    }, 0.55);
+                        // FIXED: Ensure scaleY returns to exactly 1
+                        tl.to(title, {
+                            scaleY: 1,
+                            filter: 'brightness(1) saturate(1)',
+                            duration: durations.enter * 0.3,
+                            ease: 'elastic.out(1, 0.3)'
+                        }, 0.55);
+                    } else {
+                        // Ensure title is visible and properly scaled for back navigation
+                        gsap.set(title, { visibility: 'visible', opacity: 1, scaleY: 1 });
+                    }
                 }
 
                 // Content animation - ripple without scaling
                 const content = document.querySelector('.spiral-tower-floor-content');
-                if (content && (!isBackNavigation || content.style.opacity !== '1')) {
-                    gsap.set(content, {
-                        opacity: 0,
-                        transformOrigin: 'center center',
-                        filter: 'blur(10px) saturate(0.7)'
-                    });
+                if (content) {
+                    gsap.set(content, { visibility: 'visible' });
+                    if (!isBackNavigation || content.style.opacity !== '1') {
+                        gsap.set(content, {
+                            opacity: 0,
+                            transformOrigin: 'center center',
+                            filter: 'blur(10px) saturate(0.7)'
+                        });
 
-                    // Ripple animation without scaling
-                    tl.to(content, {
-                        opacity: 0.7,
-                        filter: 'blur(3px) saturate(1.2)',
-                        duration: durations.enter * 0.5,
-                        ease: 'power2.out'
-                    }, 0.4);
+                        // Ripple animation without scaling
+                        tl.to(content, {
+                            opacity: 0.7,
+                            filter: 'blur(3px) saturate(1.2)',
+                            duration: durations.enter * 0.5,
+                            ease: 'power2.out'
+                        }, 0.4);
 
-                    tl.to(content, {
-                        opacity: 1,
-                        filter: 'blur(0px) saturate(1)',
-                        duration: durations.enter * 0.5,
-                        ease: 'power1.out'
-                    }, 0.7);
+                        tl.to(content, {
+                            opacity: 1,
+                            filter: 'blur(0px) saturate(1)',
+                            duration: durations.enter * 0.5,
+                            ease: 'power1.out'
+                        }, 0.7);
+                    } else {
+                        // Ensure content is visible for back navigation
+                        gsap.set(content, { visibility: 'visible', opacity: 1 });
+                    }
                 }
             },
 
@@ -1154,260 +1144,58 @@ SpiralTower.transitions = (function () {
                 }
 
                 // Title animation - magical appearance with glow but no scaling
-                if (title && (!isBackNavigation || title.style.opacity !== '1')) {
-                    gsap.set(title, {
-                        opacity: 0,
-                        filter: 'blur(10px) brightness(2)',
-                        textShadow: '0 0 15px rgba(255,255,255,0.8)'
-                    });
+                if (title) {
+                    gsap.set(title, { visibility: 'visible' }); // Add this line
+                    if (!isBackNavigation || title.style.opacity !== '1') {
+                        gsap.set(title, {
+                            opacity: 0,
+                            filter: 'blur(10px) brightness(2)',
+                            textShadow: '0 0 15px rgba(255,255,255,0.8)'
+                        });
 
-                    // Magical appearance animation
-                    tl.to(title, {
-                        opacity: 1,
-                        filter: 'blur(0px) brightness(1)',
-                        textShadow: '0 0 0px rgba(255,255,255,0)',
-                        duration: durations.enter * 0.8,
-                        ease: 'power2.out'
-                    }, durations.enter * 0.5);
+                        // Magical appearance animation
+                        tl.to(title, {
+                            opacity: 1,
+                            filter: 'blur(0px) brightness(1)',
+                            textShadow: '0 0 0px rgba(255,255,255,0)',
+                            duration: durations.enter * 0.8,
+                            ease: 'power2.out'
+                        }, durations.enter * 0.5);
+                    } else {
+                        // Ensure title is visible for back navigation
+                        gsap.set(title, { visibility: 'visible', opacity: 1 });
+                    }
                 }
 
                 // Content animation - fade in with mystical swirl but no scaling
                 const content = document.querySelector('.spiral-tower-floor-content');
-                if (content && (!isBackNavigation || content.style.opacity !== '1')) {
-                    gsap.set(content, {
-                        opacity: 0,
-                        y: 20,
-                        rotation: 5,
-                        transformOrigin: 'center center',
-                        filter: 'blur(5px)'
-                    });
-
-                    // Swirl in animation
-                    tl.to(content, {
-                        opacity: 1,
-                        y: 0,
-                        rotation: 0,
-                        filter: 'blur(0px)',
-                        duration: durations.enter * 0.7,
-                        ease: 'power3.out'
-                    }, durations.enter * 0.6);
-                }
-            },
-
-            exit: (wrapper, title, tl) => {
-                // Title animation - magical disappearance with scaling
-                if (title) {
-                    tl.to(title, {
-                        opacity: 0,
-                        scale: 1.2,
-                        filter: 'blur(10px) brightness(2)',
-                        textShadow: '0 0 15px rgba(255,255,255,0.8)',
-                        duration: durations.exit * 0.7,
-                        ease: 'power2.in'
-                    }, 0);
-                }
-
-                // Content animation - swirl out with scaling
-                const content = document.querySelector('.spiral-tower-floor-content');
                 if (content) {
-                    tl.to(content, {
-                        opacity: 0,
-                        y: 20,
-                        rotation: -5,
-                        scale: 0.9,
-                        filter: 'blur(5px)',
-                        duration: durations.exit * 0.8,
-                        ease: 'power2.in'
-                    }, 0.1);
-                }
-
-                // Wrapper animation - close portal with scaling
-                if (wrapper) {
-                    tl.to(wrapper, {
-                        opacity: 0.7,
-                        borderRadius: '50%',
-                        scale: 0.8,
-                        filter: 'hue-rotate(90deg) saturate(2)',
-                        duration: durations.exit * 0.6,
-                        ease: 'power2.in'
-                    }, 0.3);
-
-                    tl.to(wrapper, {
-                        opacity: 0,
-                        scale: 0,
-                        duration: durations.exit * 0.4,
-                        ease: 'power3.in'
-                    }, durations.exit * 0.6);
-                }
-            }
-        },
-
-        'electric-pulse': {
-            enter: (wrapper, title, tl) => {
-                if (wrapper) {
-                    gsap.set(wrapper, { visibility: 'visible' });
-
-                    if (!isBackNavigation || wrapper.style.opacity !== '1') {
-                        gsap.set(wrapper, {
+                    gsap.set(content, { visibility: 'visible' }); // Add this line
+                    if (!isBackNavigation || content.style.opacity !== '1') {
+                        gsap.set(content, {
                             opacity: 0,
-                            filter: 'brightness(1.5) contrast(1.2) saturate(1.2)'
+                            y: 20,
+                            rotation: 5,
+                            transformOrigin: 'center center',
+                            filter: 'blur(5px)'
                         });
 
-                        // Pulse animation without scaling
-                        tl.to(wrapper, {
-                            opacity: 0.6,
-                            duration: 0.1,
-                            ease: 'power2.in'
-                        }, 0);
-
-                        tl.to(wrapper, {
-                            opacity: 0.3,
-                            duration: 0.1,
-                            ease: 'power2.out'
-                        }, 0.1);
-
-                        tl.to(wrapper, {
-                            opacity: 0.8,
-                            duration: 0.1,
-                            ease: 'power2.in'
-                        }, 0.2);
-
-                        tl.to(wrapper, {
+                        // Swirl in animation
+                        tl.to(content, {
                             opacity: 1,
-                            filter: 'brightness(1) contrast(1) saturate(1)',
+                            y: 0,
+                            rotation: 0,
+                            filter: 'blur(0px)',
                             duration: durations.enter * 0.7,
-                            ease: 'power2.out'
-                        }, 0.3);
+                            ease: 'power3.out'
+                        }, durations.enter * 0.6);
+                    } else {
+                        // Ensure content is visible for back navigation
+                        gsap.set(content, { visibility: 'visible', opacity: 1 });
                     }
-                }
-
-                // Title animation - electric flicker in
-                if (title && (!isBackNavigation || title.style.opacity !== '1')) {
-                    gsap.set(title, {
-                        opacity: 0,
-                        x: -5,
-                        textShadow: '0 0 8px rgba(255,255,255,0.8), 0 0 15px rgba(0,150,255,0.5)'
-                    });
-
-                    // Flicker animation
-                    tl.to(title, {
-                        opacity: 0.7,
-                        x: 2,
-                        duration: 0.08
-                    }, 0.4);
-
-                    tl.to(title, {
-                        opacity: 0.3,
-                        x: -3,
-                        duration: 0.08
-                    }, 0.48);
-
-                    tl.to(title, {
-                        opacity: 0.9,
-                        x: 1,
-                        duration: 0.08
-                    }, 0.56);
-
-                    tl.to(title, {
-                        opacity: 1,
-                        x: 0,
-                        textShadow: '0 0 0px rgba(255,255,255,0), 0 0 0px rgba(0,150,255,0)',
-                        duration: 0.2,
-                        ease: 'power2.out'
-                    }, 0.64);
-                }
-
-                // Content animation - electric reveal from left to right
-                const content = document.querySelector('.spiral-tower-floor-content');
-                if (content && (!isBackNavigation || content.style.opacity !== '1')) {
-                    gsap.set(content, {
-                        opacity: 0,
-                        clipPath: 'polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%)',
-                        filter: 'brightness(1.2)'
-                    });
-
-                    // Electric wipe animation
-                    tl.to(content, {
-                        opacity: 1,
-                        clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
-                        filter: 'brightness(1)',
-                        duration: durations.enter * 0.7,
-                        ease: 'steps(20)'
-                    }, 0.7);
                 }
             },
 
-            exit: (wrapper, title, tl) => {
-                // Title animation - electric zap out with scaling
-                if (title) {
-                    tl.to(title, {
-                        opacity: 0.8,
-                        scale: 1.05,
-                        textShadow: '0 0 8px rgba(255,255,255,0.8), 0 0 15px rgba(0,150,255,0.5)',
-                        duration: 0.1
-                    }, 0);
-
-                    tl.to(title, {
-                        opacity: 0.4,
-                        x: 3,
-                        scale: 1.1,
-                        duration: 0.1
-                    }, 0.1);
-
-                    tl.to(title, {
-                        opacity: 0,
-                        x: -5,
-                        duration: 0.1,
-                        ease: 'power1.in'
-                    }, 0.2);
-                }
-
-                // Content animation - electric wipe out with scaling
-                const content = document.querySelector('.spiral-tower-floor-content');
-                if (content) {
-                    tl.to(content, {
-                        opacity: 0.7,
-                        clipPath: 'polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%)',
-                        filter: 'brightness(1.2)',
-                        scale: 0.95,
-                        duration: durations.exit * 0.7,
-                        ease: 'steps(15)'
-                    }, 0.1);
-
-                    tl.to(content, {
-                        opacity: 0,
-                        scale: 0.9,
-                        duration: durations.exit * 0.3,
-                        ease: 'power2.in'
-                    }, durations.exit * 0.7);
-                }
-
-                // Wrapper animation with electric flicker
-                if (wrapper) {
-                    tl.to(wrapper, {
-                        opacity: 0.7,
-                        filter: 'brightness(1.5) contrast(1.2) saturate(1.2)',
-                        duration: 0.15
-                    }, 0.3);
-
-                    tl.to(wrapper, {
-                        opacity: 0.9,
-                        duration: 0.1
-                    }, 0.45);
-
-                    tl.to(wrapper, {
-                        opacity: 0.2,
-                        duration: 0.1
-                    }, 0.55);
-
-                    tl.to(wrapper, {
-                        opacity: 0,
-                        scale: 0.9,
-                        duration: 0.2,
-                        ease: 'power3.in'
-                    }, 0.65);
-                }
-            }
         },
 
         'slide-panels': {
@@ -1429,113 +1217,74 @@ SpiralTower.transitions = (function () {
                 }
 
                 // Title animation - slide in from left
-                if (title && (!isBackNavigation || title.style.opacity !== '1')) {
-                    gsap.set(title, {
-                        opacity: 0,
-                        x: -50,
-                        filter: 'drop-shadow(3px 3px 5px rgba(0,0,0,0.3))'
-                    });
+                if (title) {
+                    gsap.set(title, { visibility: 'visible' }); // Add this line
+                    if (!isBackNavigation || title.style.opacity !== '1') {
+                        gsap.set(title, {
+                            opacity: 0,
+                            x: -50,
+                            filter: 'drop-shadow(3px 3px 5px rgba(0,0,0,0.3))'
+                        });
 
-                    tl.to(title, {
-                        opacity: 1,
-                        x: 0,
-                        filter: 'drop-shadow(0px 0px 0px rgba(0,0,0,0))',
-                        duration: durations.enter * 0.7,
-                        ease: 'power2.out'
-                    }, 0.2);
+                        tl.to(title, {
+                            opacity: 1,
+                            x: 0,
+                            filter: 'drop-shadow(0px 0px 0px rgba(0,0,0,0))',
+                            duration: durations.enter * 0.7,
+                            ease: 'power2.out'
+                        }, 0.2);
+                    } else {
+                        // Ensure title is visible for back navigation
+                        gsap.set(title, { visibility: 'visible', opacity: 1 });
+                    }
                 }
 
                 // Content animation - reveal with horizontal blinds effect
                 const content = document.querySelector('.spiral-tower-floor-content');
-                if (content && (!isBackNavigation || content.style.opacity !== '1')) {
-                    // Try to animate paragraphs in sequence
-                    const paragraphs = content.querySelectorAll('p, h2, h3, ul, ol, blockquote');
+                if (content) {
+                    gsap.set(content, { visibility: 'visible' }); // Add this line
+                    if (!isBackNavigation || content.style.opacity !== '1') {
+                        // Try to animate paragraphs in sequence
+                        const paragraphs = content.querySelectorAll('p, h2, h3, ul, ol, blockquote');
 
-                    if (paragraphs.length > 0) {
-                        // Create blind effect by sliding in from alternating sides
-                        paragraphs.forEach((para, index) => {
-                            const isEven = index % 2 === 0;
-                            gsap.set(para, {
-                                opacity: 0,
-                                x: isEven ? -40 : 40
+                        if (paragraphs.length > 0) {
+                            // Create blind effect by sliding in from alternating sides
+                            paragraphs.forEach((para, index) => {
+                                const isEven = index % 2 === 0;
+                                gsap.set(para, {
+                                    opacity: 0,
+                                    x: isEven ? -40 : 40
+                                });
                             });
-                        });
 
-                        tl.to(paragraphs, {
-                            opacity: 1,
-                            x: 0,
-                            duration: 0.7,
-                            stagger: 0.08,
-                            ease: 'power2.out'
-                        }, 0.4);
+                            tl.to(paragraphs, {
+                                opacity: 1,
+                                x: 0,
+                                duration: 0.7,
+                                stagger: 0.08,
+                                ease: 'power2.out'
+                            }, 0.4);
+                        } else {
+                            // Fallback if no paragraphs
+                            gsap.set(content, {
+                                opacity: 0,
+                                clipPath: 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)'
+                            });
+
+                            tl.to(content, {
+                                opacity: 1,
+                                clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
+                                duration: durations.enter * 0.8,
+                                ease: 'power2.out'
+                            }, 0.4);
+                        }
                     } else {
-                        // Fallback if no paragraphs
-                        gsap.set(content, {
-                            opacity: 0,
-                            clipPath: 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)'
-                        });
-
-                        tl.to(content, {
-                            opacity: 1,
-                            clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
-                            duration: durations.enter * 0.8,
-                            ease: 'power2.out'
-                        }, 0.4);
+                        // Ensure content is visible for back navigation
+                        gsap.set(content, { visibility: 'visible', opacity: 1 });
                     }
                 }
             },
-
-            exit: (wrapper, title, tl) => {
-                // Title animation - slide out to right with scale
-                if (title) {
-                    tl.to(title, {
-                        opacity: 0,
-                        x: 50,
-                        scale: 0.9,
-                        filter: 'drop-shadow(3px 3px 5px rgba(0,0,0,0.3))',
-                        duration: durations.exit * 0.7,
-                        ease: 'power2.in'
-                    }, 0);
-                }
-
-                // Content animation - panels slide out in sequence
-                const content = document.querySelector('.spiral-tower-floor-content');
-                if (content) {
-                    const paragraphs = content.querySelectorAll('p, h2, h3, ul, ol, blockquote');
-
-                    if (paragraphs.length > 0) {
-                        tl.to(paragraphs, {
-                            opacity: 0,
-                            x: (i) => (i % 2 === 0) ? -40 : 40,
-                            scale: 0.95,
-                            duration: 0.5,
-                            stagger: 0.06,
-                            ease: 'power1.in'
-                        }, 0.1);
-                    } else {
-                        // Fallback
-                        tl.to(content, {
-                            opacity: 0,
-                            clipPath: 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)',
-                            scale: 0.95,
-                            duration: durations.exit * 0.6,
-                            ease: 'power2.in'
-                        }, 0.1);
-                    }
-                }
-
-                // Wrapper animation with scale on exit
-                if (wrapper) {
-                    tl.to(wrapper, {
-                        opacity: 0,
-                        scale: 0.9,
-                        duration: durations.exit,
-                        ease: 'power2.in'
-                    }, 0.3);
-                }
-            }
         }
-
     };
 
     // Get list of all transition type keys
@@ -1557,79 +1306,337 @@ SpiralTower.transitions = (function () {
     }
 
 
+
+
+
+
+
+
+
+
+
+    // Complete debugging function to find the scrolling issue
+    function debugScrollingIssue() {
+        const content = document.querySelector('.spiral-tower-floor-content');
+        const container = document.querySelector('.spiral-tower-floor-container');
+
+        console.log('=== COMPLETE SCROLLING DEBUG ===');
+
+        if (content) {
+            console.log('Content element found:', content);
+            console.log('Content classes:', content.className);
+            console.log('Content computed styles:');
+            const contentStyles = window.getComputedStyle(content);
+            console.log('  overflow-y:', contentStyles.overflowY);
+            console.log('  overflow-x:', contentStyles.overflowX);
+            console.log('  overflow:', contentStyles.overflow);
+            console.log('  max-height:', contentStyles.maxHeight);
+            console.log('  height:', contentStyles.height);
+            console.log('Content dimensions:');
+            console.log('  scrollHeight:', content.scrollHeight);
+            console.log('  clientHeight:', content.clientHeight);
+            console.log('  offsetHeight:', content.offsetHeight);
+            console.log('  scrollTop:', content.scrollTop);
+            console.log('Content inline styles:', content.style.cssText);
+        } else {
+            console.log('❌ Content element NOT found');
+        }
+
+        if (container) {
+            console.log('Container element found:', container);
+            console.log('Container classes:', container.className);
+            console.log('Container computed styles:');
+            const containerStyles = window.getComputedStyle(container);
+            console.log('  overflow-y:', containerStyles.overflowY);
+            console.log('  overflow:', containerStyles.overflow);
+            console.log('  max-height:', containerStyles.maxHeight);
+            console.log('Container dimensions:');
+            console.log('  scrollHeight:', container.scrollHeight);
+            console.log('  clientHeight:', container.clientHeight);
+            console.log('  offsetHeight:', container.offsetHeight);
+            console.log('Container inline styles:', container.style.cssText);
+        } else {
+            console.log('❌ Container element NOT found');
+        }
+
+        // Test manual scrolling
+        if (content) {
+            console.log('Testing manual scroll...');
+            content.scrollTop = 50;
+            setTimeout(() => {
+                console.log('After manual scroll - scrollTop:', content.scrollTop);
+                if (content.scrollTop === 0) {
+                    console.log('❌ Manual scrolling FAILED - element cannot scroll');
+                } else {
+                    console.log('✅ Manual scrolling works');
+                }
+            }, 100);
+        }
+    }
+
+    // Force scrolling to work regardless of CSS
+    function forceScrollingToWork() {
+        const content = document.querySelector('.spiral-tower-floor-content');
+        if (content) {
+            console.log('Forcing scrolling to work...');
+
+            // Remove ALL overflow restrictions
+            content.style.removeProperty('overflow');
+            content.style.removeProperty('overflow-y');
+            content.style.removeProperty('overflow-x');
+
+            // Force scrolling with maximum specificity
+            content.style.setProperty('overflow-y', 'auto', 'important');
+            content.style.setProperty('max-height', '100%', 'important');
+
+            // Remove any height restrictions that might prevent scrolling
+            content.style.setProperty('height', 'auto', 'important');
+
+            // Add the class
+            content.classList.add('scrollbars-visible');
+
+            console.log('After forcing - overflow-y:', window.getComputedStyle(content).overflowY);
+
+            // Test scroll again
+            content.scrollTop = 50;
+            setTimeout(() => {
+                console.log('After force + manual scroll - scrollTop:', content.scrollTop);
+            }, 100);
+        }
+    }
+
+
+
+
+
+
+
+
+
+    function showElements() {
+        const title = document.querySelector('.spiral-tower-floor-title');
+        const container = document.querySelector('.spiral-tower-floor-container');
+        const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
+
+        // ONLY set visibility - don't touch opacity!
+        if (title) {
+            gsap.set(title, { visibility: 'visible' });
+            // DON'T set opacity: 1 here - let transitions handle it
+        }
+        if (container) {
+            gsap.set(container, { visibility: 'visible' });
+            // DON'T add content-visible class here - let transitions handle opacity
+        }
+        if (wrapper) {
+            gsap.set(wrapper, { visibility: 'visible' });
+            // DON'T set opacity: 1 here - let transitions handle it
+        }
+
+        logger.log(MODULE_NAME, "All elements set to visible (but not opaque)");
+    }
+
+
+
+
+
+
+
+    function hideScrollbars() {
+        const content = document.querySelector('.spiral-tower-floor-content');
+        if (content) {
+            console.log('Hiding scrollbars on:', content);
+
+            // Remove visible class
+            content.classList.remove('scrollbars-visible');
+
+            // Force hidden with inline styles
+            content.style.setProperty('overflow-y', 'hidden', 'important');
+            content.style.setProperty('overflow', 'hidden', 'important');
+
+            console.log('Scrollbars hidden - overflow-y:', window.getComputedStyle(content).overflowY);
+        } else {
+            console.error('hideScrollbars: Content element not found');
+        }
+    }
+
+    function showScrollbars() {
+        const content = document.querySelector('.spiral-tower-floor-content');
+        if (content) {
+            setTimeout(() => {
+                console.log('Showing scrollbars on:', content);
+
+                // Clear any conflicting inline styles first
+                content.style.removeProperty('overflow');
+                content.style.removeProperty('overflow-x');
+
+                // Add the class first
+                content.classList.add('scrollbars-visible');
+
+                // Force visible with inline styles - this should override everything
+                content.style.setProperty('overflow-y', 'auto', 'important');
+
+                // Ensure max-height allows scrolling
+                if (!content.style.maxHeight) {
+                    content.style.setProperty('max-height', '100%', 'important');
+                }
+
+                console.log('Scrollbars shown - classes:', content.className);
+                console.log('Scrollbars shown - overflow-y:', window.getComputedStyle(content).overflowY);
+                console.log('Scrollbars shown - dimensions:', {
+                    scrollHeight: content.scrollHeight,
+                    clientHeight: content.clientHeight,
+                    needsScroll: content.scrollHeight > content.clientHeight
+                });
+
+                // Test if scrolling actually works
+                const originalScrollTop = content.scrollTop;
+                content.scrollTop = 10;
+                setTimeout(() => {
+                    if (content.scrollTop !== originalScrollTop) {
+                        console.log('✅ Scrolling is working');
+                    } else {
+                        console.log('❌ Scrolling is NOT working');
+                        console.log('Attempting to force scrolling...');
+
+                        // Nuclear option - completely override everything
+                        content.style.cssText += '; overflow-y: scroll !important; max-height: 300px !important;';
+                    }
+                }, 50);
+
+            }, 200); // Reduced delay
+        } else {
+            console.error('showScrollbars: Content element not found');
+        }
+    }
+
+
     function runEntranceAnimations() {
-        // Select a random entrance transition
+        showElements();
+
         const transitionType = selectRandomTransition(lastEntranceType);
         lastEntranceType = transitionType;
 
         logger.log(MODULE_NAME, `Running entrance animations with type: ${transitionType}`);
         isAnimating = true;
 
-        // Get the main elements
         const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
         const title = document.querySelector('.spiral-tower-floor-title');
         const content = document.querySelector('.spiral-tower-floor-content');
         const container = document.querySelector('.spiral-tower-floor-container');
 
-        // For back navigation - first ensure elements are visible without animation
+        // For back navigation - ensure everything is visible and reset
         if (isBackNavigation) {
-            logger.log(MODULE_NAME, "Back navigation detected - handling differently");
+            logger.log(MODULE_NAME, "Back navigation detected - skipping animations");
 
-            // Make sure container is visible
             if (container) {
-                gsap.set(container, { visibility: 'visible', display: 'block' });
+                gsap.set(container, { visibility: 'visible', opacity: 1 });
+                container.classList.add('content-visible');
+            }
+            if (title) {
+                gsap.set(title, { visibility: 'visible', opacity: 1 });
+            }
+            if (content) {
+                gsap.set(content, { visibility: 'visible', opacity: 1 });
+            }
+            if (wrapper) {
+                gsap.set(wrapper, { visibility: 'visible', opacity: 1 });
             }
         }
 
-        // Create timeline for entrance animations
         const tl = gsap.timeline({
             onComplete: () => {
                 isAnimating = false;
                 logger.log(MODULE_NAME, "Entrance animations complete");
+
+                if (container) {
+                    container.classList.add('content-visible');
+                }
             }
         });
 
-        // Apply the selected transition type
-        transitionTypes[transitionType].enter(wrapper, title, tl);
+        // ADD ERROR HANDLING for entrance transitions too
+        try {
+            logger.log(MODULE_NAME, `Calling entrance transition for: ${transitionType}`);
+            transitionTypes[transitionType].enter(wrapper, title, tl);
+        } catch (error) {
+            console.error(`ERROR in entrance transition '${transitionType}':`, error);
+            console.error('Error stack:', error.stack);
+
+            // Fallback - just make everything visible
+            if (container) {
+                gsap.set(container, { visibility: 'visible', opacity: 1 });
+                container.classList.add('content-visible');
+            }
+            if (title) {
+                gsap.set(title, { visibility: 'visible', opacity: 1 });
+            }
+            if (content) {
+                gsap.set(content, { visibility: 'visible', opacity: 1 });
+            }
+            if (wrapper) {
+                gsap.set(wrapper, { visibility: 'visible', opacity: 1 });
+            }
+        }
     }
 
-    // Run exit animations before navigating to a new page
+
     function runExitAnimations(callback) {
-        // Select a random exit transition
         const transitionType = selectRandomTransition(lastExitType);
         lastExitType = transitionType;
 
         logger.log(MODULE_NAME, `Running exit animations with type: ${transitionType}`);
         isAnimating = true;
 
-        // Get the main elements
         const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
         const title = document.querySelector('.spiral-tower-floor-title');
 
-        // Create timeline for exit animations
         const tl = gsap.timeline({
             onComplete: () => {
                 isAnimating = false;
                 logger.log(MODULE_NAME, "Exit animations complete");
 
-                // Store the animation state in sessionStorage
                 try {
                     sessionStorage.setItem('spiralTower_lastExitTime', Date.now());
                     sessionStorage.setItem('spiralTower_lastExitType', transitionType);
                 } catch (err) {
-                    logger.warn(MODULE_NAME, "Could not store animation state in sessionStorage", err);
+                    logger.warn(MODULE_NAME, "Could not store animation state", err);
                 }
 
-                // Call the callback function to continue navigation
                 if (typeof callback === 'function') {
                     callback();
                 }
             }
         });
 
-        // Apply the selected transition type
-        transitionTypes[transitionType].exit(wrapper, title, tl);
+        // ADD ERROR HANDLING for exit transitions
+        try {
+            logger.log(MODULE_NAME, `Calling exit transition for: ${transitionType}`);
+
+            // Check if exit function exists
+            if (transitionTypes[transitionType] && transitionTypes[transitionType].exit) {
+                transitionTypes[transitionType].exit(wrapper, title, tl);
+            } else {
+                console.error(`Exit transition missing for type: ${transitionType}`);
+
+                // Fallback exit animation
+                if (wrapper) {
+                    tl.to(wrapper, { opacity: 0, duration: 1 }, 0);
+                }
+                if (title) {
+                    tl.to(title, { opacity: 0, duration: 1 }, 0);
+                }
+            }
+        } catch (error) {
+            console.error(`ERROR in exit transition '${transitionType}':`, error);
+            console.error('Error stack:', error.stack);
+
+            // Force completion of timeline if there's an error
+            if (typeof callback === 'function') {
+                setTimeout(callback, 100);
+            }
+        }
     }
+
 
     // Updated link interception to allow clicks during transitions
     function setupLinkInterception() {
@@ -1685,6 +1692,85 @@ SpiralTower.transitions = (function () {
         }
     });
 
+    function overrideFloorNavigation() {
+        // Wait a bit for the toolbar script to load
+        setTimeout(() => {
+            const upButton = document.getElementById('button-floor-up');
+            const downButton = document.getElementById('button-floor-down');
+
+            if (upButton || downButton) {
+                logger.log(MODULE_NAME, "Overriding floor navigation buttons");
+
+                // Remove existing event listeners by cloning the elements
+                if (upButton) {
+                    const newUpButton = upButton.cloneNode(true);
+                    upButton.parentNode.replaceChild(newUpButton, upButton);
+
+                    newUpButton.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        handleFloorNavigation('up', newUpButton);
+                    });
+                }
+
+                if (downButton) {
+                    const newDownButton = downButton.cloneNode(true);
+                    downButton.parentNode.replaceChild(newDownButton, downButton);
+
+                    newDownButton.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        handleFloorNavigation('down', newDownButton);
+                    });
+                }
+            }
+        }, 100);
+    }
+
+    function handleFloorNavigation(direction, button) {
+        logger.log(MODULE_NAME, `Floor navigation: ${direction}`);
+
+        // Kill any ongoing animations
+        if (isAnimating) {
+            gsap.killTweensOf(document.querySelector('.spiral-tower-floor-wrapper'));
+            gsap.killTweensOf(document.querySelector('.spiral-tower-floor-title'));
+            gsap.killTweensOf(document.querySelector('.spiral-tower-floor-content'));
+            isAnimating = false;
+        }
+
+        const currentFloor = parseInt(button.getAttribute('data-current-floor'));
+        const ajaxUrl = document.querySelector('body').getAttribute('data-ajax-url');
+        const originalTooltip = button.getAttribute('data-tooltip');
+        button.setAttribute('data-tooltip', 'Finding floor...');
+
+        // Run exit animations first
+        runExitAnimations(() => {
+            // Then do the AJAX navigation
+            const formData = new FormData();
+            formData.append('action', 'spiral_tower_navigate_floor');
+            formData.append('nonce', document.querySelector('body').getAttribute('data-navigation-nonce'));
+            formData.append('direction', direction);
+            formData.append('current_floor', currentFloor);
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data.redirect_url) {
+                        window.location.href = data.data.redirect_url;
+                    } else {
+                        alert('Navigation failed: ' + (data.data ? data.data.message : 'Unknown error'));
+                        button.setAttribute('data-tooltip', originalTooltip);
+                    }
+                })
+                .catch(error => {
+                    console.error('Navigation error:', error);
+                    alert('An error occurred during navigation.');
+                    button.setAttribute('data-tooltip', originalTooltip);
+                });
+        });
+    }
+
     // Initialize the module
     function init() {
         if (initialized) {
@@ -1694,59 +1780,53 @@ SpiralTower.transitions = (function () {
 
         logger.log(MODULE_NAME, "Initializing enhanced transitions module");
 
-        // Set up link interception for smooth page transitions
         setupLinkInterception();
+        overrideFloorNavigation();
 
-        // Check for back/forward navigation through multiple methods
+        // MUCH more conservative back navigation detection
         let backDetected = false;
 
-        // Method 1: Check performance navigation type (works in most browsers)
+        // Method 1: Browser's performance navigation type (most reliable)
         if (window.performance && window.performance.navigation) {
             backDetected = window.performance.navigation.type === 2; // TYPE_BACK_FORWARD = 2
+            if (backDetected) {
+                logger.log(MODULE_NAME, "Back navigation detected via performance.navigation.type");
+            }
         }
 
-        // Method 2: Check Navigation Timing API (newer browsers)
+        // Method 2: Navigation Timing API (newer browsers)
         if (!backDetected && window.performance && window.performance.getEntriesByType) {
             const navEntries = window.performance.getEntriesByType('navigation');
-            if (navEntries.length > 0) {
-                backDetected = navEntries[0].type === 'back_forward';
+            if (navEntries.length > 0 && navEntries[0].type === 'back_forward') {
+                backDetected = true;
+                logger.log(MODULE_NAME, "Back navigation detected via Navigation Timing API");
             }
         }
 
-        // Method 3: Check sessionStorage for evidence of previous exit
-        if (!backDetected) {
-            try {
-                const lastExitTime = sessionStorage.getItem('spiralTower_lastExitTime');
-                if (lastExitTime) {
-                    // If we exited within the last 60 seconds, this is likely a back navigation
-                    const timeSinceExit = Date.now() - parseInt(lastExitTime);
-                    if (timeSinceExit < 60000) { // 60 seconds
-                        backDetected = true;
-                        logger.log(MODULE_NAME, "Back navigation detected via session storage (exit was " +
-                            Math.round(timeSinceExit / 1000) + " seconds ago)");
-                    }
-                }
-            } catch (err) {
-                logger.warn(MODULE_NAME, "Could not access sessionStorage", err);
+        // Method 3: REMOVE session storage detection entirely for now
+        // It's causing too many false positives
+
+        // ALWAYS clear session storage to prevent accumulation
+        try {
+            const lastExitTime = sessionStorage.getItem('spiralTower_lastExitTime');
+            if (lastExitTime) {
+                const timeSinceExit = Date.now() - parseInt(lastExitTime);
+                logger.log(MODULE_NAME, "Found session storage exit from " +
+                    Math.round(timeSinceExit / 1000) + " seconds ago, but ignoring for back nav detection");
             }
+            sessionStorage.removeItem('spiralTower_lastExitTime');
+            sessionStorage.removeItem('spiralTower_lastExitType');
+        } catch (err) {
+            // Ignore errors
         }
 
         // Record the back navigation state
         isBackNavigation = backDetected;
 
         if (isBackNavigation) {
-            logger.log(MODULE_NAME, "Back navigation detected, forcing entrance animations");
-
-            // If we have a stored exit type, use a complementary entrance type
-            try {
-                const storedExitType = sessionStorage.getItem('spiralTower_lastExitType');
-                if (storedExitType) {
-                    lastEntranceType = storedExitType;
-                    logger.log(MODULE_NAME, `Using stored exit type for entrance: ${storedExitType}`);
-                }
-            } catch (err) {
-                logger.warn(MODULE_NAME, "Could not access stored exit type", err);
-            }
+            logger.log(MODULE_NAME, "Back navigation confirmed - will skip entrance animations");
+        } else {
+            logger.log(MODULE_NAME, "Normal navigation - will run entrance animations");
         }
 
         // Always run entrance animations

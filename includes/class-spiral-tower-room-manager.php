@@ -43,6 +43,13 @@ class Spiral_Tower_Room_Manager
 
         // Add AJAX handler for typeahead
         add_action('wp_ajax_spiral_tower_search_floors', array($this, 'ajax_search_floors'));
+
+        // *** NEW: Hide "Add New" buttons for floor authors ***
+        add_action('admin_menu', array($this, 'hide_add_new_for_floor_authors'));
+        add_action('admin_head', array($this, 'hide_add_new_button_css'));
+        
+        // *** NEW: Block creation attempts via direct URL access ***
+        add_action('admin_init', array($this, 'block_room_creation_for_authors'));
     }
 
     /**
@@ -87,6 +94,112 @@ class Spiral_Tower_Room_Manager
 
         // Add room capabilities to floor_author role
         $this->add_room_capabilities_to_floor_author();
+    }
+
+    /**
+     * *** MODIFIED: Add proper admin access capabilities ***
+     * Add room capabilities to floor_author role
+     */
+    private function add_room_capabilities_to_floor_author()
+    {
+        $role = get_role('floor_author');
+        if ($role) {
+            $caps_to_add = [
+                'edit_posts' => true, // *** ENSURE this is set for admin access ***
+                'read' => true,
+                'upload_files' => true,
+                'edit_room' => true,
+                'edit_rooms' => true,
+                'edit_published_rooms' => true,
+                'read_room' => true,
+                'read_private_rooms' => true,
+                'create_rooms' => true // *** KEEP THIS - needed for admin access ***
+            ];
+            foreach ($caps_to_add as $cap => $value) {
+                $role->add_cap($cap, $value);
+            }
+
+            $caps_to_deny = [
+                'edit_others_rooms' => false,
+                'delete_room' => false,
+                'delete_rooms' => false,
+                'delete_published_rooms' => false,
+                'delete_others_rooms' => false,
+                'publish_rooms' => false
+            ];
+            foreach ($caps_to_deny as $cap => $value) {
+                $role->add_cap($cap, $value);
+            }
+        }
+
+        // *** Ensure admins and editors can create rooms ***
+        $admin_roles = array('administrator', 'editor');
+        foreach ($admin_roles as $role_name) {
+            $role = get_role($role_name);
+            if ($role) {
+                $role->add_cap('edit_room');
+                $role->add_cap('read_room');
+                $role->add_cap('delete_room');
+                $role->add_cap('edit_rooms');
+                $role->add_cap('edit_others_rooms');
+                $role->add_cap('publish_rooms');
+                $role->add_cap('read_private_rooms');
+                $role->add_cap('delete_rooms');
+                $role->add_cap('delete_private_rooms');
+                $role->add_cap('delete_published_rooms');
+                $role->add_cap('delete_others_rooms');
+                $role->add_cap('edit_private_rooms');
+                $role->add_cap('edit_published_rooms');
+                $role->add_cap('create_rooms');
+            }
+        }
+    }
+
+    /**
+     * *** NEW: Block room creation via redirect for floor authors ***
+     */
+    public function block_room_creation_for_authors()
+    {
+        global $pagenow;
+        
+        if ($pagenow === 'post-new.php' && isset($_GET['post_type']) && $_GET['post_type'] === 'room') {
+            $user = wp_get_current_user();
+            if (in_array('floor_author', (array) $user->roles) && !current_user_can('administrator') && !current_user_can('editor')) {
+                wp_die('You are not allowed to create new rooms. Please contact an administrator.', 'Access Denied', array('response' => 403));
+            }
+        }
+    }
+
+    /**
+     * *** MODIFIED: Check role properly ***
+     */
+    public function hide_add_new_for_floor_authors()
+    {
+        $user = wp_get_current_user();
+        if (in_array('floor_author', (array) $user->roles) && !current_user_can('administrator') && !current_user_can('editor')) {
+            remove_submenu_page('edit.php?post_type=room', 'post-new.php?post_type=room');
+        }
+    }
+
+    /**
+     * *** MODIFIED: Check role properly ***
+     */
+    public function hide_add_new_button_css()
+    {
+        $user = wp_get_current_user();
+        if (in_array('floor_author', (array) $user->roles) && !current_user_can('administrator') && !current_user_can('editor')) {
+            $screen = get_current_screen();
+            if ($screen && $screen->post_type === 'room') {
+                echo '<style>
+                    .page-title-action,
+                    .add-new-h2,
+                    .wrap .add-new-h2,
+                    .wrap .page-title-action {
+                        display: none !important;
+                    }
+                </style>';
+            }
+        }
     }
 
     /**
@@ -218,39 +331,6 @@ class Spiral_Tower_Room_Manager
             }
         }
         return $template;
-    }
-
-    /**
-     * Add room capabilities to floor_author role
-     */
-    private function add_room_capabilities_to_floor_author()
-    {
-        $role = get_role('floor_author');
-        if ($role) {
-            $caps_to_add = [
-                'edit_room',
-                'edit_rooms',
-                'edit_published_rooms',
-                'read_room',
-                'read_private_rooms',
-                'create_rooms' // Floor authors can create rooms
-            ];
-            foreach ($caps_to_add as $cap) {
-                $role->add_cap($cap, true);
-            }
-
-            $caps_to_deny = [
-                'edit_others_rooms',
-                'delete_room',
-                'delete_rooms',
-                'delete_published_rooms',
-                'delete_others_rooms',
-                'publish_rooms'
-            ];
-            foreach ($caps_to_deny as $cap) {
-                $role->add_cap($cap, false);
-            }
-        }
     }
 
     /**
@@ -1085,7 +1165,8 @@ class Spiral_Tower_Room_Manager
 
         $search_term = isset($_GET['term']) ? sanitize_text_field($_GET['term']) : '';
 
-        // Get all floors first
+        // *** MODIFIED: Restrict floor search based on user role ***
+        $user = wp_get_current_user();
         $args = array(
             'post_type' => 'floor',
             'posts_per_page' => -1,
@@ -1106,6 +1187,11 @@ class Spiral_Tower_Room_Manager
                 )
             )
         );
+
+        // *** NEW: If user is floor_author, only show their own floors ***
+        if (in_array('floor_author', (array) $user->roles) && !current_user_can('edit_others_floors')) {
+            $args['author'] = $user->ID;
+        }
 
         $floors = get_posts($args);
         $results = array();
@@ -1129,4 +1215,5 @@ class Spiral_Tower_Room_Manager
 
         wp_send_json($results);
     }
-}
+
+} // End Class Spiral_Tower_Room_Manager

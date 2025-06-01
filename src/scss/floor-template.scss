@@ -336,13 +336,184 @@ body .container {
 
 
 
+.spiral-tower-floor-title {
+  opacity: 0; // Tranition will show title
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 1001 !important; // Above gizmos and wrapper
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background-color: var(--title-bg-color, rgba(20, 20, 20, 0.85)) !important;
+  padding: $padding-standard !important;
+  box-shadow: $box-shadow !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  /* Indicate it's clickable */
+  will-change: transform, opacity;
+  /* Optimize for animations */
+  transform: translateX(0);
+
+  h1 {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 1.5em !important; // Adjust as needed
+    color: var(--title-text-color, #fff) !important;
+    font-weight: bold !important;
+    line-height: 1.2 !important;
+    font-family: var(--title-font, 'Metamorphous', serif) !important;
+    letter-spacing: -0.5px;
+    text-align: center;
+  }
+}
+
+.spiral-tower-floor-number {
+  // Keep original styles
+  font-size: 0.8em !important;
+  margin-bottom: 6px !important;
+  font-weight: bold !important;
+  color: var(--subtitle-color, #e90303) !important;
+  font-family: var(--title-font) !important;
+  text-align: center;
+}
 
 
-/* --------------------------------------------------------
- * 6. PUT TOOLBAR BACK HERE IS ORDER CHANGE BLOWED IT UP
- * -------------------------------------------------------- */
+
+.spiral-tower-floor-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  max-width: 800px;
+  z-index: 1000;
+  box-sizing: border-box !important;
+  margin-top: 60px;
+  max-height: calc(80vh - 100px);
+  
+  /* Start hidden for transitions */
+  opacity: 0;
+  visibility: hidden;
+  
+  /* Container does NOT scroll - content does */
+  overflow: visible !important;
+}
 
 
+
+/* Show scrollbars on the content element after transition */
+.spiral-tower-floor-container .spiral-tower-floor-content.scrollbars-visible {
+  overflow-y: auto !important;
+}
+
+/* Smooth scrollbar fade-in for webkit browsers */
+body.floor-template-active .spiral-tower-floor-content.scrollbars-visible::-webkit-scrollbar {
+  opacity: 0;
+  animation: fadeInScrollbar 0.5s ease forwards;
+}
+
+@keyframes fadeInScrollbar {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.spiral-tower-floor-container.content-hidden {
+  opacity: 0;
+  visibility: hidden !important;
+  // wtf?
+}
+
+.spiral-tower-floor-container.content-visible {
+  opacity: 1;
+  visibility: visible !important;
+}
+
+body.text-only-mode .spiral-tower-floor-container {
+  opacity: 1 !important;
+  display: block;
+}
+
+.spiral-tower-floor-content {
+  /* Appearance */
+  background-color: var(--content-bg-color, rgba(35, 35, 35, 0.85)) !important;
+  padding: 30px !important;
+  border-radius: 15px !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
+  box-sizing: border-box !important;
+  color: var(--content-text-color, #e6e6e6) !important;
+  font-family: var(--body-font) !important;
+  position: relative !important;
+  
+  /* CRITICAL: Set explicit height constraint for scrolling */
+  height: 100%;
+  max-height: calc(80vh - 160px); /* Account for padding and title */
+  
+  /* Scrolling - start with auto (normal behavior) */
+  overflow-y: auto;
+  
+  /* Content styling */
+  p, ul, ol, li, blockquote {
+    color: var(--content-text-color, #e6e6e6) !important;
+    font-size: 1.8rem;
+    line-height: 1.6;
+    margin-bottom: 1em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--title-text-color, #fff) !important;
+    font-family: var(--title-font) !important;
+    margin: 1.5em 0 0.5em;
+  }
+
+  a {
+    color: var(--subtitle-color, #e90303) !important;
+    text-decoration: none !important;
+    &:hover {
+      text-decoration: underline !important;
+    }
+  }
+
+  /* Scrollbar styling */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--subtitle-color, #e90303);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(233, 3, 3, 0.8);
+  }
+}
+
+// Keep scrollbar styles (adjust colors maybe)
+.spiral-tower-floor-content::-webkit-scrollbar {
+  width: 10px !important;
+}
+
+.spiral-tower-floor-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+.spiral-tower-floor-content::-webkit-scrollbar-thumb {
+  background-color: var(--subtitle-color, #e90303) !important;
+  border-radius: 5px;
+}
+
+.spiral-tower-floor-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(233, 3, 3, 0.8) !important;
+}
 
 /* --------------------------------------------------------
  * 8. RESPONSIVE ADJUSTMENTS (Keep/Adjust from Original)
@@ -350,6 +521,8 @@ body .container {
  * -------------------------------------------------------- */
 @media (max-width: 768px) {
   .spiral-tower-floor-container {
+    visibility: hidden;
+    opacity: 0;
     width: 90%;
     margin-top: 50px; // Adjust offset based on title height
     max-height: calc(85vh - 80px);

@@ -1054,6 +1054,7 @@ function spiral_tower_get_user_profile_url($user_id)
     return false;
 }
 
+
 /**
  * Add Spiral Tower as a top-level admin menu with Settings and Logs submenus
  * Replace the existing spiral_tower_add_settings_page function with this

@@ -25,6 +25,9 @@ $title_bg_color = get_post_meta(get_the_ID(), '_title_background_color', true);
 $content_color = get_post_meta(get_the_ID(), '_content_color', true);
 $content_bg_color = get_post_meta(get_the_ID(), '_content_background_color', true);
 $floor_number_color = get_post_meta(get_the_ID(), '_floor_number_color', true);
+$ajax_url = admin_url('admin-ajax.php');
+$ajax_nonce = wp_create_nonce('spiral_tower_floor_search_nonce');
+$navigation_nonce = wp_create_nonce('spiral_tower_floor_navigation');
 
 // Get the post type to determine which meta keys to use
 $current_post_type = get_post_type(get_the_ID());
@@ -133,6 +136,9 @@ $portals = $portal_query->posts;
 </head>
 
 <body <?php body_class('floor-template-active floor-fullscreen'); ?>
+	data-ajax-url="<?php echo esc_url($ajax_url); ?>"
+    data-search-nonce="<?php echo esc_js($ajax_nonce); ?>"	
+	data-navigation-nonce="<?php echo esc_js($navigation_nonce); ?>"
 	data-title-color="<?php echo esc_attr($title_color); ?>"
 	data-title-bg-color="<?php echo esc_attr($title_bg_color); ?>"
 	data-content-color="<?php echo esc_attr($content_color); ?>"
@@ -403,14 +409,6 @@ $portals = $portal_query->posts;
 	<?php wp_footer(); ?>
 
 
-
-
-
-	<?php
-	// Prepare data for JavaScript
-	$ajax_url = admin_url('admin-ajax.php');
-	$ajax_nonce = wp_create_nonce('spiral_tower_floor_search_nonce');
-	?>
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
 			// Get elements

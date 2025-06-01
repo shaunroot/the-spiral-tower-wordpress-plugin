@@ -34,19 +34,19 @@ class Spiral_Tower_Portal_Manager
         // Add portal redirect functionality
         add_action('template_redirect', array($this, 'redirect_portal_view'));
 
-        // Portal listing on floor display
+        // Portals
         add_action('spiral_tower_after_floor_content', array($this, 'display_floor_portals'));
-
-        // Save portals
         add_action('wp_ajax_save_portal_positions', array($this, 'save_portal_positions'));
+        add_filter('user_has_cap', array($this, 'restrict_portal_editing'), 10, 3);
+        add_action('pre_get_posts', array($this, 'filter_portals_for_authors'));
+        add_action('admin_init', array($this, 'validate_portal_creation_access'));
 
         // Add AJAX handler for getting permalink
         add_action('wp_ajax_get_post_permalink', array($this, 'ajax_get_post_permalink'));
 
         // Add AJAX handlers for typeahead
-        add_action('wp_ajax_spiral_tower_search_floors', array($this, 'ajax_search_floors'));
-        add_action('wp_ajax_spiral_tower_search_rooms', array($this, 'ajax_search_rooms'));
-
+        add_action('wp_ajax_portal_search_floors', array($this, 'ajax_search_floors'));
+        add_action('wp_ajax_portal_search_rooms', array($this, 'ajax_search_rooms'));
     }
 
     /**
@@ -84,6 +84,9 @@ class Spiral_Tower_Portal_Manager
     /**
      * AJAX handler for floor search
      */
+    /**
+     * AJAX handler for floor search
+     */
     public function ajax_search_floors()
     {
         // Check permissions
@@ -92,54 +95,40 @@ class Spiral_Tower_Portal_Manager
         }
 
         $search_term = isset($_GET['term']) ? sanitize_text_field($_GET['term']) : '';
+        $context = isset($_GET['context']) ? sanitize_text_field($_GET['context']) : '';
 
         $args = array(
             'post_type' => 'floor',
-            'posts_per_page' => 20, // Limit results
-            'post_status' => 'publish',
-            's' => $search_term, // Search in title and content
-            'orderby' => array(
-                'meta_value_num' => 'DESC',
-                'title' => 'ASC'
-            ),
-            'meta_query' => array(
-                'relation' => 'OR',
-                array(
-                    'key' => '_floor_number',
-                    'compare' => 'EXISTS'
-                ),
-                array(
-                    'key' => '_floor_number',
-                    'compare' => 'NOT EXISTS'
-                )
-            )
-        );
-
-        $args = array(
-            'post_type' => 'floor', // or 'room'
             'posts_per_page' => 20,
             'post_status' => 'publish',
             'orderby' => 'title',
             'order' => 'ASC',
-            'meta_query' => array(
-                array(
-                    'key' => 'fake_key_to_trigger_join',
-                    'compare' => 'NOT EXISTS'
-                )
-            ),
             'suppress_filters' => false
         );
-        
-        // Add this filter right before the get_posts() call:
-        add_filter('posts_where', function($where) use ($search_term) {
+
+        $user = wp_get_current_user();
+
+        // Only restrict for floor authors and only for origins
+        if (in_array('floor_author', (array) $user->roles) && !current_user_can('edit_others_floors')) {
+            if ($context === 'origin') {
+                // For origins, only show their own floors
+                $args['author'] = $user->ID;
+            }
+            // For destinations (or no context), show all floors - no restrictions
+        }
+
+        // Add search filter
+        add_filter('posts_where', function ($where) use ($search_term) {
             global $wpdb;
-            $where .= $wpdb->prepare(" AND {$wpdb->posts}.post_title LIKE %s", '%' . $wpdb->esc_like($search_term) . '%');
+            if (!empty($search_term)) {
+                $where .= $wpdb->prepare(" AND {$wpdb->posts}.post_title LIKE %s", '%' . $wpdb->esc_like($search_term) . '%');
+            }
             return $where;
         }, 10, 1);
-        
+
         $floors = get_posts($args);
-        
         remove_all_filters('posts_where');
+
         $results = array();
 
         foreach ($floors as $floor) {
@@ -182,9 +171,10 @@ class Spiral_Tower_Portal_Manager
         }
 
         $search_term = isset($_GET['term']) ? sanitize_text_field($_GET['term']) : '';
+        $context = isset($_GET['context']) ? sanitize_text_field($_GET['context']) : '';
 
         $args = array(
-            'post_type' => 'room', 
+            'post_type' => 'room',
             'posts_per_page' => 20,
             'post_status' => 'publish',
             'orderby' => 'title',
@@ -197,17 +187,47 @@ class Spiral_Tower_Portal_Manager
             ),
             'suppress_filters' => false
         );
-        
-        // Add this filter right before the get_posts() call:
-        add_filter('posts_where', function($where) use ($search_term) {
+
+        $user = wp_get_current_user();
+
+        // Only restrict for floor authors and only for origins
+        if (in_array('floor_author', (array) $user->roles) && !current_user_can('edit_others_floors')) {
+            if ($context === 'origin') {
+                // For origins, only show rooms on their floors
+                $authored_floor_ids = get_posts(array(
+                    'post_type' => 'floor',
+                    'author' => $user->ID,
+                    'posts_per_page' => -1,
+                    'fields' => 'ids'
+                ));
+
+                if (!empty($authored_floor_ids)) {
+                    $args['meta_query'][] = array(
+                        'key' => '_room_floor_id',
+                        'value' => $authored_floor_ids,
+                        'compare' => 'IN'
+                    );
+                } else {
+                    // No floors, no rooms
+                    wp_send_json(array());
+                    return;
+                }
+            }
+            // For destinations (or no context), show all rooms - no restrictions
+        }
+
+        // Add search filter
+        add_filter('posts_where', function ($where) use ($search_term) {
             global $wpdb;
-            $where .= $wpdb->prepare(" AND {$wpdb->posts}.post_title LIKE %s", '%' . $wpdb->esc_like($search_term) . '%');
+            if (!empty($search_term)) {
+                $where .= $wpdb->prepare(" AND {$wpdb->posts}.post_title LIKE %s", '%' . $wpdb->esc_like($search_term) . '%');
+            }
             return $where;
         }, 10, 1);
 
         $rooms = get_posts($args);
         remove_all_filters('posts_where');
-        
+
         $results = array();
 
         foreach ($rooms as $room) {
@@ -237,6 +257,7 @@ class Spiral_Tower_Portal_Manager
 
         wp_send_json($results);
     }
+
 
     /**
      * Register Portal Custom Post Type
@@ -276,6 +297,204 @@ class Spiral_Tower_Portal_Manager
         );
 
         register_post_type('portal', $args);
+        $this->add_portal_capabilities_to_roles();
+    }
+
+    private function add_portal_capabilities_to_roles()
+    {
+        // Add basic post capabilities to floor_author role
+        $role = get_role('floor_author');
+        if ($role) {
+            $role->add_cap('read', true);
+            $role->add_cap('edit_posts', true);
+            $role->add_cap('edit_published_posts', true);
+            $role->add_cap('publish_posts', true);
+            $role->add_cap('delete_posts', false);
+            $role->add_cap('delete_published_posts', false);
+            $role->add_cap('edit_others_posts', false);
+            $role->add_cap('delete_others_posts', false);
+        }
+    }
+
+    /**
+     * Restrict portal editing based on ownership
+     */
+    public function restrict_portal_editing($allcaps, $caps, $args)
+    {
+        // Only check edit_post capability for existing portals
+        if ($args[0] !== 'edit_post') {
+            return $allcaps;
+        }
+
+        $post_id = isset($args[2]) ? $args[2] : null;
+        $user_id = isset($args[1]) ? $args[1] : null;
+
+        // If no post ID or user ID, allow (this handles creation)
+        if (!$post_id || !$user_id) {
+            return $allcaps;
+        }
+
+        $post = get_post($post_id);
+
+        // If post doesn't exist or isn't a portal, allow
+        if (!$post || $post->post_type !== 'portal') {
+            return $allcaps;
+        }
+
+        // If user is admin or editor, allow
+        $user = get_userdata($user_id);
+        if (!$user) {
+            return $allcaps;
+        }
+
+        if (array_intersect(['administrator', 'editor'], (array) $user->roles)) {
+            return $allcaps;
+        }
+
+        // Only restrict floor authors
+        if (!in_array('floor_author', (array) $user->roles)) {
+            return $allcaps;
+        }
+
+        // For floor authors, check if they own the origin floor/room
+        $origin_type = get_post_meta($post->ID, '_origin_type', true);
+
+        // If no origin type set yet, allow (likely still being created)
+        if (empty($origin_type)) {
+            return $allcaps;
+        }
+
+        $can_edit = false;
+
+        if ($origin_type === 'floor') {
+            $origin_floor_id = get_post_meta($post->ID, '_origin_floor_id', true);
+            if ($origin_floor_id) {
+                $floor = get_post($origin_floor_id);
+                if ($floor && $floor->post_author == $user_id) {
+                    $can_edit = true;
+                }
+            }
+        } elseif ($origin_type === 'room') {
+            $origin_room_id = get_post_meta($post->ID, '_origin_room_id', true);
+            if ($origin_room_id) {
+                $room_floor_id = get_post_meta($origin_room_id, '_room_floor_id', true);
+                if ($room_floor_id) {
+                    $floor = get_post($room_floor_id);
+                    if ($floor && $floor->post_author == $user_id) {
+                        $can_edit = true;
+                    }
+                }
+            }
+        }
+
+        // Only block if we definitely can't edit
+        if (!$can_edit) {
+            $allcaps['edit_post'] = false;
+        }
+
+        return $allcaps;
+    }
+
+    /**
+     * Filter portals for floor authors to only show their own
+     */
+    public function filter_portals_for_authors($query)
+    {
+        global $pagenow, $typenow;
+
+        if (is_admin() && $query->is_main_query() && $pagenow === 'edit.php' && $typenow === 'portal') {
+            $user = wp_get_current_user();
+            if (in_array('floor_author', (array) $user->roles) && !current_user_can('edit_others_portals')) {
+                // Get floors authored by this user
+                $authored_floor_ids = get_posts(array(
+                    'post_type' => 'floor',
+                    'author' => $user->ID,
+                    'posts_per_page' => -1,
+                    'fields' => 'ids'
+                ));
+
+                if (!empty($authored_floor_ids)) {
+                    // Get rooms on floors authored by this user
+                    $authored_room_ids = get_posts(array(
+                        'post_type' => 'room',
+                        'posts_per_page' => -1,
+                        'fields' => 'ids',
+                        'meta_query' => array(
+                            array(
+                                'key' => '_room_floor_id',
+                                'value' => $authored_floor_ids,
+                                'compare' => 'IN'
+                            )
+                        )
+                    ));
+
+                    // Create meta query to show portals originating from their floors or rooms
+                    $meta_query = array(
+                        'relation' => 'OR',
+                        array(
+                            'relation' => 'AND',
+                            array(
+                                'key' => '_origin_type',
+                                'value' => 'floor',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => '_origin_floor_id',
+                                'value' => $authored_floor_ids,
+                                'compare' => 'IN'
+                            )
+                        )
+                    );
+
+                    if (!empty($authored_room_ids)) {
+                        $meta_query[] = array(
+                            'relation' => 'AND',
+                            array(
+                                'key' => '_origin_type',
+                                'value' => 'room',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => '_origin_room_id',
+                                'value' => $authored_room_ids,
+                                'compare' => 'IN'
+                            )
+                        );
+                    }
+
+                    $query->set('meta_query', $meta_query);
+                } else {
+                    // If no floors, show no portals
+                    $query->set('post__in', array(0));
+                }
+            }
+        }
+    }
+
+    /**
+     * Validate portal creation access and origin restrictions
+     */
+    public function validate_portal_creation_access()
+    {
+        global $pagenow;
+
+        // Check if we're on the new portal creation page
+        if ($pagenow === 'post-new.php' && isset($_GET['post_type']) && $_GET['post_type'] === 'portal') {
+            $user = wp_get_current_user();
+
+            // Allow admins and editors full access
+            if (current_user_can('administrator') || current_user_can('editor')) {
+                return;
+            }
+
+            // For floor authors, allow creation (they'll be restricted during save)
+            if (in_array('floor_author', (array) $user->roles)) {
+                return;
+            }
+
+            // If user is not admin, editor, or floor_author, deny access
+            wp_die('You are not allowed to create portals.', 'Access Denied', array('response' => 403));
+        }
     }
 
     /**
@@ -693,7 +912,6 @@ class Spiral_Tower_Portal_Manager
 
         </div>
         <script type="text/javascript">
-
             jQuery(document).ready(function ($) {
                 // Auto-populate fields from URL parameters
                 const urlParams = new URLSearchParams(window.location.search);
@@ -704,11 +922,12 @@ class Spiral_Tower_Portal_Manager
                 // Auto-select origin type if provided
                 if (originType && (originType === 'floor' || originType === 'room')) {
                     $('#origin_type').val(originType).trigger('change');
-                    // The PHP code above already handles populating the hidden fields and display values
                 }
 
                 // TypeAhead functionality
-                function initTypeAhead(inputSelector, resultsSelector, searchAction, hiddenInputSelector) {
+
+                // TypeAhead functionality - DEBUG VERSION
+                function initTypeAhead(inputSelector, resultsSelector, searchAction, hiddenInputSelector, context) {
                     let currentTimeout = null;
                     let currentRequest = null;
 
@@ -718,7 +937,6 @@ class Spiral_Tower_Portal_Manager
                         const $hidden = $(hiddenInputSelector);
                         const searchTerm = $input.val();
 
-                        // Clear previous timeout and request
                         if (currentTimeout) clearTimeout(currentTimeout);
                         if (currentRequest) currentRequest.abort();
 
@@ -727,15 +945,17 @@ class Spiral_Tower_Portal_Manager
                             return;
                         }
 
-                        // Debounce the search
                         currentTimeout = setTimeout(function () {
+                            const ajaxData = {
+                                action: searchAction,
+                                term: searchTerm,
+                                context: context
+                            };
+
                             currentRequest = $.ajax({
                                 url: ajaxurl,
                                 method: 'GET',
-                                data: {
-                                    action: searchAction,
-                                    term: searchTerm
-                                },
+                                data: ajaxData,
                                 success: function (data) {
                                     $results.empty();
 
@@ -750,14 +970,20 @@ class Spiral_Tower_Portal_Manager
                                             $results.append($result);
                                         });
                                     }
-
                                     $results.show();
+                                },
+                                error: function (xhr, status, error) {
+                                    console.error('AJAX error:', {
+                                        status,
+                                        error,
+                                        responseText: xhr.responseText
+                                    });
+                                    $results.html('<div class="portal-typeahead-result">Error loading results</div>').show();
                                 }
                             });
                         }, 300);
                     });
 
-                    // Handle result selection
                     $(document).on('click', resultsSelector + ' .portal-typeahead-result', function () {
                         const $result = $(this);
                         const id = $result.data('id');
@@ -767,20 +993,15 @@ class Spiral_Tower_Portal_Manager
                             $(inputSelector).val(label);
                             $(hiddenInputSelector).val(id);
                         }
-
                         $(resultsSelector).hide();
-                        updateOriginLink();
-                        updateDestinationLink();
                     });
 
-                    // Hide results when clicking outside
                     $(document).on('click', function (e) {
                         if (!$(e.target).closest('.portal-typeahead-container').length) {
                             $(resultsSelector).hide();
                         }
                     });
 
-                    // Clear hidden value when input is manually cleared
                     $(document).on('input', inputSelector, function () {
                         if ($(this).val() === '') {
                             $(hiddenInputSelector).val('');
@@ -788,11 +1009,11 @@ class Spiral_Tower_Portal_Manager
                     });
                 }
 
-                // Initialize typeaheads
-                initTypeAhead('#origin_floor_search', '#origin_floor_results', 'spiral_tower_search_floors', '#origin_floor_id');
-                initTypeAhead('#destination_floor_search', '#destination_floor_results', 'spiral_tower_search_floors', '#destination_floor_id');
-                initTypeAhead('#origin_room_search', '#origin_room_results', 'spiral_tower_search_rooms', '#origin_room_id');
-                initTypeAhead('#destination_room_search', '#destination_room_results', 'spiral_tower_search_rooms', '#destination_room_id');
+                // Change these lines in your initTypeAhead calls:
+                initTypeAhead('#origin_floor_search', '#origin_floor_results', 'portal_search_floors', '#origin_floor_id', 'origin');
+                initTypeAhead('#destination_floor_search', '#destination_floor_results', 'portal_search_floors', '#destination_floor_id', 'destination');
+                initTypeAhead('#origin_room_search', '#origin_room_results', 'portal_search_rooms', '#origin_room_id', 'origin');
+                initTypeAhead('#destination_room_search', '#destination_room_results', 'portal_search_rooms', '#destination_room_id', 'destination');
 
                 // Custom Size Toggle
                 $('#use_custom_size').on('change', function () {
@@ -958,7 +1179,6 @@ class Spiral_Tower_Portal_Manager
             });
         </script>
 
-
         <?php
     }
 
@@ -983,6 +1203,39 @@ class Spiral_Tower_Portal_Manager
         }
 
         // --- Sanitize and Save Fields ---
+        $user = wp_get_current_user();
+        $is_floor_author = in_array('floor_author', (array) $user->roles) && !current_user_can('administrator') && !current_user_can('editor');
+
+        if ($is_floor_author) {
+            $origin_type = isset($_POST['origin_type']) ? sanitize_text_field($_POST['origin_type']) : '';
+
+            if ($origin_type === 'floor' && isset($_POST['origin_floor_id'])) {
+                $origin_floor_id = intval($_POST['origin_floor_id']);
+                if ($origin_floor_id) {
+                    $floor = get_post($origin_floor_id);
+                    if (!$floor || $floor->post_type !== 'floor' || $floor->post_author != $user->ID) {
+                        wp_die('You can only create portals with origins on floors you own.', 'Access Denied', array('response' => 403));
+                    }
+                }
+            } elseif ($origin_type === 'room' && isset($_POST['origin_room_id'])) {
+                $origin_room_id = intval($_POST['origin_room_id']);
+                if ($origin_room_id) {
+                    $room = get_post($origin_room_id);
+                    if (!$room || $room->post_type !== 'room') {
+                        wp_die('Invalid room.', 'Access Denied', array('response' => 403));
+                    }
+
+                    // Check if the room belongs to a floor owned by this user
+                    $room_floor_id = get_post_meta($origin_room_id, '_room_floor_id', true);
+                    if ($room_floor_id) {
+                        $floor = get_post($room_floor_id);
+                        if (!$floor || $floor->post_author != $user->ID) {
+                            wp_die('You can only create portals with origins on rooms in floors you own.', 'Access Denied', array('response' => 403));
+                        }
+                    }
+                }
+            }
+        }
 
         // Portal Type (Appearance)
         if (isset($_POST['portal_type'])) {
