@@ -22,12 +22,12 @@ $floor_query_args = array(
     'meta_query' => array(
         'relation' => 'OR', // Include if either condition is met
         array(
-            'key'     => '_floor_hidden', // Check the hidden meta key
-            'value'   => '1',           // Value indicating hidden
+            'key' => '_floor_hidden', // Check the hidden meta key
+            'value' => '1',           // Value indicating hidden
             'compare' => '!=',          // Exclude if it IS '1'
         ),
         array(
-            'key'     => '_floor_hidden',
+            'key' => '_floor_hidden',
             'compare' => 'NOT EXISTS', // Also include if the meta key simply doesn't exist
         )
     )
@@ -83,11 +83,12 @@ wp_reset_postdata();
                         <div class="stairs-panel">
                             <ul class="floor-buttons">
                                 <?php foreach ($floors as $floor): ?>
-                                    <li>
+                                    <li id="floor-<?php echo esc_html($floor['number']); ?>">
                                         <?php // *** MODIFICATION: Check 'no_public_transport' status *** ?>
                                         <?php if ($floor['no_public_transport']): ?>
                                             <?php // Display as non-clickable text ?>
-                                            <span class="floor-button no-transport"> <?php // Add class 'no-transport' for potential styling ?>
+                                            <span class="floor-button no-transport">
+                                                <?php // Add class 'no-transport' for potential styling ?>
                                                 <span class="floor-number"><?php echo esc_html($floor['number']); ?></span>
                                                 <span class="floor-title"><?php echo esc_html($floor['title']); ?></span>
                                             </span>
@@ -113,24 +114,93 @@ wp_reset_postdata();
 
     <!-- Fixed navigation arrows -->
     <button class="stairs-nav-arrow" id="goToBottomBtn" title="Go to bottom">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white"
+            stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
     </button>
-    
+
     <button class="stairs-nav-arrow" id="goToTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white"
+            stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="18 15 12 9 6 15"></polyline>
         </svg>
     </button>
 
     <script>
-        document.getElementById('goToBottomBtn').addEventListener('click', function() {
+        // Function to center floor 0 on page load
+        function centerFloor0() {
+            console.log('centering floor...');
+
+            const floor0Element = document.getElementById('floor-0');
+            if (floor0Element) {
+                const elementRect = floor0Element.getBoundingClientRect();
+                const elementTop = elementRect.top + window.pageYOffset;
+                const elementHeight = elementRect.height;
+                const viewportHeight = window.innerHeight;
+
+                // Calculate position to center the element
+                const centerPosition = elementTop - (viewportHeight / 2) + (elementHeight / 2);
+                console.log('calculated centerPosition:', centerPosition);
+
+                // Try multiple scroll methods
+                try {
+                    // Method 1: Modern scrollTo with options
+                    window.scrollTo({
+                        top: centerPosition,
+                        left: 0,
+                        behavior: 'smooth'
+                    });
+                    console.log('Tried modern scrollTo');
+                } catch (e) {
+                    console.log('Modern scrollTo failed:', e);
+                }
+
+                // Method 2: Direct property assignment (immediate fallback)
+                setTimeout(() => {
+                    document.documentElement.scrollTop = centerPosition;
+                    document.body.scrollTop = centerPosition; // For Safari
+                    console.log('Applied direct scroll, new position:', window.pageYOffset);
+                }, 50);
+
+                // Method 3: Use scrollIntoView on the element itself
+                setTimeout(() => {
+                    floor0Element.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                        inline: 'nearest'
+                    });
+                    console.log('Tried scrollIntoView');
+                }, 100);
+
+                // Method 4: Force immediate scroll as final fallback
+                setTimeout(() => {
+                    window.scrollTo(0, centerPosition);
+                    console.log('Final fallback scroll, position:', window.pageYOffset);
+                }, 200);
+            } else {
+                console.log('floor-0 element not found');
+            }
+        }
+
+        // Try multiple timing approaches
+        setTimeout(() => {
+            centerFloor0();
+        }, 100);
+
+        setTimeout(() => {
+            centerFloor0();
+        }, 500);
+
+        window.addEventListener('load', centerFloor0);
+
+        // Existing navigation button functionality
+        document.getElementById('goToBottomBtn').addEventListener('click', function () {
             document.body.scrollTop = document.body.scrollHeight; // For Safari
             document.documentElement.scrollTop = document.documentElement.scrollHeight; // For Chrome, Firefox, IE and Opera
         });
-        
-        document.getElementById('goToTopBtn').addEventListener('click', function() {
+
+        document.getElementById('goToTopBtn').addEventListener('click', function () {
             document.body.scrollTop = 0; // For Safari
             document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
         });

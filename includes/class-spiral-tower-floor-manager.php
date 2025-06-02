@@ -60,11 +60,11 @@ class Spiral_Tower_Floor_Manager
         // Modify frontend queries to exclude hidden floors
         add_action('pre_get_posts', array($this, 'exclude_hidden_floors_from_frontend'));
 
-        // *** NEW: Hide "Add New" buttons for floor authors ***
+        // *** Hide "Add New" buttons for floor authors ***
         add_action('admin_menu', array($this, 'hide_add_new_for_floor_authors'));
         add_action('admin_head', array($this, 'hide_add_new_button_css'));
         
-        // *** NEW: Block creation attempts via direct URL access ***
+        // *** Block creation attempts via direct URL access ***
         add_action('admin_init', array($this, 'block_floor_creation_for_authors'));
 
     }

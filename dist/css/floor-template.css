@@ -2139,8 +2139,8 @@ body.text-only-mode .spiral-tower-floor-container {
  * -------------------------------------------------------- */
 @media (max-width: 768px) {
   .spiral-tower-floor-container {
-    visibility: hidden;
-    opacity: 0;
+    opacity: 1 !important;
+    visibility: visible !important;
     width: 90%;
     margin-top: 50px;
     max-height: calc(85vh - 80px);

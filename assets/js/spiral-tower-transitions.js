@@ -27,83 +27,6 @@ SpiralTower.transitions = (function () {
     // Define transition types
     const transitionTypes = {
 
-        'fade-slide': {
-            enter: (wrapper, title, tl) => {
-                if (wrapper) {
-                    // *** Only set visibility, but keep opacity at current value for back navigation ***
-                    gsap.set(wrapper, { visibility: 'visible' });
-
-                    // *** Check if we need to animate or if we're coming from back navigation ***
-                    if (!isBackNavigation || wrapper.style.opacity !== '1') {
-                        gsap.set(wrapper, { opacity: 0 });
-                        tl.to(wrapper, {
-                            opacity: 1,
-                            duration: durations.enter,
-                            ease: 'power2.out'
-                        }, 0);
-                    }
-                }
-
-                if (title) {
-                    // *** Only animate title if not back-navigating or if explicitly needed ***
-                    if (!isBackNavigation || title.style.opacity !== '1') {
-                        gsap.set(title, { y: '-100%', opacity: 0 });
-                        tl.to(title, {
-                            y: 0,
-                            opacity: 1,
-                            duration: durations.enter,
-                            ease: 'power2.out'
-                        }, 0.2);
-                    }
-                }
-
-                // Animate content
-                const content = document.querySelector('.spiral-tower-floor-content');
-                if (content) {
-                    // *** Only animate content if not back-navigating or if explicitly needed ***
-                    if (!isBackNavigation || content.style.opacity !== '1') {
-                        gsap.set(content, { x: '-50px', opacity: 0 });
-                        tl.to(content, {
-                            x: 0,
-                            opacity: 1,
-                            duration: durations.enter,
-                            ease: 'power2.out'
-                        }, 0.4); // Delay after title appears
-                    }
-                }
-            },
-
-            exit: (wrapper, title, tl) => {
-                if (title) {
-                    tl.to(title, {
-                        y: '100%',
-                        opacity: 0,
-                        duration: durations.exit,
-                        ease: 'power2.in'
-                    }, 0);
-                }
-
-                // Animate content
-                const content = document.querySelector('.spiral-tower-floor-content');
-                if (content) {
-                    tl.to(content, {
-                        x: '50px',
-                        opacity: 0,
-                        duration: durations.exit * 0.8,
-                        ease: 'power2.in'
-                    }, 0.05); // Slightly after title starts
-                }
-
-                if (wrapper) {
-                    tl.to(wrapper, {
-                        opacity: 0,
-                        duration: durations.exit,
-                        ease: 'power2.in'
-                    }, 0.1);
-                }
-            }
-        },
-
         // Let's fix the fade-blur exit function - it might be missing some elements
 
         'fade-blur': {
@@ -449,7 +372,7 @@ SpiralTower.transitions = (function () {
                         ease: 'power2.inOut'
                     }, 0);
                 }
-        
+
                 const content = document.querySelector('.spiral-tower-floor-content');
                 if (content) {
                     tl.to(content, {
@@ -458,7 +381,7 @@ SpiralTower.transitions = (function () {
                         ease: 'power2.inOut'
                     }, 0.1);
                 }
-        
+
                 if (wrapper) {
                     tl.to(wrapper, {
                         opacity: 0,
@@ -466,7 +389,7 @@ SpiralTower.transitions = (function () {
                         ease: 'power2.in'
                     }, 0.3);
                 }
-            },            
+            },
 
         },
 
@@ -990,7 +913,7 @@ SpiralTower.transitions = (function () {
                         ease: 'power2.in'
                     }, 0);
                 }
-        
+
                 const content = document.querySelector('.spiral-tower-floor-content');
                 if (content) {
                     tl.to(content, {
@@ -1001,7 +924,7 @@ SpiralTower.transitions = (function () {
                         ease: 'power2.in'
                     }, 0.1);
                 }
-        
+
                 if (wrapper) {
                     tl.to(wrapper, {
                         opacity: 0,
@@ -1010,7 +933,7 @@ SpiralTower.transitions = (function () {
                         ease: 'power3.in'
                     }, 0.2);
                 }
-            }           
+            }
         },
 
         'liquid-morph': {
@@ -1046,7 +969,7 @@ SpiralTower.transitions = (function () {
                             filter: 'brightness(1.3) saturate(1.5)'
                         });
 
-                        // Create wave-like animation with proper ending
+                        // Create wave-like animation with guaranteed proper ending
                         tl.to(title, {
                             opacity: 1,
                             y: 0,
@@ -1058,20 +981,38 @@ SpiralTower.transitions = (function () {
 
                         tl.to(title, {
                             scaleY: 0.9,
-                            duration: durations.enter * 0.3,
+                            duration: durations.enter * 0.2,
                             ease: 'power1.inOut'
                         }, 0.4);
 
-                        // FIXED: Ensure scaleY returns to exactly 1
+                        // FIXED: Use a callback to ensure scaleY is exactly 1 and clear all transforms
                         tl.to(title, {
                             scaleY: 1,
                             filter: 'brightness(1) saturate(1)',
                             duration: durations.enter * 0.3,
-                            ease: 'elastic.out(1, 0.3)'
+                            ease: 'elastic.out(1, 0.3)',
+                            onComplete: () => {
+                                // Force clear any residual transforms
+                                gsap.set(title, {
+                                    scaleY: 1,
+                                    scaleX: 1,
+                                    scale: 1,
+                                    transform: 'none',
+                                    clearProps: 'transform,filter'
+                                });
+                                console.log('Title transform cleared after liquid-morph animation');
+                            }
                         }, 0.55);
                     } else {
                         // Ensure title is visible and properly scaled for back navigation
-                        gsap.set(title, { visibility: 'visible', opacity: 1, scaleY: 1 });
+                        gsap.set(title, {
+                            visibility: 'visible',
+                            opacity: 1,
+                            scaleY: 1,
+                            scaleX: 1,
+                            scale: 1,
+                            transform: 'none'
+                        });
                     }
                 }
 
@@ -1098,11 +1039,21 @@ SpiralTower.transitions = (function () {
                             opacity: 1,
                             filter: 'blur(0px) saturate(1)',
                             duration: durations.enter * 0.5,
-                            ease: 'power1.out'
+                            ease: 'power1.out',
+                            onComplete: () => {
+                                // Ensure content is also clear of any unwanted transforms
+                                gsap.set(content, {
+                                    clearProps: 'filter,transform'
+                                });
+                            }
                         }, 0.7);
                     } else {
                         // Ensure content is visible for back navigation
-                        gsap.set(content, { visibility: 'visible', opacity: 1 });
+                        gsap.set(content, {
+                            visibility: 'visible',
+                            opacity: 1,
+                            transform: 'none'
+                        });
                     }
                 }
             },
@@ -1239,7 +1190,7 @@ SpiralTower.transitions = (function () {
                         ease: 'power2.in'
                     }, 0);
                 }
-        
+
                 const content = document.querySelector('.spiral-tower-floor-content');
                 if (content) {
                     tl.to(content, {
@@ -1250,7 +1201,7 @@ SpiralTower.transitions = (function () {
                         ease: 'power3.in'
                     }, 0.1);
                 }
-        
+
                 if (wrapper) {
                     tl.to(wrapper, {
                         opacity: 0,
@@ -1358,7 +1309,7 @@ SpiralTower.transitions = (function () {
                         ease: 'power2.in'
                     }, 0);
                 }
-        
+
                 const content = document.querySelector('.spiral-tower-floor-content');
                 if (content) {
                     const paragraphs = content.querySelectorAll('p, h2, h3, ul, ol, blockquote');
@@ -1379,7 +1330,7 @@ SpiralTower.transitions = (function () {
                         }, 0.1);
                     }
                 }
-        
+
                 if (wrapper) {
                     tl.to(wrapper, {
                         opacity: 0,
@@ -1387,7 +1338,1277 @@ SpiralTower.transitions = (function () {
                         ease: 'power2.in'
                     }, 0.3);
                 }
-            },            
+            },
+        },
+        'fade-slide': {
+            enter: (wrapper, title, tl) => {
+                if (wrapper) {
+                    gsap.set(wrapper, { visibility: 'visible' });
+
+                    if (!isBackNavigation || wrapper.style.opacity !== '1') {
+                        gsap.set(wrapper, {
+                            opacity: 0,
+                            filter: 'blur(8px) brightness(1.1)'
+                        });
+                        tl.to(wrapper, {
+                            opacity: 1,
+                            filter: 'blur(0px) brightness(1)',
+                            duration: durations.enter,
+                            ease: 'power2.out'
+                        }, 0);
+                    }
+                }
+
+                if (title) {
+                    if (!isBackNavigation || title.style.opacity !== '1') {
+                        gsap.set(title, { y: '-100%', opacity: 0 });
+                        tl.to(title, {
+                            y: 0,
+                            opacity: 1,
+                            duration: durations.enter,
+                            ease: 'power2.out'
+                        }, 0.2);
+                    }
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    if (!isBackNavigation || content.style.opacity !== '1') {
+                        gsap.set(content, { x: '-50px', opacity: 0 });
+                        tl.to(content, {
+                            x: 0,
+                            opacity: 1,
+                            duration: durations.enter,
+                            ease: 'power2.out'
+                        }, 0.4);
+                    }
+                }
+            },
+
+            exit: (wrapper, title, tl) => {
+                if (wrapper) {
+                    tl.to(wrapper, {
+                        opacity: 0,
+                        filter: 'blur(8px) brightness(0.9)',
+                        duration: durations.exit,
+                        ease: 'power2.in'
+                    }, 0);
+                }
+
+                if (title) {
+                    tl.to(title, {
+                        y: '100%',
+                        opacity: 0,
+                        duration: durations.exit,
+                        ease: 'power2.in'
+                    }, 0);
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    tl.to(content, {
+                        x: '50px',
+                        opacity: 0,
+                        duration: durations.exit * 0.8,
+                        ease: 'power2.in'
+                    }, 0.05);
+                }
+            }
+        },
+        'particle-explosion': {
+            enter: (wrapper, title, tl) => {
+                if (wrapper) {
+                    gsap.set(wrapper, { visibility: 'visible' });
+                    if (!isBackNavigation || wrapper.style.opacity !== '1') {
+                        gsap.set(wrapper, {
+                            opacity: 0,
+                            rotation: 5,
+                            filter: 'blur(20px) hue-rotate(180deg) brightness(2)',
+                            borderRadius: '20px'
+                        });
+
+                        tl.to(wrapper, {
+                            opacity: 1,
+                            rotation: 0,
+                            filter: 'blur(0px) hue-rotate(0deg) brightness(1)',
+                            borderRadius: '0px',
+                            duration: durations.enter * 0.8,
+                            ease: 'power3.out'
+                        }, 0);
+                    }
+                }
+
+                if (title) {
+                    gsap.set(title, { visibility: 'visible' });
+                    if (!isBackNavigation || title.style.opacity !== '1') {
+                        // Split title into individual characters for particle effect
+                        let titleH1 = title.querySelector('h1');
+                        if (titleH1 && !title.classList.contains('particles-processed')) {
+                            let titleText = titleH1.textContent;
+                            let newHTML = '';
+
+                            for (let i = 0; i < titleText.length; i++) {
+                                if (titleText[i] === ' ') {
+                                    newHTML += ' ';
+                                } else {
+                                    newHTML += `<span class="particle-char" style="display:inline-block;">${titleText[i]}</span>`;
+                                }
+                            }
+
+                            titleH1.innerHTML = newHTML;
+                            title.classList.add('particles-processed');
+                        }
+
+                        const particles = title.querySelectorAll('.particle-char');
+                        if (particles.length > 0) {
+                            // Set initial state - scattered around randomly
+                            particles.forEach((particle, index) => {
+                                const angle = (index / particles.length) * Math.PI * 4;
+                                const radius = 300 + Math.random() * 200;
+                                const x = Math.cos(angle) * radius;
+                                const y = Math.sin(angle) * radius;
+
+                                gsap.set(particle, {
+                                    opacity: 0,
+                                    x: x,
+                                    y: y,
+                                    rotation: Math.random() * 720,
+                                    scale: 0.1 + Math.random() * 1.5,
+                                    filter: 'hue-rotate(' + (Math.random() * 360) + 'deg) brightness(2)'
+                                });
+                            });
+
+                            gsap.set(title, { opacity: 1 });
+
+                            // Animate particles flying in
+                            tl.to(particles, {
+                                opacity: 1,
+                                x: 0,
+                                y: 0,
+                                rotation: 0,
+                                scale: 1,
+                                filter: 'hue-rotate(0deg) brightness(1)',
+                                duration: durations.enter * 0.9,
+                                stagger: {
+                                    amount: durations.enter * 0.7,
+                                    from: "random"
+                                },
+                                ease: 'power3.out'
+                            }, 0.3);
+                        } else {
+                            gsap.set(title, { opacity: 0, rotation: 90 });
+                            tl.to(title, {
+                                opacity: 1,
+                                rotation: 0,
+                                duration: durations.enter * 0.8,
+                                ease: 'back.out(1.7)'
+                            }, 0.3);
+                        }
+                    }
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    gsap.set(content, { visibility: 'visible' });
+                    if (!isBackNavigation || content.style.opacity !== '1') {
+                        const elements = content.querySelectorAll('p, h2, h3, ul, ol, blockquote, div');
+
+                        if (elements.length > 0) {
+                            elements.forEach((el, index) => {
+                                const explosionRadius = 400 + Math.random() * 200;
+                                const angle = (Math.random() * Math.PI * 2);
+                                const randomX = Math.cos(angle) * explosionRadius;
+                                const randomY = Math.sin(angle) * explosionRadius;
+
+                                gsap.set(el, {
+                                    opacity: 0,
+                                    x: randomX,
+                                    y: randomY,
+                                    rotation: (Math.random() - 0.5) * 360,
+                                    scale: 0.3 + Math.random() * 0.4,
+                                    filter: 'blur(8px) brightness(' + (1.5 + Math.random() * 0.5) + ')'
+                                });
+                            });
+
+                            tl.to(elements, {
+                                opacity: 1,
+                                x: 0,
+                                y: 0,
+                                rotation: 0,
+                                scale: 1,
+                                filter: 'blur(0px) brightness(1)',
+                                duration: durations.enter * 1.1,
+                                stagger: {
+                                    amount: durations.enter * 0.8,
+                                    from: "random"
+                                },
+                                ease: 'power2.out'
+                            }, 0.6);
+                        } else {
+                            gsap.set(content, { opacity: 0, filter: 'blur(15px)' });
+                            tl.to(content, {
+                                opacity: 1,
+                                filter: 'blur(0px)',
+                                duration: durations.enter,
+                                ease: 'power2.out'
+                            }, 0.6);
+                        }
+                    }
+                }
+            },
+
+            exit: (wrapper, title, tl) => {
+                if (wrapper) {
+                    tl.to(wrapper, {
+                        opacity: 0,
+                        rotation: -5,
+                        filter: 'blur(25px) hue-rotate(-180deg) brightness(0.5)',
+                        borderRadius: '20px',
+                        duration: durations.exit,
+                        ease: 'power3.in'
+                    }, 0);
+                }
+
+                if (title) {
+                    const particles = title.querySelectorAll('.particle-char');
+                    if (particles.length > 0) {
+                        tl.to(particles, {
+                            opacity: 0,
+                            x: (index) => (Math.random() - 0.5) * 600,
+                            y: (index) => (Math.random() - 0.5) * 400,
+                            rotation: (index) => (Math.random() - 0.5) * 720,
+                            scale: 0.1,
+                            filter: 'hue-rotate(' + (Math.random() * 360) + 'deg) brightness(0.5)',
+                            duration: durations.exit * 0.8,
+                            stagger: {
+                                amount: durations.exit * 0.5,
+                                from: "center"
+                            },
+                            ease: 'power3.in'
+                        }, 0.1);
+                    } else {
+                        tl.to(title, {
+                            opacity: 0,
+                            rotation: -90,
+                            duration: durations.exit * 0.8,
+                            ease: 'power3.in'
+                        }, 0.1);
+                    }
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    const elements = content.querySelectorAll('p, h2, h3, ul, ol, blockquote, div');
+                    if (elements.length > 0) {
+                        tl.to(elements, {
+                            opacity: 0,
+                            x: (index) => (Math.random() - 0.5) * 800,
+                            y: (index) => (Math.random() - 0.5) * 600,
+                            rotation: (index) => (Math.random() - 0.5) * 540,
+                            scale: 0.2,
+                            filter: 'blur(15px) brightness(0.3)',
+                            duration: durations.exit,
+                            stagger: {
+                                amount: durations.exit * 0.6,
+                                from: "edges"
+                            },
+                            ease: 'power3.in'
+                        }, 0.2);
+                    } else {
+                        tl.to(content, {
+                            opacity: 0,
+                            filter: 'blur(15px)',
+                            duration: durations.exit,
+                            ease: 'power3.in'
+                        }, 0.2);
+                    }
+                }
+            }
+        },
+        'reality-tear': {
+            enter: (wrapper, title, tl) => {
+                if (wrapper) {
+                    gsap.set(wrapper, { visibility: 'visible' });
+                    if (!isBackNavigation || wrapper.style.opacity !== '1') {
+                        gsap.set(wrapper, {
+                            opacity: 0,
+                            clipPath: 'polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%)',
+                            filter: 'contrast(3) brightness(0.3) hue-rotate(90deg) blur(5px)',
+                            borderRadius: '50%'
+                        });
+
+                        // Reality tears open from center
+                        tl.to(wrapper, {
+                            clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
+                            borderRadius: '0%',
+                            duration: durations.enter * 0.6,
+                            ease: 'power4.out'
+                        }, 0);
+
+                        tl.to(wrapper, {
+                            opacity: 1,
+                            filter: 'contrast(1) brightness(1) hue-rotate(0deg) blur(0px)',
+                            duration: durations.enter * 0.8,
+                            ease: 'power2.out'
+                        }, 0.3);
+                    }
+                }
+
+                if (title) {
+                    gsap.set(title, { visibility: 'visible' });
+                    if (!isBackNavigation || title.style.opacity !== '1') {
+                        gsap.set(title, {
+                            opacity: 0,
+                            rotationX: -90,
+                            y: -100,
+                            filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.8)) blur(10px)',
+                            transformOrigin: 'center bottom',
+                            transformStyle: 'preserve-3d'
+                        });
+
+                        tl.to(title, {
+                            opacity: 1,
+                            rotationX: 0,
+                            y: 0,
+                            filter: 'drop-shadow(0 0px 0px rgba(0,0,0,0)) blur(0px)',
+                            duration: durations.enter * 0.9,
+                            ease: 'power3.out'
+                        }, 0.4);
+                    }
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    gsap.set(content, { visibility: 'visible' });
+                    if (!isBackNavigation || content.style.opacity !== '1') {
+                        gsap.set(content, {
+                            opacity: 0,
+                            clipPath: 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)',
+                            rotationX: 45,
+                            filter: 'blur(5px) contrast(2) brightness(0.5)',
+                            transformOrigin: 'center top',
+                            transformStyle: 'preserve-3d'
+                        });
+
+                        tl.to(content, {
+                            opacity: 1,
+                            clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
+                            rotationX: 0,
+                            filter: 'blur(0px) contrast(1) brightness(1)',
+                            duration: durations.enter,
+                            ease: 'power2.out'
+                        }, 0.7);
+                    }
+                }
+            },
+
+            exit: (wrapper, title, tl) => {
+                if (wrapper) {
+                    tl.to(wrapper, {
+                        clipPath: 'polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%)',
+                        filter: 'contrast(3) brightness(0.3) hue-rotate(-90deg) blur(5px)',
+                        borderRadius: '50%',
+                        duration: durations.exit * 0.8,
+                        ease: 'power4.in'
+                    }, 0);
+
+                    tl.to(wrapper, {
+                        opacity: 0,
+                        duration: durations.exit * 0.4,
+                        ease: 'power2.in'
+                    }, durations.exit * 0.6);
+                }
+
+                if (title) {
+                    tl.to(title, {
+                        opacity: 0,
+                        rotationX: 90,
+                        y: -100,
+                        filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.8)) blur(10px)',
+                        duration: durations.exit * 0.7,
+                        ease: 'power3.in'
+                    }, 0);
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    tl.to(content, {
+                        opacity: 0,
+                        clipPath: 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)',
+                        rotationX: -45,
+                        filter: 'blur(10px) contrast(3) brightness(0.3)',
+                        duration: durations.exit * 0.9,
+                        ease: 'power3.in'
+                    }, 0.1);
+                }
+            },
+            'quantum-phase': {
+                enter: (wrapper, title, tl) => {
+                    if (wrapper) {
+                        gsap.set(wrapper, { visibility: 'visible' });
+                        if (!isBackNavigation || wrapper.style.opacity !== '1') {
+                            gsap.set(wrapper, {
+                                opacity: 0,
+                                filter: 'invert(1) hue-rotate(180deg) saturate(3) blur(50px) contrast(5)',
+                                mixBlendMode: 'difference',
+                                borderRadius: '30px'
+                            });
+
+                            // Quantum materialization through multiple phase states
+                            tl.to(wrapper, {
+                                opacity: 0.3,
+                                filter: 'invert(0.7) hue-rotate(135deg) saturate(2.5) blur(30px) contrast(3)',
+                                borderRadius: '20px',
+                                duration: durations.enter * 0.2,
+                                ease: 'power4.out'
+                            }, 0);
+
+                            tl.to(wrapper, {
+                                opacity: 0.6,
+                                filter: 'invert(0.4) hue-rotate(90deg) saturate(2) blur(15px) contrast(2)',
+                                borderRadius: '10px',
+                                duration: durations.enter * 0.3,
+                                ease: 'power3.out'
+                            }, 0.2);
+
+                            tl.to(wrapper, {
+                                opacity: 0.9,
+                                filter: 'invert(0.1) hue-rotate(45deg) saturate(1.5) blur(5px) contrast(1.5)',
+                                borderRadius: '5px',
+                                duration: durations.enter * 0.3,
+                                ease: 'power2.out'
+                            }, 0.4);
+
+                            tl.to(wrapper, {
+                                opacity: 1,
+                                filter: 'invert(0) hue-rotate(0deg) saturate(1) blur(0px) contrast(1)',
+                                mixBlendMode: 'normal',
+                                borderRadius: '0px',
+                                duration: durations.enter * 0.4,
+                                ease: 'elastic.out(1, 0.5)'
+                            }, 0.6);
+                        }
+                    }
+
+                    if (title) {
+                        gsap.set(title, { visibility: 'visible' });
+                        if (!isBackNavigation || title.style.opacity !== '1') {
+                            // Quantum superposition effect - multiple simultaneous states
+                            gsap.set(title, {
+                                opacity: 0,
+                                filter: 'blur(30px) brightness(3) contrast(0.1) hue-rotate(180deg)'
+                            });
+
+                            // Create multiple quantum states that collapse into one
+                            const quantumStates = 6;
+                            for (let i = 0; i < quantumStates; i++) {
+                                const offset = (i - 2.5) * 8; // positions around center
+                                const phaseTime = 0.3 + (i * 0.08);
+                                const hueShift = i * 60; // different colors for each state
+
+                                tl.to(title, {
+                                    x: offset,
+                                    opacity: 0.15 + (i * 0.12),
+                                    filter: `blur(${25 - i * 4}px) brightness(${2.5 - i * 0.3}) contrast(${0.2 + i * 0.15}) hue-rotate(${180 - hueShift}deg)`,
+                                    duration: 0.12,
+                                    ease: 'none'
+                                }, phaseTime);
+                            }
+
+                            // Wave function collapse to single state
+                            tl.to(title, {
+                                x: 0,
+                                opacity: 1,
+                                filter: 'blur(0px) brightness(1) contrast(1) hue-rotate(0deg)',
+                                duration: durations.enter * 0.5,
+                                ease: 'power3.out'
+                            }, 0.9);
+                        }
+                    }
+
+                    const content = document.querySelector('.spiral-tower-floor-content');
+                    if (content) {
+                        gsap.set(content, { visibility: 'visible' });
+                        if (!isBackNavigation || content.style.opacity !== '1') {
+                            // Content quantum superposition effect - similar to title
+                            gsap.set(content, {
+                                opacity: 0,
+                                filter: 'blur(25px) brightness(2.5) contrast(0.2) hue-rotate(180deg) saturate(3)',
+                                mixBlendMode: 'overlay'
+                            });
+
+                            // Create quantum phase states for content
+                            const contentStates = 5;
+                            for (let i = 0; i < contentStates; i++) {
+                                const phaseTime = 1.0 + (i * 0.1);
+                                const hueShift = i * 72; // spread across color wheel
+                                const yOffset = (i - 2) * 5;
+
+                                tl.to(content, {
+                                    y: yOffset,
+                                    opacity: 0.2 + (i * 0.15),
+                                    filter: `blur(${20 - i * 3}px) brightness(${2.2 - i * 0.25}) contrast(${0.3 + i * 0.15}) hue-rotate(${180 - hueShift}deg) saturate(${2.5 - i * 0.3})`,
+                                    mixBlendMode: i % 2 === 0 ? 'overlay' : 'screen',
+                                    duration: 0.15,
+                                    ease: 'none'
+                                }, phaseTime);
+                            }
+
+                            // Final quantum collapse to normal state
+                            tl.to(content, {
+                                y: 0,
+                                opacity: 1,
+                                filter: 'blur(0px) brightness(1) contrast(1) hue-rotate(0deg) saturate(1)',
+                                mixBlendMode: 'normal',
+                                duration: durations.enter * 0.6,
+                                ease: 'power3.out'
+                            }, 1.6);
+                        }
+                    }
+                },
+
+                exit: (wrapper, title, tl) => {
+                    if (wrapper) {
+                        // Quantum phase transition in reverse
+                        tl.to(wrapper, {
+                            opacity: 0.7,
+                            filter: 'invert(0.3) hue-rotate(60deg) saturate(2) blur(15px) contrast(2)',
+                            mixBlendMode: 'multiply',
+                            borderRadius: '15px',
+                            duration: durations.exit * 0.3,
+                            ease: 'power2.in'
+                        }, 0);
+
+                        tl.to(wrapper, {
+                            opacity: 0.4,
+                            filter: 'invert(0.6) hue-rotate(120deg) saturate(3) blur(30px) contrast(4)',
+                            borderRadius: '25px',
+                            duration: durations.exit * 0.3,
+                            ease: 'power3.in'
+                        }, durations.exit * 0.2);
+
+                        tl.to(wrapper, {
+                            opacity: 0,
+                            filter: 'invert(1) hue-rotate(180deg) saturate(4) blur(50px) contrast(6)',
+                            mixBlendMode: 'difference',
+                            borderRadius: '40px',
+                            duration: durations.exit * 0.4,
+                            ease: 'power4.in'
+                        }, durations.exit * 0.4);
+                    }
+
+                    if (title) {
+                        // Quantum decoherence - single state splits into multiple
+                        const decoherenceStates = 4;
+                        for (let i = 0; i < decoherenceStates; i++) {
+                            const offset = (Math.random() - 0.5) * 40;
+                            const decoherenceTime = i * 0.08;
+                            const hueShift = i * 90;
+
+                            tl.to(title, {
+                                x: offset,
+                                opacity: 1 - (i * 0.25),
+                                filter: `blur(${i * 8}px) brightness(${2 + i * 0.5}) contrast(${0.8 - i * 0.15}) hue-rotate(${hueShift}deg)`,
+                                duration: 0.1,
+                                ease: 'none'
+                            }, decoherenceTime);
+                        }
+
+                        tl.to(title, {
+                            opacity: 0,
+                            x: (Math.random() - 0.5) * 100,
+                            filter: 'blur(40px) brightness(0) contrast(0) hue-rotate(360deg)',
+                            duration: durations.exit * 0.6,
+                            ease: 'power3.in'
+                        }, 0.4);
+                    }
+
+                    const content = document.querySelector('.spiral-tower-floor-content');
+                    if (content) {
+                        // Content quantum decoherence - simpler version matching wrapper/title
+                        tl.to(content, {
+                            opacity: 0,
+                            y: (Math.random() - 0.5) * 30,
+                            filter: 'blur(25px) hue-rotate(180deg) saturate(0.3) contrast(3) brightness(0.5)',
+                            mixBlendMode: 'overlay',
+                            duration: durations.exit * 0.8,
+                            ease: 'power3.in'
+                        }, 0.15);
+                    }
+                }
+            }
+        },
+        'dimension-portal': {
+            enter: (wrapper, title, tl) => {
+                if (wrapper) {
+                    gsap.set(wrapper, { visibility: 'visible' });
+                    if (!isBackNavigation || wrapper.style.opacity !== '1') {
+                        gsap.set(wrapper, {
+                            opacity: 0,
+                            borderRadius: '50%',
+                            filter: 'blur(100px) contrast(10) brightness(5) hue-rotate(270deg) saturate(3)',
+                            background: 'radial-gradient(circle, rgba(138,43,226,0.8) 0%, rgba(30,144,255,0.6) 50%, rgba(0,0,0,0.9) 100%)',
+                            boxShadow: 'inset 0 0 100px rgba(138,43,226,0.8), 0 0 100px rgba(30,144,255,0.6)'
+                        });
+
+                        // Portal opening sequence - magical gateway materializing
+                        tl.to(wrapper, {
+                            opacity: 0.2,
+                            borderRadius: '40%',
+                            filter: 'blur(60px) contrast(8) brightness(4) hue-rotate(225deg) saturate(2.5)',
+                            duration: durations.enter * 0.15,
+                            ease: 'power4.out'
+                        }, 0);
+
+                        tl.to(wrapper, {
+                            opacity: 0.4,
+                            borderRadius: '30%',
+                            filter: 'blur(40px) contrast(6) brightness(3.5) hue-rotate(180deg) saturate(2)',
+                            duration: durations.enter * 0.2,
+                            ease: 'power3.out'
+                        }, 0.1);
+
+                        tl.to(wrapper, {
+                            opacity: 0.7,
+                            borderRadius: '15%',
+                            filter: 'blur(20px) contrast(4) brightness(2.5) hue-rotate(90deg) saturate(1.8)',
+                            duration: durations.enter * 0.25,
+                            ease: 'power2.out'
+                        }, 0.25);
+
+                        tl.to(wrapper, {
+                            opacity: 0.9,
+                            borderRadius: '5%',
+                            filter: 'blur(8px) contrast(2) brightness(1.8) hue-rotate(45deg) saturate(1.4)',
+                            duration: durations.enter * 0.25,
+                            ease: 'power1.out'
+                        }, 0.45);
+
+                        tl.to(wrapper, {
+                            opacity: 1,
+                            borderRadius: '0%',
+                            filter: 'blur(0px) contrast(1) brightness(1) hue-rotate(0deg) saturate(1)',
+                            background: '',
+                            boxShadow: '',
+                            duration: durations.enter * 0.35,
+                            ease: 'elastic.out(1, 0.3)'
+                        }, 0.65);
+                    }
+                }
+
+                if (title) {
+                    gsap.set(title, { visibility: 'visible' });
+                    if (!isBackNavigation || title.style.opacity !== '1') {
+                        gsap.set(title, {
+                            opacity: 0,
+                            z: -1000,
+                            rotationY: 720,
+                            rotationX: 45,
+                            filter: 'blur(20px) drop-shadow(0 0 30px rgba(138,43,226,0.9)) brightness(3)',
+                            textShadow: '0 0 40px rgba(30,144,255,0.9), 0 0 80px rgba(138,43,226,0.6)',
+                            transformStyle: 'preserve-3d'
+                        });
+
+                        tl.to(title, {
+                            opacity: 1,
+                            z: 0,
+                            rotationY: 0,
+                            rotationX: 0,
+                            filter: 'blur(0px) drop-shadow(0 0 0px rgba(138,43,226,0)) brightness(1)',
+                            textShadow: '0 0 0px rgba(30,144,255,0), 0 0 0px rgba(138,43,226,0)',
+                            duration: durations.enter * 0.9,
+                            ease: 'power3.out'
+                        }, 0.4);
+                    }
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    gsap.set(content, { visibility: 'visible' });
+                    if (!isBackNavigation || content.style.opacity !== '1') {
+                        gsap.set(content, {
+                            opacity: 0,
+                            z: -500,
+                            rotationX: 30,
+                            y: 50,
+                            filter: 'blur(15px) hue-rotate(270deg) brightness(2) contrast(0.5)',
+                            background: 'linear-gradient(45deg, rgba(138,43,226,0.1) 0%, rgba(30,144,255,0.1) 100%)',
+                            boxShadow: '0 0 50px rgba(138,43,226,0.3)',
+                            transformStyle: 'preserve-3d'
+                        });
+
+                        tl.to(content, {
+                            opacity: 1,
+                            z: 0,
+                            rotationX: 0,
+                            y: 0,
+                            filter: 'blur(0px) hue-rotate(0deg) brightness(1) contrast(1)',
+                            background: '',
+                            boxShadow: '',
+                            duration: durations.enter * 1.0,
+                            ease: 'power2.out'
+                        }, 0.7);
+                    }
+                }
+            },
+
+            exit: (wrapper, title, tl) => {
+                if (wrapper) {
+                    // Portal closing with different color scheme (reds/oranges for exit)
+                    tl.to(wrapper, {
+                        opacity: 0.8,
+                        borderRadius: '10%',
+                        filter: 'blur(15px) contrast(3) brightness(2) hue-rotate(30deg) saturate(2)',
+                        background: 'radial-gradient(circle, rgba(255,69,0,0.8) 0%, rgba(255,140,0,0.6) 50%, rgba(139,0,0,0.9) 100%)',
+                        boxShadow: 'inset 0 0 80px rgba(255,69,0,0.8), 0 0 80px rgba(255,140,0,0.6)',
+                        duration: durations.exit * 0.2,
+                        ease: 'power1.in'
+                    }, 0);
+
+                    tl.to(wrapper, {
+                        opacity: 0.5,
+                        borderRadius: '25%',
+                        filter: 'blur(30px) contrast(5) brightness(3) hue-rotate(60deg) saturate(2.5)',
+                        duration: durations.exit * 0.3,
+                        ease: 'power2.in'
+                    }, durations.exit * 0.2);
+
+                    tl.to(wrapper, {
+                        opacity: 0.2,
+                        borderRadius: '40%',
+                        filter: 'blur(50px) contrast(8) brightness(4) hue-rotate(90deg) saturate(3)',
+                        duration: durations.exit * 0.3,
+                        ease: 'power3.in'
+                    }, durations.exit * 0.4);
+
+                    tl.to(wrapper, {
+                        opacity: 0,
+                        borderRadius: '50%',
+                        filter: 'blur(100px) contrast(10) brightness(5) hue-rotate(120deg) saturate(4)',
+                        duration: durations.exit * 0.2,
+                        ease: 'power4.in'
+                    }, durations.exit * 0.8);
+                }
+
+                if (title) {
+                    tl.to(title, {
+                        opacity: 0,
+                        z: -1000,
+                        rotationY: -720,
+                        rotationX: -45,
+                        filter: 'blur(20px) drop-shadow(0 0 30px rgba(255,69,0,0.9)) brightness(3)',
+                        textShadow: '0 0 40px rgba(255,140,0,0.9), 0 0 80px rgba(255,69,0,0.6)',
+                        duration: durations.exit * 0.8,
+                        ease: 'power3.in'
+                    }, 0);
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    tl.to(content, {
+                        opacity: 0,
+                        z: -500,
+                        rotationX: -30,
+                        y: -50,
+                        filter: 'blur(15px) hue-rotate(60deg) brightness(0.5) contrast(2)',
+                        background: 'linear-gradient(45deg, rgba(255,69,0,0.2) 0%, rgba(255,140,0,0.2) 100%)',
+                        boxShadow: '0 0 50px rgba(255,69,0,0.5)',
+                        duration: durations.exit * 0.9,
+                        ease: 'power3.in'
+                    }, 0.1);
+                }
+            }
+        },
+        'dimension-portal': {
+            enter: (wrapper, title, tl) => {
+                if (wrapper) {
+                    gsap.set(wrapper, { visibility: 'visible' });
+                    if (!isBackNavigation || wrapper.style.opacity !== '1') {
+                        gsap.set(wrapper, {
+                            opacity: 0,
+                            borderRadius: '50%',
+                            filter: 'blur(100px) contrast(10) brightness(5) hue-rotate(270deg) saturate(3)',
+                            background: 'radial-gradient(circle, rgba(138,43,226,0.8) 0%, rgba(30,144,255,0.6) 50%, rgba(0,0,0,0.9) 100%)',
+                            boxShadow: 'inset 0 0 100px rgba(138,43,226,0.8), 0 0 100px rgba(30,144,255,0.6)'
+                        });
+
+                        // Portal opening sequence - magical gateway materializing
+                        tl.to(wrapper, {
+                            opacity: 0.2,
+                            borderRadius: '40%',
+                            filter: 'blur(60px) contrast(8) brightness(4) hue-rotate(225deg) saturate(2.5)',
+                            duration: durations.enter * 0.15,
+                            ease: 'power4.out'
+                        }, 0);
+
+                        tl.to(wrapper, {
+                            opacity: 0.4,
+                            borderRadius: '30%',
+                            filter: 'blur(40px) contrast(6) brightness(3.5) hue-rotate(180deg) saturate(2)',
+                            duration: durations.enter * 0.2,
+                            ease: 'power3.out'
+                        }, 0.1);
+
+                        tl.to(wrapper, {
+                            opacity: 0.7,
+                            borderRadius: '15%',
+                            filter: 'blur(20px) contrast(4) brightness(2.5) hue-rotate(90deg) saturate(1.8)',
+                            duration: durations.enter * 0.25,
+                            ease: 'power2.out'
+                        }, 0.25);
+
+                        tl.to(wrapper, {
+                            opacity: 0.9,
+                            borderRadius: '5%',
+                            filter: 'blur(8px) contrast(2) brightness(1.8) hue-rotate(45deg) saturate(1.4)',
+                            duration: durations.enter * 0.25,
+                            ease: 'power1.out'
+                        }, 0.45);
+
+                        tl.to(wrapper, {
+                            opacity: 1,
+                            borderRadius: '0%',
+                            filter: 'blur(0px) contrast(1) brightness(1) hue-rotate(0deg) saturate(1)',
+                            background: '',
+                            boxShadow: '',
+                            duration: durations.enter * 0.35,
+                            ease: 'elastic.out(1, 0.3)'
+                        }, 0.65);
+                    }
+                }
+
+                if (title) {
+                    gsap.set(title, { visibility: 'visible' });
+                    if (!isBackNavigation || title.style.opacity !== '1') {
+                        gsap.set(title, {
+                            opacity: 0,
+                            z: -1000,
+                            rotationY: 720,
+                            rotationX: 45,
+                            filter: 'blur(20px) drop-shadow(0 0 30px rgba(138,43,226,0.9)) brightness(3)',
+                            textShadow: '0 0 40px rgba(30,144,255,0.9), 0 0 80px rgba(138,43,226,0.6)',
+                            transformStyle: 'preserve-3d'
+                        });
+
+                        tl.to(title, {
+                            opacity: 1,
+                            z: 0,
+                            rotationY: 0,
+                            rotationX: 0,
+                            filter: 'blur(0px) drop-shadow(0 0 0px rgba(138,43,226,0)) brightness(1)',
+                            textShadow: '0 0 0px rgba(30,144,255,0), 0 0 0px rgba(138,43,226,0)',
+                            duration: durations.enter * 0.9,
+                            ease: 'power3.out'
+                        }, 0.4);
+                    }
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    gsap.set(content, { visibility: 'visible' });
+                    if (!isBackNavigation || content.style.opacity !== '1') {
+                        gsap.set(content, {
+                            opacity: 0,
+                            z: -500,
+                            rotationX: 30,
+                            y: 50,
+                            filter: 'blur(15px) hue-rotate(270deg) brightness(2) contrast(0.5)',
+                            background: 'linear-gradient(45deg, rgba(138,43,226,0.1) 0%, rgba(30,144,255,0.1) 100%)',
+                            boxShadow: '0 0 50px rgba(138,43,226,0.3)',
+                            transformStyle: 'preserve-3d'
+                        });
+
+                        tl.to(content, {
+                            opacity: 1,
+                            z: 0,
+                            rotationX: 0,
+                            y: 0,
+                            filter: 'blur(0px) hue-rotate(0deg) brightness(1) contrast(1)',
+                            background: '',
+                            boxShadow: '',
+                            duration: durations.enter * 1.0,
+                            ease: 'power2.out'
+                        }, 0.7);
+                    }
+                }
+            },
+
+            exit: (wrapper, title, tl) => {
+                if (wrapper) {
+                    // Portal closing with different color scheme (reds/oranges for exit)
+                    tl.to(wrapper, {
+                        opacity: 0.8,
+                        borderRadius: '10%',
+                        filter: 'blur(15px) contrast(3) brightness(2) hue-rotate(30deg) saturate(2)',
+                        background: 'radial-gradient(circle, rgba(255,69,0,0.8) 0%, rgba(255,140,0,0.6) 50%, rgba(139,0,0,0.9) 100%)',
+                        boxShadow: 'inset 0 0 80px rgba(255,69,0,0.8), 0 0 80px rgba(255,140,0,0.6)',
+                        duration: durations.exit * 0.2,
+                        ease: 'power1.in'
+                    }, 0);
+
+                    tl.to(wrapper, {
+                        opacity: 0.5,
+                        borderRadius: '25%',
+                        filter: 'blur(30px) contrast(5) brightness(3) hue-rotate(60deg) saturate(2.5)',
+                        duration: durations.exit * 0.3,
+                        ease: 'power2.in'
+                    }, durations.exit * 0.2);
+
+                    tl.to(wrapper, {
+                        opacity: 0.2,
+                        borderRadius: '40%',
+                        filter: 'blur(50px) contrast(8) brightness(4) hue-rotate(90deg) saturate(3)',
+                        duration: durations.exit * 0.3,
+                        ease: 'power3.in'
+                    }, durations.exit * 0.4);
+
+                    tl.to(wrapper, {
+                        opacity: 0,
+                        borderRadius: '50%',
+                        filter: 'blur(100px) contrast(10) brightness(5) hue-rotate(120deg) saturate(4)',
+                        duration: durations.exit * 0.2,
+                        ease: 'power4.in'
+                    }, durations.exit * 0.8);
+                }
+
+                if (title) {
+                    tl.to(title, {
+                        opacity: 0,
+                        z: -1000,
+                        rotationY: -720,
+                        rotationX: -45,
+                        filter: 'blur(20px) drop-shadow(0 0 30px rgba(255,69,0,0.9)) brightness(3)',
+                        textShadow: '0 0 40px rgba(255,140,0,0.9), 0 0 80px rgba(255,69,0,0.6)',
+                        duration: durations.exit * 0.8,
+                        ease: 'power3.in'
+                    }, 0);
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    tl.to(content, {
+                        opacity: 0,
+                        z: -500,
+                        rotationX: -30,
+                        y: -50,
+                        filter: 'blur(15px) hue-rotate(60deg) brightness(0.5) contrast(2)',
+                        background: 'linear-gradient(45deg, rgba(255,69,0,0.2) 0%, rgba(255,140,0,0.2) 100%)',
+                        boxShadow: '0 0 50px rgba(255,69,0,0.5)',
+                        duration: durations.exit * 0.9,
+                        ease: 'power3.in'
+                    }, 0.1);
+                }
+            }
+        },
+        'typewriter-rebuild': {
+            enter: (wrapper, title, tl) => {
+                if (wrapper) {
+                    gsap.set(wrapper, { visibility: 'visible' });
+                    if (!isBackNavigation || wrapper.style.opacity !== '1') {
+                        gsap.set(wrapper, {
+                            opacity: 0,
+                            filter: 'contrast(1.8) brightness(0.7) sepia(0.3)',
+                            background: 'linear-gradient(0deg, rgba(0, 20, 0, 0.05) 0%, rgba(0, 0, 0, 0.02) 100%)',
+                            fontFamily: 'monospace, Courier, "Courier New"'
+                        });
+
+                        tl.to(wrapper, {
+                            opacity: 1,
+                            filter: 'contrast(1.2) brightness(0.95) sepia(0.1)',
+                            duration: durations.enter * 0.4,
+                            ease: 'power1.out'
+                        }, 0);
+
+                        tl.to(wrapper, {
+                            filter: 'contrast(1) brightness(1) sepia(0)',
+                            background: '',
+                            fontFamily: '',
+                            duration: durations.enter * 0.6,
+                            ease: 'power1.out'
+                        }, durations.enter * 0.7);
+                    }
+                }
+
+                if (title) {
+                    gsap.set(title, { visibility: 'visible' });
+                    if (!isBackNavigation || title.style.opacity !== '1') {
+                        let titleH1 = title.querySelector('h1');
+                        if (titleH1 && !title.classList.contains('typewriter-processed')) {
+                            let titleText = titleH1.textContent;
+                            titleH1.innerHTML = '<span class="typewriter-cursor" style="color: #00ff00; font-weight: bold;">|</span>';
+                            title.classList.add('typewriter-processed');
+
+                            gsap.set(title, {
+                                opacity: 1,
+                                color: '#00ff00',
+                                fontFamily: 'monospace, Courier, "Courier New"',
+                                textShadow: '0 0 5px rgba(0, 255, 0, 0.3)'
+                            });
+
+                            // Blinking cursor effect
+                            tl.to(title.querySelector('.typewriter-cursor'), {
+                                opacity: 0,
+                                duration: 0.5,
+                                repeat: -1,
+                                yoyo: true,
+                                ease: 'power2.inOut'
+                            }, 0);
+
+                            // Type each character with typewriter sounds
+                            for (let i = 0; i < titleText.length; i++) {
+                                tl.call(() => {
+                                    const cursor = title.querySelector('.typewriter-cursor');
+                                    if (cursor) {
+                                        cursor.insertAdjacentText('beforebegin', titleText[i]);
+                                    }
+                                }, [], 0.5 + (i * 0.1));
+                            }
+
+                            // Remove cursor and normalize styling
+                            tl.call(() => {
+                                const cursor = title.querySelector('.typewriter-cursor');
+                                if (cursor) cursor.remove();
+                            }, [], 0.5 + (titleText.length * 0.1) + 0.3);
+
+                            tl.to(title, {
+                                color: '',
+                                fontFamily: '',
+                                textShadow: '',
+                                duration: 0.8,
+                                ease: 'power1.out'
+                            }, 0.5 + (titleText.length * 0.1) + 0.5);
+                        } else {
+                            gsap.set(title, { opacity: 0 });
+                            tl.to(title, { opacity: 1, duration: durations.enter }, 0.2);
+                        }
+                    }
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    gsap.set(content, { visibility: 'visible' });
+                    if (!isBackNavigation || content.style.opacity !== '1') {
+                        gsap.set(content, {
+                            opacity: 0,
+                            filter: 'contrast(1.5) brightness(0.8)',
+                            fontFamily: 'monospace, Courier, "Courier New"',
+                            background: 'rgba(0, 20, 0, 0.08)',
+                            padding: '15px',
+                            borderRadius: '3px',
+                            border: '1px solid rgba(0, 255, 0, 0.1)'
+                        });
+
+                        tl.to(content, {
+                            opacity: 1,
+                            duration: durations.enter * 0.4,
+                            ease: 'power1.out'
+                        }, 1.8);
+
+                        // Add scanning line effect
+                        tl.fromTo(content, {
+                            backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(0, 255, 0, 0.1) 2%, transparent 4%)',
+                            backgroundSize: '100% 100%',
+                            backgroundPosition: '-100% 0'
+                        }, {
+                            backgroundPosition: '200% 0',
+                            duration: durations.enter * 0.6,
+                            ease: 'power1.inOut'
+                        }, 1.8);
+
+                        // Return to normal styling
+                        tl.to(content, {
+                            filter: 'contrast(1) brightness(1)',
+                            fontFamily: '',
+                            background: '',
+                            padding: '',
+                            borderRadius: '',
+                            border: '',
+                            backgroundImage: '',
+                            duration: 1.0,
+                            ease: 'power1.out'
+                        }, durations.enter * 0.8);
+                    }
+                }
+            },
+
+            exit: (wrapper, title, tl) => {
+                if (wrapper) {
+                    tl.to(wrapper, {
+                        opacity: 0,
+                        filter: 'contrast(2) brightness(0.5) sepia(0.5)',
+                        background: 'linear-gradient(0deg, rgba(0, 20, 0, 0.1) 0%, rgba(0, 0, 0, 0.05) 100%)',
+                        duration: durations.exit,
+                        ease: 'power2.in'
+                    }, 0);
+                }
+
+                if (title) {
+                    // Reverse typewriter effect - erasing characters
+                    let titleH1 = title.querySelector('h1');
+                    if (titleH1) {
+                        const text = titleH1.textContent;
+
+                        // Add terminal styling during exit
+                        tl.to(title, {
+                            color: '#00ff00',
+                            fontFamily: 'monospace, Courier, "Courier New"',
+                            textShadow: '0 0 5px rgba(0, 255, 0, 0.3)',
+                            duration: 0.3,
+                            ease: 'power1.out'
+                        }, 0);
+
+                        // Erase characters one by one
+                        for (let i = text.length - 1; i >= 0; i--) {
+                            tl.call(() => {
+                                if (titleH1.textContent.length > 0) {
+                                    titleH1.textContent = titleH1.textContent.slice(0, -1);
+                                }
+                            }, [], 0.4 + ((text.length - i - 1) * 0.04));
+                        }
+
+                        // Add blinking cursor after erasing
+                        tl.call(() => {
+                            titleH1.innerHTML = '<span class="typewriter-cursor" style="color: #00ff00; font-weight: bold;">|</span>';
+                        }, [], 0.4 + (text.length * 0.04));
+
+                        // Fade out cursor
+                        tl.to(title, {
+                            opacity: 0,
+                            duration: 0.5,
+                            ease: 'power2.in'
+                        }, 0.6 + (text.length * 0.04));
+                    } else {
+                        tl.to(title, {
+                            opacity: 0,
+                            color: '#00ff00',
+                            fontFamily: 'monospace, Courier, "Courier New"',
+                            duration: durations.exit * 0.8,
+                            ease: 'power2.in'
+                        }, 0);
+                    }
+                }
+
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    tl.to(content, {
+                        opacity: 0,
+                        filter: 'contrast(0.5) brightness(0.3)',
+                        fontFamily: 'monospace, Courier, "Courier New"',
+                        color: '#00aa00',
+                        duration: durations.exit * 0.9,
+                        ease: 'power2.in'
+                    }, 0.2);
+                }
+            },
+            '3d-flip-cascade': {
+                enter: (wrapper, title, tl) => {
+                    if (wrapper) {
+                        gsap.set(wrapper, { visibility: 'visible' });
+                        if (!isBackNavigation || wrapper.style.opacity !== '1') {
+                            // Set up 3D perspective on wrapper
+                            gsap.set(wrapper, {
+                                opacity: 0,
+                                perspective: '1200px',
+                                perspectiveOrigin: 'center center',
+                                transformStyle: 'preserve-3d'
+                            });
+
+                            tl.to(wrapper, {
+                                opacity: 1,
+                                duration: durations.enter * 0.8,
+                                ease: 'power2.out'
+                            }, 0);
+                        }
+                    }
+
+                    if (title) {
+                        gsap.set(title, { visibility: 'visible' });
+                        if (!isBackNavigation || title.style.opacity !== '1') {
+                            gsap.set(title, {
+                                opacity: 0,
+                                rotationY: -180,
+                                rotationX: 45,
+                                z: -300,
+                                transformOrigin: 'center center',
+                                transformStyle: 'preserve-3d',
+                                filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.6)) blur(5px)',
+                                backfaceVisibility: 'hidden'
+                            });
+
+                            tl.to(title, {
+                                opacity: 1,
+                                rotationY: 0,
+                                rotationX: 0,
+                                z: 0,
+                                filter: 'drop-shadow(0 0px 0px rgba(0,0,0,0)) blur(0px)',
+                                duration: durations.enter * 0.8,
+                                ease: 'back.out(1.7)'
+                            }, 0.2);
+                        }
+                    }
+
+                    const content = document.querySelector('.spiral-tower-floor-content');
+                    if (content) {
+                        gsap.set(content, { visibility: 'visible' });
+                        if (!isBackNavigation || content.style.opacity !== '1') {
+                            // Simple single flip for the entire content block
+                            gsap.set(content, {
+                                opacity: 0,
+                                rotationX: 90,
+                                z: -200,
+                                transformOrigin: 'center bottom',
+                                transformStyle: 'preserve-3d',
+                                filter: 'drop-shadow(0 15px 30px rgba(0,0,0,0.5)) brightness(0.8)',
+                                backfaceVisibility: 'hidden'
+                            });
+
+                            tl.to(content, {
+                                opacity: 1,
+                                rotationX: 0,
+                                z: 0,
+                                filter: 'drop-shadow(0 0px 0px rgba(0,0,0,0)) brightness(1)',
+                                duration: durations.enter * 0.8,
+                                ease: 'back.out(1.4)'
+                            }, 0.6);
+                        }
+                    }
+                },
+
+                exit: (wrapper, title, tl) => {
+                    if (wrapper) {
+                        tl.to(wrapper, {
+                            opacity: 0,
+                            duration: durations.exit,
+                            ease: 'power2.in'
+                        }, 0.5);
+                    }
+
+                    if (title) {
+                        tl.to(title, {
+                            opacity: 0,
+                            rotationY: 180,
+                            rotationX: -45,
+                            z: -300,
+                            filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.8)) blur(5px)',
+                            duration: durations.exit * 0.8,
+                            ease: 'back.in(1.7)'
+                        }, 0);
+                    }
+
+                    const content = document.querySelector('.spiral-tower-floor-content');
+                    if (content) {
+                        // Simple single flip for content exit
+                        tl.to(content, {
+                            opacity: 0,
+                            rotationX: -90,
+                            z: -200,
+                            filter: 'drop-shadow(0 15px 30px rgba(0,0,0,0.7)) brightness(0.6)',
+                            duration: durations.exit * 0.8,
+                            ease: 'back.in(1.4)'
+                        }, 0.1);
+                    }
+                }
+            }
         }
     };
 
@@ -1769,160 +2990,160 @@ SpiralTower.transitions = (function () {
         }
     }
 
-// Replace your runExitAnimations function with this super-debug version:
+    // Replace your runExitAnimations function with this super-debug version:
 
-function runExitAnimations(callback) {
-    debugToStorage('=== EXIT ANIMATION START ===');
-    
-    const transitionType = selectRandomTransition(lastExitType);
-    lastExitType = transitionType;
+    function runExitAnimations(callback) {
+        debugToStorage('=== EXIT ANIMATION START ===');
 
-    debugToStorage(`Selected exit transition: ${transitionType}`);
-    logger.log(MODULE_NAME, `Running exit animations with type: ${transitionType}`);
-    isAnimating = true;
+        const transitionType = selectRandomTransition(lastExitType);
+        lastExitType = transitionType;
 
-    const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
-    const title = document.querySelector('.spiral-tower-floor-title');
+        debugToStorage(`Selected exit transition: ${transitionType}`);
+        logger.log(MODULE_NAME, `Running exit animations with type: ${transitionType}`);
+        isAnimating = true;
 
-    // Debug element states
-    debugToStorage(`Elements - wrapper: ${wrapper ? 'YES' : 'NO'}, title: ${title ? 'YES' : 'NO'}`);
-    
-    if (wrapper) {
-        debugToStorage(`Wrapper - opacity: ${window.getComputedStyle(wrapper).opacity}, visibility: ${window.getComputedStyle(wrapper).visibility}`);
-    }
+        const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
+        const title = document.querySelector('.spiral-tower-floor-title');
 
-    // Check if transition exists
-    const transition = transitionTypes[transitionType];
-    debugToStorage(`Transition exists: ${!!transition}, Exit function exists: ${!!(transition && transition.exit)}`);
+        // Debug element states
+        debugToStorage(`Elements - wrapper: ${wrapper ? 'YES' : 'NO'}, title: ${title ? 'YES' : 'NO'}`);
 
-    const tl = gsap.timeline({
-        onStart: () => {
-            debugToStorage('Timeline STARTED');
-            console.log('🎬 GSAP Timeline started');
-        },
-        onUpdate: () => {
-            // Log progress every 25%
-            const progress = Math.round(tl.progress() * 4) * 25;
-            if (progress > 0 && progress <= 100) {
-                console.log(`🎬 Timeline progress: ${progress}%`);
-                debugToStorage(`Timeline progress: ${progress}%`);
-            }
-        },
-        onComplete: () => {
-            debugToStorage('Timeline COMPLETED');
-            console.log('🎬 GSAP Timeline completed successfully');
-            isAnimating = false;
-            logger.log(MODULE_NAME, "Exit animations complete");
-
-            try {
-                sessionStorage.setItem('spiralTower_lastExitTime', Date.now());
-                sessionStorage.setItem('spiralTower_lastExitType', transitionType);
-                debugToStorage('Session storage updated');
-            } catch (err) {
-                debugToStorage(`Session storage error: ${err.message}`);
-                logger.warn(MODULE_NAME, "Could not store animation state", err);
-            }
-
-            debugToStorage('=== EXIT ANIMATION END ===');
-            
-            if (typeof callback === 'function') {
-                debugToStorage('Calling navigation callback');
-                console.log('🎬 Calling navigation callback');
-                callback();
-            } else {
-                debugToStorage('No callback provided');
-                console.log('❌ No callback provided');
-            }
-        },
-        onReverseComplete: () => {
-            console.log('🎬 Timeline reverse completed (unexpected)');
-            debugToStorage('Timeline REVERSE completed (unexpected)');
+        if (wrapper) {
+            debugToStorage(`Wrapper - opacity: ${window.getComputedStyle(wrapper).opacity}, visibility: ${window.getComputedStyle(wrapper).visibility}`);
         }
-    });
 
-    // Add timeline debugging
-    setTimeout(() => {
-        console.log('🎬 Timeline state after 100ms:', {
-            duration: tl.duration(),
-            progress: tl.progress(),
-            isActive: tl.isActive(),
-            paused: tl.paused(),
-            totalTime: tl.totalTime(),
-            time: tl.time()
+        // Check if transition exists
+        const transition = transitionTypes[transitionType];
+        debugToStorage(`Transition exists: ${!!transition}, Exit function exists: ${!!(transition && transition.exit)}`);
+
+        const tl = gsap.timeline({
+            onStart: () => {
+                debugToStorage('Timeline STARTED');
+                console.log('🎬 GSAP Timeline started');
+            },
+            onUpdate: () => {
+                // Log progress every 25%
+                const progress = Math.round(tl.progress() * 4) * 25;
+                if (progress > 0 && progress <= 100) {
+                    console.log(`🎬 Timeline progress: ${progress}%`);
+                    debugToStorage(`Timeline progress: ${progress}%`);
+                }
+            },
+            onComplete: () => {
+                debugToStorage('Timeline COMPLETED');
+                console.log('🎬 GSAP Timeline completed successfully');
+                isAnimating = false;
+                logger.log(MODULE_NAME, "Exit animations complete");
+
+                try {
+                    sessionStorage.setItem('spiralTower_lastExitTime', Date.now());
+                    sessionStorage.setItem('spiralTower_lastExitType', transitionType);
+                    debugToStorage('Session storage updated');
+                } catch (err) {
+                    debugToStorage(`Session storage error: ${err.message}`);
+                    logger.warn(MODULE_NAME, "Could not store animation state", err);
+                }
+
+                debugToStorage('=== EXIT ANIMATION END ===');
+
+                if (typeof callback === 'function') {
+                    debugToStorage('Calling navigation callback');
+                    console.log('🎬 Calling navigation callback');
+                    callback();
+                } else {
+                    debugToStorage('No callback provided');
+                    console.log('❌ No callback provided');
+                }
+            },
+            onReverseComplete: () => {
+                console.log('🎬 Timeline reverse completed (unexpected)');
+                debugToStorage('Timeline REVERSE completed (unexpected)');
+            }
         });
-        debugToStorage(`Timeline state: duration=${tl.duration()}, progress=${tl.progress()}, active=${tl.isActive()}`);
-    }, 100);
 
-    // Check timeline state periodically
-    const checkInterval = setInterval(() => {
-        if (!tl.isActive() && tl.progress() < 1) {
-            console.log('⚠️ Timeline stopped unexpectedly at progress:', tl.progress());
-            debugToStorage(`Timeline stopped at progress: ${tl.progress()}`);
-            clearInterval(checkInterval);
-            
-            // Force completion
-            console.log('🔧 Forcing timeline completion');
-            debugToStorage('Forcing timeline completion due to stall');
-            isAnimating = false;
-            if (typeof callback === 'function') {
-                callback();
+        // Add timeline debugging
+        setTimeout(() => {
+            console.log('🎬 Timeline state after 100ms:', {
+                duration: tl.duration(),
+                progress: tl.progress(),
+                isActive: tl.isActive(),
+                paused: tl.paused(),
+                totalTime: tl.totalTime(),
+                time: tl.time()
+            });
+            debugToStorage(`Timeline state: duration=${tl.duration()}, progress=${tl.progress()}, active=${tl.isActive()}`);
+        }, 100);
+
+        // Check timeline state periodically
+        const checkInterval = setInterval(() => {
+            if (!tl.isActive() && tl.progress() < 1) {
+                console.log('⚠️ Timeline stopped unexpectedly at progress:', tl.progress());
+                debugToStorage(`Timeline stopped at progress: ${tl.progress()}`);
+                clearInterval(checkInterval);
+
+                // Force completion
+                console.log('🔧 Forcing timeline completion');
+                debugToStorage('Forcing timeline completion due to stall');
+                isAnimating = false;
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            } else if (tl.progress() >= 1) {
+                console.log('✅ Timeline completed normally');
+                clearInterval(checkInterval);
             }
-        } else if (tl.progress() >= 1) {
-            console.log('✅ Timeline completed normally');
+        }, 200); // Check every 200ms
+
+        // Clear interval after maximum duration
+        setTimeout(() => {
             clearInterval(checkInterval);
-        }
-    }, 200); // Check every 200ms
+        }, 10000);
 
-    // Clear interval after maximum duration
-    setTimeout(() => {
-        clearInterval(checkInterval);
-    }, 10000);
+        try {
+            if (transition && transition.exit) {
+                console.log(`🎬 Calling ${transitionType}.exit()`);
+                transition.exit(wrapper, title, tl);
 
-    try {
-        if (transition && transition.exit) {
-            console.log(`🎬 Calling ${transitionType}.exit()`);
-            transition.exit(wrapper, title, tl);
-            
-            debugToStorage(`Exit function called, timeline duration: ${tl.duration()}`);
-            console.log('🎬 Timeline setup complete, duration:', tl.duration());
-            
-            // Force minimum duration if empty
-            if (tl.duration() === 0) {
-                console.log('⚠️ Timeline duration is 0, adding fallback');
-                debugToStorage('Timeline duration is 0, adding fallback');
+                debugToStorage(`Exit function called, timeline duration: ${tl.duration()}`);
+                console.log('🎬 Timeline setup complete, duration:', tl.duration());
+
+                // Force minimum duration if empty
+                if (tl.duration() === 0) {
+                    console.log('⚠️ Timeline duration is 0, adding fallback');
+                    debugToStorage('Timeline duration is 0, adding fallback');
+                    tl.to([wrapper, title], { opacity: 0, duration: 1 }, 0);
+                }
+            } else {
+                debugToStorage(`ERROR: Exit transition missing for ${transitionType}`);
+                logger.error(MODULE_NAME, `Exit transition missing for type: ${transitionType}`);
                 tl.to([wrapper, title], { opacity: 0, duration: 1 }, 0);
             }
-        } else {
-            debugToStorage(`ERROR: Exit transition missing for ${transitionType}`);
-            logger.error(MODULE_NAME, `Exit transition missing for type: ${transitionType}`);
-            tl.to([wrapper, title], { opacity: 0, duration: 1 }, 0);
-        }
-    } catch (error) {
-        debugToStorage(`ERROR in exit transition: ${error.message}`);
-        logger.error(MODULE_NAME, `Error in exit transition '${transitionType}':`, error);
-        
-        // Force completion
-        if (typeof callback === 'function') {
-            setTimeout(() => {
-                debugToStorage('Error recovery callback executed');
-                callback();
-            }, 100);
-        }
-    }
-    
-    // Safety net
-    setTimeout(() => {
-        if (isAnimating) {
-            debugToStorage('TIMEOUT: Animation forced to complete');
-            logger.warn(MODULE_NAME, 'Exit animation timeout - forcing completion');
-            console.log('⏰ TIMEOUT: Forcing animation completion');
-            isAnimating = false;
+        } catch (error) {
+            debugToStorage(`ERROR in exit transition: ${error.message}`);
+            logger.error(MODULE_NAME, `Error in exit transition '${transitionType}':`, error);
+
+            // Force completion
             if (typeof callback === 'function') {
-                callback();
+                setTimeout(() => {
+                    debugToStorage('Error recovery callback executed');
+                    callback();
+                }, 100);
             }
         }
-    }, 5000);
-}
+
+        // Safety net
+        setTimeout(() => {
+            if (isAnimating) {
+                debugToStorage('TIMEOUT: Animation forced to complete');
+                logger.warn(MODULE_NAME, 'Exit animation timeout - forcing completion');
+                console.log('⏰ TIMEOUT: Forcing animation completion');
+                isAnimating = false;
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            }
+        }, 5000);
+    }
 
     // Updated link interception to allow clicks during transitions
     function setupLinkInterception() {
