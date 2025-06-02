@@ -15,8 +15,24 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
+// Get the post type to determine which meta keys to use
+$current_post_type = get_post_type(get_the_ID());
+$meta_prefix = ($current_post_type === 'room') ? '_room_' : '_floor_';
+
 // --- Get Post Meta ---
-$floor_number = get_post_meta(get_the_ID(), '_floor_number', true);
+if ($current_post_type === 'floor') {
+    // For floors, get the data directly
+    $floor_number = get_post_meta(get_the_ID(), '_floor_number', true);    
+} elseif ($current_post_type === 'room') {
+    // For rooms, get the parent floor ID first
+    $parent_floor_id = get_post_meta(get_the_ID(), '_room_floor_id', true);
+    
+    if ($parent_floor_id) {
+        // Get floor number and alt text from the parent floor
+        $floor_number = get_post_meta($parent_floor_id, '_floor_number', true);
+    }		
+}
+
 $floor_number_alt_text = get_post_meta(get_the_ID(), '_floor_number_alt_text', true);
 $background_youtube_url = get_post_meta(get_the_ID(), '_background_youtube_url', true);
 $youtube_audio_only = get_post_meta(get_the_ID(), '_youtube_audio_only', true) === '1';
@@ -29,9 +45,6 @@ $ajax_url = admin_url('admin-ajax.php');
 $ajax_nonce = wp_create_nonce('spiral_tower_floor_search_nonce');
 $navigation_nonce = wp_create_nonce('spiral_tower_floor_navigation');
 
-// Get the post type to determine which meta keys to use
-$current_post_type = get_post_type(get_the_ID());
-$meta_prefix = ($current_post_type === 'room') ? '_room_' : '_floor_';
 
 // Use the appropriate meta key prefix
 $custom_script_inside = get_post_meta(get_the_ID(), $meta_prefix . 'custom_script_inside', true);
@@ -136,6 +149,7 @@ $portals = $portal_query->posts;
 </head>
 
 <body <?php body_class('floor-template-active floor-fullscreen'); ?>
+	data-floor-numer="<?php echo $floor_number; ?>"    
 	data-ajax-url="<?php echo esc_url($ajax_url); ?>"
     data-search-nonce="<?php echo esc_js($ajax_nonce); ?>"	
 	data-navigation-nonce="<?php echo esc_js($navigation_nonce); ?>"

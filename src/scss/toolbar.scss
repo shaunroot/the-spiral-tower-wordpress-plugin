@@ -13,9 +13,6 @@ $margin-large: 80px;
   /* Use !important if necessary to override other display rules */
 }
 
-/* --------------------------------------------------------
-   * 7. TOOLBAR & TOOLTIPS 
-   * -------------------------------------------------------- */
 #toolbar {
   display: flex;
   position: fixed;
@@ -89,11 +86,32 @@ $margin-large: 80px;
     opacity: 0; // JS might fade this in
     visibility: hidden;
     transition: opacity 0.3s ease;
+  }
 
-    // Keep SVG styles for volume on/off 
-    #volume-off-icon,
-    #volume-on-icon {
-      /* ... svg styles ... */
+
+  /// Off button snores
+  /* Keyframes for breathing fade */
+  @keyframes volumeBreath {
+
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+
+    50% {
+      opacity: 1.0;
+    }
+  }
+
+  /* Animation with high specificity and !important to override reduced motion */
+  #volume-off-icon {
+    animation: volumeBreath 4s ease-in-out infinite !important;
+  }
+
+  /* Prevent prefers-reduced-motion from disabling this specific animation */
+  @media (prefers-reduced-motion: reduce) {
+    #volume-off-icon {
+      animation: volumeBreath 4s ease-in-out infinite !important;
     }
   }
 
@@ -467,4 +485,26 @@ $margin-large: 80px;
     visibility: visible !important;
     transform: scale(1) !important;
   }
+}
+
+
+
+
+
+#button-floor-up,
+#button-floor-down {
+  position: relative;
+}
+
+
+#button-floor-up,
+#button-floor-down {
+  position: relative;
+  z-index: 1; // Make sure it's above other elements if needed
+  pointer-events: auto; // <- force pointer interaction on wrapper
+}
+
+#button-floor-up svg,
+#button-floor-down svg {
+  pointer-events: none; // <- ensure SVG doesn't block events on the parent
 }

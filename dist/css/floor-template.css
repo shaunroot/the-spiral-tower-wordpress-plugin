@@ -1056,9 +1056,6 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
   /* Use !important if necessary to override other display rules */
 }
 
-/* --------------------------------------------------------
-   * 7. TOOLBAR & TOOLTIPS 
-   * -------------------------------------------------------- */
 #toolbar {
   display: flex;
   position: fixed;
@@ -1070,6 +1067,9 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
   opacity: 0.8;
   /* Add this to your CSS */
   /* Optional hover effect */
+  /* Keyframes for breathing fade */
+  /* Animation with high specificity and !important to override reduced motion */
+  /* Prevent prefers-reduced-motion from disabling this specific animation */
   /* Like users tooltip styles */
   /* Processing state */
   /* Like button in the toolbar */
@@ -1132,9 +1132,21 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
   visibility: hidden;
   transition: opacity 0.3s ease;
 }
-#toolbar #button-sound-toggle #volume-off-icon,
-#toolbar #button-sound-toggle #volume-on-icon {
-  /* ... svg styles ... */
+@keyframes volumeBreath {
+  0%, 100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+#toolbar #volume-off-icon {
+  animation: volumeBreath 4s ease-in-out infinite !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  #toolbar #volume-off-icon {
+    animation: volumeBreath 4s ease-in-out infinite !important;
+  }
 }
 #toolbar #toolbar-heart.liked svg {
   fill: red;
@@ -1464,6 +1476,23 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
     transform: scale(1) !important;
   }
 }
+#button-floor-up,
+#button-floor-down {
+  position: relative;
+}
+
+#button-floor-up,
+#button-floor-down {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+#button-floor-up svg,
+#button-floor-down svg {
+  pointer-events: none;
+}
+
 .achievement-notification-container {
   position: fixed;
   top: 20px;
@@ -1937,6 +1966,7 @@ body .container {
   text-align: center;
 }
 
+/* Fix pointer events for content-hidden state */
 .spiral-tower-floor-container {
   position: fixed;
   top: 50%;
@@ -1951,13 +1981,60 @@ body .container {
   /* Start hidden for transitions */
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   /* Container does NOT scroll - content does */
   overflow: visible !important;
 }
 
-/* Show scrollbars on the content element after transition */
-.spiral-tower-floor-container .spiral-tower-floor-content.scrollbars-visible {
-  overflow-y: auto !important;
+/* When content becomes visible, restore click events */
+.spiral-tower-floor-container.content-visible {
+  opacity: 1;
+  visibility: visible !important;
+  pointer-events: auto !important; /* Higher specificity */
+}
+
+/* IMPORTANT: When content is hidden, block all pointer events */
+.spiral-tower-floor-container.content-hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important; /* Higher specificity to override inline styles */
+}
+
+/* Also block pointer events on the content itself when hidden */
+.spiral-tower-floor-container.content-hidden .spiral-tower-floor-content {
+  pointer-events: none !important;
+}
+
+/* Make sure title doesn't block when content is hidden */
+.spiral-tower-floor-title {
+  opacity: 0;
+  visibility: hidden;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 1001 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background-color: var(--title-bg-color, rgba(20, 20, 20, 0.85)) !important;
+  padding: 20px !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  will-change: transform, opacity;
+  transform: translateX(0);
+  pointer-events: auto; /* Title should always be clickable when visible */
+}
+.spiral-tower-floor-title h1 {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 1.5em !important;
+  color: var(--title-text-color, #fff) !important;
+  font-weight: bold !important;
+  line-height: 1.2 !important;
+  font-family: var(--title-font, "Metamorphous", serif) !important;
+  letter-spacing: -0.5px;
+  text-align: center;
 }
 
 /* Smooth scrollbar fade-in for webkit browsers */

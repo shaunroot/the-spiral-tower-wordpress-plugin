@@ -104,82 +104,63 @@ SpiralTower.transitions = (function () {
             }
         },
 
+        // Let's fix the fade-blur exit function - it might be missing some elements
+
         'fade-blur': {
             enter: (wrapper, title, tl) => {
-                if (wrapper) {
-                    // Only set visibility, preserve opacity for back navigation
-                    gsap.set(wrapper, { visibility: 'visible' });
-
-                    if (!isBackNavigation || wrapper.style.opacity !== '1') {
-                        gsap.set(wrapper, { opacity: 0, filter: 'blur(20px)' });
-                        tl.to(wrapper, {
-                            opacity: 1,
-                            filter: 'blur(0px)',
-                            duration: durations.enter,
-                            ease: 'power2.out'
-                        }, 0);
-                    }
-                }
-
-                if (title) {
-                    if (!isBackNavigation || title.style.opacity !== '1') {
-                        gsap.set(title, { opacity: 0, scale: 0.5 });
-                        tl.to(title, {
-                            opacity: 1,
-                            scale: 1,
-                            duration: durations.enter,
-                            ease: 'back.out(1.7)'
-                        }, 0.4);
-                    }
-                }
-
-                // Animate content with blur effect
-                const content = document.querySelector('.spiral-tower-floor-content');
-                if (content) {
-                    if (!isBackNavigation || content.style.opacity !== '1') {
-                        gsap.set(content, { opacity: 0, filter: 'blur(10px)' });
-                        tl.to(content, {
-                            opacity: 1,
-                            filter: 'blur(0px)',
-                            duration: durations.enter,
-                            ease: 'power3.out'
-                        }, 0.6); // After title animation
-                    }
-                }
+                // ... enter function stays the same ...
             },
 
             exit: (wrapper, title, tl) => {
+                console.log('fade-blur EXIT called with:', { wrapper: !!wrapper, title: !!title });
+
                 if (title) {
+                    console.log('Animating title exit');
                     tl.to(title, {
                         opacity: 0,
                         scale: 1.5,
                         duration: durations.exit,
                         ease: 'power2.in'
                     }, 0);
+                } else {
+                    console.log('No title element found for exit animation');
                 }
 
                 // Animate content exit
                 const content = document.querySelector('.spiral-tower-floor-content');
                 if (content) {
+                    console.log('Animating content exit');
                     tl.to(content, {
                         opacity: 0,
                         filter: 'blur(10px)',
                         duration: durations.exit * 0.8,
                         ease: 'power2.in'
                     }, 0.05);
+                } else {
+                    console.log('No content element found for exit animation');
                 }
 
                 if (wrapper) {
+                    console.log('Animating wrapper exit');
                     tl.to(wrapper, {
                         opacity: 0,
                         filter: 'blur(20px)',
                         duration: durations.exit,
                         ease: 'power2.in'
                     }, 0.1);
+                } else {
+                    console.log('No wrapper element found for exit animation');
                 }
+
+                // FORCE a minimum animation even if no elements found
+                if (!title && !content && !wrapper) {
+                    console.log('No elements found, adding dummy animation');
+                    tl.to({}, { duration: durations.exit }, 0);
+                }
+
+                console.log('fade-blur exit setup complete, timeline duration should be:', durations.exit);
             }
         },
-
         'cross-fade': {
             enter: (wrapper, title, tl) => {
                 if (wrapper) {
@@ -460,6 +441,32 @@ SpiralTower.transitions = (function () {
                     }
                 }
             },
+            exit: (wrapper, title, tl) => {
+                if (title) {
+                    tl.to(title, {
+                        clipPath: 'polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%)',
+                        duration: durations.exit * 0.7,
+                        ease: 'power2.inOut'
+                    }, 0);
+                }
+        
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    tl.to(content, {
+                        clipPath: 'polygon(100% 0%, 100% 0%, 100% 100%, 100% 100%)',
+                        duration: durations.exit * 0.8,
+                        ease: 'power2.inOut'
+                    }, 0.1);
+                }
+        
+                if (wrapper) {
+                    tl.to(wrapper, {
+                        opacity: 0,
+                        duration: durations.exit,
+                        ease: 'power2.in'
+                    }, 0.3);
+                }
+            },            
 
         },
 
@@ -576,7 +583,6 @@ SpiralTower.transitions = (function () {
                     }
                 }
             },
-
             exit: (wrapper, title, tl) => {
                 if (title) {
                     // Animate letters in reverse order
@@ -629,7 +635,7 @@ SpiralTower.transitions = (function () {
                 }
             }
         },
-        
+
         //// Makes scroll bars appear?
         // 'perspective-shift': {
         //     enter: (wrapper, title, tl) => {
@@ -975,7 +981,36 @@ SpiralTower.transitions = (function () {
                     }
                 }
             },
-
+            exit: (wrapper, title, tl) => {
+                if (title) {
+                    tl.to(title, {
+                        opacity: 0,
+                        filter: 'blur(15px)',
+                        duration: durations.exit * 0.8,
+                        ease: 'power2.in'
+                    }, 0);
+                }
+        
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    tl.to(content, {
+                        opacity: 0,
+                        filter: 'blur(20px)',
+                        y: -30,
+                        duration: durations.exit * 0.9,
+                        ease: 'power2.in'
+                    }, 0.1);
+                }
+        
+                if (wrapper) {
+                    tl.to(wrapper, {
+                        opacity: 0,
+                        filter: 'blur(15px)',
+                        duration: durations.exit,
+                        ease: 'power3.in'
+                    }, 0.2);
+                }
+            }           
         },
 
         'liquid-morph': {
@@ -1195,7 +1230,37 @@ SpiralTower.transitions = (function () {
                     }
                 }
             },
-
+            exit: (wrapper, title, tl) => {
+                if (title) {
+                    tl.to(title, {
+                        opacity: 0,
+                        filter: 'blur(10px) brightness(0.5)',
+                        duration: durations.exit,
+                        ease: 'power2.in'
+                    }, 0);
+                }
+        
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    tl.to(content, {
+                        opacity: 0,
+                        rotation: -5,
+                        filter: 'blur(5px)',
+                        duration: durations.exit * 0.8,
+                        ease: 'power3.in'
+                    }, 0.1);
+                }
+        
+                if (wrapper) {
+                    tl.to(wrapper, {
+                        opacity: 0,
+                        borderRadius: '50%',
+                        filter: 'hue-rotate(-90deg) saturate(0.5)',
+                        duration: durations.exit,
+                        ease: 'power3.in'
+                    }, 0.2);
+                }
+            }
         },
 
         'slide-panels': {
@@ -1284,6 +1349,45 @@ SpiralTower.transitions = (function () {
                     }
                 }
             },
+            exit: (wrapper, title, tl) => {
+                if (title) {
+                    tl.to(title, {
+                        opacity: 0,
+                        x: 50,
+                        duration: durations.exit * 0.7,
+                        ease: 'power2.in'
+                    }, 0);
+                }
+        
+                const content = document.querySelector('.spiral-tower-floor-content');
+                if (content) {
+                    const paragraphs = content.querySelectorAll('p, h2, h3, ul, ol, blockquote');
+                    if (paragraphs.length > 0) {
+                        tl.to(paragraphs, {
+                            opacity: 0,
+                            x: (index) => index % 2 === 0 ? -40 : 40,
+                            duration: 0.5,
+                            stagger: 0.05,
+                            ease: 'power2.in'
+                        }, 0.1);
+                    } else {
+                        tl.to(content, {
+                            opacity: 0,
+                            clipPath: 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)',
+                            duration: durations.exit * 0.8,
+                            ease: 'power2.in'
+                        }, 0.1);
+                    }
+                }
+        
+                if (wrapper) {
+                    tl.to(wrapper, {
+                        opacity: 0,
+                        duration: durations.exit,
+                        ease: 'power2.in'
+                    }, 0.3);
+                }
+            },            
         }
     };
 
@@ -1418,23 +1522,28 @@ SpiralTower.transitions = (function () {
         const container = document.querySelector('.spiral-tower-floor-container');
         const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
 
-        // ONLY set visibility - don't touch opacity!
+        // Make elements visible and allow interactions
         if (title) {
-            gsap.set(title, { visibility: 'visible' });
-            // DON'T set opacity: 1 here - let transitions handle it
+            gsap.set(title, {
+                visibility: 'visible',
+                pointerEvents: 'auto'  // Allow clicking on title
+            });
         }
         if (container) {
-            gsap.set(container, { visibility: 'visible' });
-            // DON'T add content-visible class here - let transitions handle opacity
+            gsap.set(container, {
+                visibility: 'visible',
+                pointerEvents: 'auto'  // Allow clicking on content
+            });
         }
         if (wrapper) {
-            gsap.set(wrapper, { visibility: 'visible' });
-            // DON'T set opacity: 1 here - let transitions handle it
+            gsap.set(wrapper, {
+                visibility: 'visible',
+                pointerEvents: 'auto'  // Allow clicking on wrapper
+            });
         }
 
-        logger.log(MODULE_NAME, "All elements set to visible (but not opaque)");
+        logger.log(MODULE_NAME, "All elements set to visible with pointer events");
     }
-
 
 
 
@@ -1509,6 +1618,23 @@ SpiralTower.transitions = (function () {
         }
     }
 
+    function getUserContentVisibilityPreference() {
+        // Try to get from Spiral Tower core module first
+        if (typeof SpiralTower !== 'undefined' &&
+            SpiralTower.utils &&
+            typeof SpiralTower.utils.loadSetting === 'function') {
+            return SpiralTower.utils.loadSetting('contentVisible', false);
+        }
+
+        // Fallback to direct localStorage check
+        try {
+            const saved = localStorage.getItem('spiralTower_contentVisible');
+            return saved === 'true';
+        } catch (err) {
+            console.warn('Could not access localStorage for content visibility');
+            return false; // Default to hidden if we can't determine preference
+        }
+    }
 
     function runEntranceAnimations() {
         showElements();
@@ -1524,16 +1650,27 @@ SpiralTower.transitions = (function () {
         const content = document.querySelector('.spiral-tower-floor-content');
         const container = document.querySelector('.spiral-tower-floor-container');
 
-        // For back navigation - ensure everything is visible and reset
+        // For back navigation
         if (isBackNavigation) {
             logger.log(MODULE_NAME, "Back navigation detected - skipping animations");
 
             if (container) {
                 gsap.set(container, { visibility: 'visible', opacity: 1 });
-                container.classList.add('content-visible');
+                // Clear any inline styles that might interfere
+                container.style.removeProperty('pointer-events');
+
+                const userWantsContentVisible = getUserContentVisibilityPreference();
+                if (userWantsContentVisible) {
+                    container.classList.remove('content-hidden');
+                    container.classList.add('content-visible');
+                } else {
+                    container.classList.remove('content-visible');
+                    container.classList.add('content-hidden');
+                }
             }
             if (title) {
                 gsap.set(title, { visibility: 'visible', opacity: 1 });
+                title.style.removeProperty('pointer-events');
             }
             if (content) {
                 gsap.set(content, { visibility: 'visible', opacity: 1 });
@@ -1549,12 +1686,23 @@ SpiralTower.transitions = (function () {
                 logger.log(MODULE_NAME, "Entrance animations complete");
 
                 if (container) {
-                    container.classList.add('content-visible');
+                    // Clear any inline styles that might interfere with CSS classes
+                    container.style.removeProperty('pointer-events');
+
+                    const userWantsContentVisible = getUserContentVisibilityPreference();
+                    if (userWantsContentVisible) {
+                        container.classList.remove('content-hidden');
+                        container.classList.add('content-visible');
+                    } else {
+                        container.classList.remove('content-visible');
+                        container.classList.add('content-hidden');
+                    }
+                    logger.log(MODULE_NAME, `Content visibility set to: ${userWantsContentVisible}`);
                 }
             }
         });
 
-        // ADD ERROR HANDLING for entrance transitions too
+        // Apply the selected transition type
         try {
             logger.log(MODULE_NAME, `Calling entrance transition for: ${transitionType}`);
             transitionTypes[transitionType].enter(wrapper, title, tl);
@@ -1562,10 +1710,17 @@ SpiralTower.transitions = (function () {
             console.error(`ERROR in entrance transition '${transitionType}':`, error);
             console.error('Error stack:', error.stack);
 
-            // Fallback - just make everything visible
+            // Fallback
             if (container) {
                 gsap.set(container, { visibility: 'visible', opacity: 1 });
-                container.classList.add('content-visible');
+                container.style.removeProperty('pointer-events');
+
+                const userWantsContentVisible = getUserContentVisibilityPreference();
+                if (userWantsContentVisible) {
+                    container.classList.add('content-visible');
+                } else {
+                    container.classList.add('content-hidden');
+                }
             }
             if (title) {
                 gsap.set(title, { visibility: 'visible', opacity: 1 });
@@ -1579,64 +1734,195 @@ SpiralTower.transitions = (function () {
         }
     }
 
-
-    function runExitAnimations(callback) {
-        const transitionType = selectRandomTransition(lastExitType);
-        lastExitType = transitionType;
-
-        logger.log(MODULE_NAME, `Running exit animations with type: ${transitionType}`);
-        isAnimating = true;
-
-        const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
-        const title = document.querySelector('.spiral-tower-floor-title');
-
-        const tl = gsap.timeline({
-            onComplete: () => {
-                isAnimating = false;
-                logger.log(MODULE_NAME, "Exit animations complete");
-
-                try {
-                    sessionStorage.setItem('spiralTower_lastExitTime', Date.now());
-                    sessionStorage.setItem('spiralTower_lastExitType', transitionType);
-                } catch (err) {
-                    logger.warn(MODULE_NAME, "Could not store animation state", err);
-                }
-
-                if (typeof callback === 'function') {
-                    callback();
-                }
-            }
-        });
-
-        // ADD ERROR HANDLING for exit transitions
+    function debugToStorage(message) {
         try {
-            logger.log(MODULE_NAME, `Calling exit transition for: ${transitionType}`);
-
-            // Check if exit function exists
-            if (transitionTypes[transitionType] && transitionTypes[transitionType].exit) {
-                transitionTypes[transitionType].exit(wrapper, title, tl);
-            } else {
-                console.error(`Exit transition missing for type: ${transitionType}`);
-
-                // Fallback exit animation
-                if (wrapper) {
-                    tl.to(wrapper, { opacity: 0, duration: 1 }, 0);
-                }
-                if (title) {
-                    tl.to(title, { opacity: 0, duration: 1 }, 0);
-                }
+            let debugLog = JSON.parse(sessionStorage.getItem('spiralTower_exitDebug') || '[]');
+            debugLog.push(`${new Date().toLocaleTimeString()}: ${message}`);
+            // Keep only last 20 messages
+            if (debugLog.length > 20) {
+                debugLog = debugLog.slice(-20);
             }
-        } catch (error) {
-            console.error(`ERROR in exit transition '${transitionType}':`, error);
-            console.error('Error stack:', error.stack);
+            sessionStorage.setItem('spiralTower_exitDebug', JSON.stringify(debugLog));
 
-            // Force completion of timeline if there's an error
-            if (typeof callback === 'function') {
-                setTimeout(callback, 100);
-            }
+            // Also log using the proper logger if transitions logging is enabled
+            logger.log(MODULE_NAME, `[EXIT DEBUG] ${message}`);
+        } catch (err) {
+            logger.warn(MODULE_NAME, 'Could not store debug info:', err);
         }
     }
 
+    // Function to display stored debug info using the proper logger
+    function showExitDebugLog() {
+        try {
+            const debugLog = JSON.parse(sessionStorage.getItem('spiralTower_exitDebug') || '[]');
+            if (debugLog.length > 0) {
+                logger.log(MODULE_NAME, '=== PREVIOUS EXIT ANIMATION DEBUG LOG ===');
+                debugLog.forEach(msg => logger.log(MODULE_NAME, msg));
+                logger.log(MODULE_NAME, '=== END DEBUG LOG ===');
+                // Clear the log after displaying
+                sessionStorage.removeItem('spiralTower_exitDebug');
+            } else {
+                logger.log(MODULE_NAME, 'No exit debug log found');
+            }
+        } catch (err) {
+            logger.warn(MODULE_NAME, 'Could not read debug log:', err);
+        }
+    }
+
+// Replace your runExitAnimations function with this super-debug version:
+
+function runExitAnimations(callback) {
+    debugToStorage('=== EXIT ANIMATION START ===');
+    
+    const transitionType = selectRandomTransition(lastExitType);
+    lastExitType = transitionType;
+
+    debugToStorage(`Selected exit transition: ${transitionType}`);
+    logger.log(MODULE_NAME, `Running exit animations with type: ${transitionType}`);
+    isAnimating = true;
+
+    const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
+    const title = document.querySelector('.spiral-tower-floor-title');
+
+    // Debug element states
+    debugToStorage(`Elements - wrapper: ${wrapper ? 'YES' : 'NO'}, title: ${title ? 'YES' : 'NO'}`);
+    
+    if (wrapper) {
+        debugToStorage(`Wrapper - opacity: ${window.getComputedStyle(wrapper).opacity}, visibility: ${window.getComputedStyle(wrapper).visibility}`);
+    }
+
+    // Check if transition exists
+    const transition = transitionTypes[transitionType];
+    debugToStorage(`Transition exists: ${!!transition}, Exit function exists: ${!!(transition && transition.exit)}`);
+
+    const tl = gsap.timeline({
+        onStart: () => {
+            debugToStorage('Timeline STARTED');
+            console.log('🎬 GSAP Timeline started');
+        },
+        onUpdate: () => {
+            // Log progress every 25%
+            const progress = Math.round(tl.progress() * 4) * 25;
+            if (progress > 0 && progress <= 100) {
+                console.log(`🎬 Timeline progress: ${progress}%`);
+                debugToStorage(`Timeline progress: ${progress}%`);
+            }
+        },
+        onComplete: () => {
+            debugToStorage('Timeline COMPLETED');
+            console.log('🎬 GSAP Timeline completed successfully');
+            isAnimating = false;
+            logger.log(MODULE_NAME, "Exit animations complete");
+
+            try {
+                sessionStorage.setItem('spiralTower_lastExitTime', Date.now());
+                sessionStorage.setItem('spiralTower_lastExitType', transitionType);
+                debugToStorage('Session storage updated');
+            } catch (err) {
+                debugToStorage(`Session storage error: ${err.message}`);
+                logger.warn(MODULE_NAME, "Could not store animation state", err);
+            }
+
+            debugToStorage('=== EXIT ANIMATION END ===');
+            
+            if (typeof callback === 'function') {
+                debugToStorage('Calling navigation callback');
+                console.log('🎬 Calling navigation callback');
+                callback();
+            } else {
+                debugToStorage('No callback provided');
+                console.log('❌ No callback provided');
+            }
+        },
+        onReverseComplete: () => {
+            console.log('🎬 Timeline reverse completed (unexpected)');
+            debugToStorage('Timeline REVERSE completed (unexpected)');
+        }
+    });
+
+    // Add timeline debugging
+    setTimeout(() => {
+        console.log('🎬 Timeline state after 100ms:', {
+            duration: tl.duration(),
+            progress: tl.progress(),
+            isActive: tl.isActive(),
+            paused: tl.paused(),
+            totalTime: tl.totalTime(),
+            time: tl.time()
+        });
+        debugToStorage(`Timeline state: duration=${tl.duration()}, progress=${tl.progress()}, active=${tl.isActive()}`);
+    }, 100);
+
+    // Check timeline state periodically
+    const checkInterval = setInterval(() => {
+        if (!tl.isActive() && tl.progress() < 1) {
+            console.log('⚠️ Timeline stopped unexpectedly at progress:', tl.progress());
+            debugToStorage(`Timeline stopped at progress: ${tl.progress()}`);
+            clearInterval(checkInterval);
+            
+            // Force completion
+            console.log('🔧 Forcing timeline completion');
+            debugToStorage('Forcing timeline completion due to stall');
+            isAnimating = false;
+            if (typeof callback === 'function') {
+                callback();
+            }
+        } else if (tl.progress() >= 1) {
+            console.log('✅ Timeline completed normally');
+            clearInterval(checkInterval);
+        }
+    }, 200); // Check every 200ms
+
+    // Clear interval after maximum duration
+    setTimeout(() => {
+        clearInterval(checkInterval);
+    }, 10000);
+
+    try {
+        if (transition && transition.exit) {
+            console.log(`🎬 Calling ${transitionType}.exit()`);
+            transition.exit(wrapper, title, tl);
+            
+            debugToStorage(`Exit function called, timeline duration: ${tl.duration()}`);
+            console.log('🎬 Timeline setup complete, duration:', tl.duration());
+            
+            // Force minimum duration if empty
+            if (tl.duration() === 0) {
+                console.log('⚠️ Timeline duration is 0, adding fallback');
+                debugToStorage('Timeline duration is 0, adding fallback');
+                tl.to([wrapper, title], { opacity: 0, duration: 1 }, 0);
+            }
+        } else {
+            debugToStorage(`ERROR: Exit transition missing for ${transitionType}`);
+            logger.error(MODULE_NAME, `Exit transition missing for type: ${transitionType}`);
+            tl.to([wrapper, title], { opacity: 0, duration: 1 }, 0);
+        }
+    } catch (error) {
+        debugToStorage(`ERROR in exit transition: ${error.message}`);
+        logger.error(MODULE_NAME, `Error in exit transition '${transitionType}':`, error);
+        
+        // Force completion
+        if (typeof callback === 'function') {
+            setTimeout(() => {
+                debugToStorage('Error recovery callback executed');
+                callback();
+            }, 100);
+        }
+    }
+    
+    // Safety net
+    setTimeout(() => {
+        if (isAnimating) {
+            debugToStorage('TIMEOUT: Animation forced to complete');
+            logger.warn(MODULE_NAME, 'Exit animation timeout - forcing completion');
+            console.log('⏰ TIMEOUT: Forcing animation completion');
+            isAnimating = false;
+            if (typeof callback === 'function') {
+                callback();
+            }
+        }
+    }, 5000);
+}
 
     // Updated link interception to allow clicks during transitions
     function setupLinkInterception() {
@@ -1693,37 +1979,33 @@ SpiralTower.transitions = (function () {
     });
 
     function overrideFloorNavigation() {
-        // Wait a bit for the toolbar script to load
         setTimeout(() => {
             const upButton = document.getElementById('button-floor-up');
             const downButton = document.getElementById('button-floor-down');
 
             if (upButton || downButton) {
-                logger.log(MODULE_NAME, "Overriding floor navigation buttons");
+                logger.log('tooltips', 'Overriding floor navigation buttons');
 
-                // Remove existing event listeners by cloning the elements
-                if (upButton) {
-                    const newUpButton = upButton.cloneNode(true);
-                    upButton.parentNode.replaceChild(newUpButton, upButton);
-
-                    newUpButton.addEventListener('click', function (e) {
+                if (upButton && !upButton.dataset.listenerBound) {
+                    upButton.addEventListener('click', function (e) {
                         e.preventDefault();
-                        handleFloorNavigation('up', newUpButton);
+                        handleFloorNavigation('up', upButton);
                     });
+                    upButton.dataset.listenerBound = 'true';
                 }
 
-                if (downButton) {
-                    const newDownButton = downButton.cloneNode(true);
-                    downButton.parentNode.replaceChild(newDownButton, downButton);
-
-                    newDownButton.addEventListener('click', function (e) {
+                if (downButton && !downButton.dataset.listenerBound) {
+                    downButton.addEventListener('click', function (e) {
                         e.preventDefault();
-                        handleFloorNavigation('down', newDownButton);
+                        handleFloorNavigation('down', downButton);
                     });
+                    downButton.dataset.listenerBound = 'true';
                 }
             }
         }, 100);
     }
+
+
 
     function handleFloorNavigation(direction, button) {
         logger.log(MODULE_NAME, `Floor navigation: ${direction}`);
@@ -1842,6 +2124,91 @@ SpiralTower.transitions = (function () {
     return {
         init: init,
         runEntranceAnimations: runEntranceAnimations,
-        runExitAnimations: runExitAnimations
+        runExitAnimations: runExitAnimations,
+        debugToStorage: debugToStorage,
+        showExitDebugLog: showExitDebugLog,
     };
 })();
+
+// Replace the bottom section with this more reliable approach:
+
+// Function to check and display debug log
+function checkAndDisplayDebugLog() {
+    if (SpiralTower.logger &&
+        SpiralTower.logger.isEnabled &&
+        SpiralTower.logger.isEnabled('transitions') &&
+        SpiralTower.transitions &&
+        SpiralTower.transitions.showExitDebugLog) {
+
+        console.log('✅ Debug system ready, showing exit log...');
+        SpiralTower.transitions.showExitDebugLog();
+        return true; // Successfully displayed
+    } else {
+        console.log('❌ Debug system not ready yet:', {
+            hasLogger: !!SpiralTower.logger,
+            loggingEnabled: SpiralTower.logger?.isEnabled?.('transitions'),
+            hasTransitions: !!SpiralTower.transitions,
+            hasDebugFunction: !!SpiralTower.transitions?.showExitDebugLog
+        });
+        return false; // Not ready yet
+    }
+}
+
+// Try multiple times to catch the debug log
+let debugCheckAttempts = 0;
+const maxDebugAttempts = 10;
+
+function tryDisplayDebugLog() {
+    debugCheckAttempts++;
+    console.log(`Debug check attempt ${debugCheckAttempts}/${maxDebugAttempts}`);
+
+    if (checkAndDisplayDebugLog()) {
+        console.log('Debug log displayed successfully');
+        return; // Success, stop trying
+    }
+
+    if (debugCheckAttempts < maxDebugAttempts) {
+        setTimeout(tryDisplayDebugLog, 500); // Try again in 500ms
+    } else {
+        console.log('Max debug attempts reached, giving up');
+
+        // Manual fallback - try to read sessionStorage directly
+        try {
+            const debugLog = JSON.parse(sessionStorage.getItem('spiralTower_exitDebug') || '[]');
+            if (debugLog.length > 0) {
+                console.log('🔧 FALLBACK: Manual debug log display');
+                console.log('=== PREVIOUS EXIT ANIMATION DEBUG LOG (FALLBACK) ===');
+                debugLog.forEach(msg => console.log(msg));
+                console.log('=== END DEBUG LOG (FALLBACK) ===');
+                sessionStorage.removeItem('spiralTower_exitDebug');
+            } else {
+                console.log('No debug log found in sessionStorage');
+            }
+        } catch (err) {
+            console.warn('Could not read debug log manually:', err);
+        }
+    }
+}
+
+// Start trying immediately
+console.log('Starting debug log check...');
+tryDisplayDebugLog();
+
+// Also try on DOMContentLoaded as backup
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOMContentLoaded - trying debug log again...');
+    setTimeout(() => {
+        if (debugCheckAttempts >= maxDebugAttempts) {
+            console.log('Trying one more time after DOMContentLoaded...');
+            checkAndDisplayDebugLog();
+        }
+    }, 1000);
+});
+
+// Expose globally if possible
+setTimeout(() => {
+    if (SpiralTower.transitions && SpiralTower.transitions.showExitDebugLog) {
+        window.showExitDebugLog = SpiralTower.transitions.showExitDebugLog;
+        console.log('✅ Global showExitDebugLog function exposed');
+    }
+}, 2000);
