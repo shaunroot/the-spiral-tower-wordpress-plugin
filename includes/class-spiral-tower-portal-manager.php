@@ -82,10 +82,7 @@ class Spiral_Tower_Portal_Manager
     }
 
     /**
-     * AJAX handler for floor search
-     */
-    /**
-     * AJAX handler for floor search
+     * AJAX handler for floor search 
      */
     public function ajax_search_floors()
     {
@@ -117,11 +114,27 @@ class Spiral_Tower_Portal_Manager
             // For destinations (or no context), show all floors - no restrictions
         }
 
-        // Add search filter
+        // FIXED: Enhanced search filter to include floor number and alt text
         add_filter('posts_where', function ($where) use ($search_term) {
             global $wpdb;
             if (!empty($search_term)) {
-                $where .= $wpdb->prepare(" AND {$wpdb->posts}.post_title LIKE %s", '%' . $wpdb->esc_like($search_term) . '%');
+                // Search in post title, floor number, and floor number alt text
+                $search_like = '%' . $wpdb->esc_like($search_term) . '%';
+                $where .= $wpdb->prepare(" AND (
+                {$wpdb->posts}.post_title LIKE %s 
+                OR EXISTS (
+                    SELECT 1 FROM {$wpdb->postmeta} 
+                    WHERE {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID 
+                    AND {$wpdb->postmeta}.meta_key = '_floor_number' 
+                    AND {$wpdb->postmeta}.meta_value LIKE %s
+                )
+                OR EXISTS (
+                    SELECT 1 FROM {$wpdb->postmeta} 
+                    WHERE {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID 
+                    AND {$wpdb->postmeta}.meta_key = '_floor_number_alt_text' 
+                    AND {$wpdb->postmeta}.meta_value LIKE %s
+                )
+            )", $search_like, $search_like, $search_like);
             }
             return $where;
         }, 10, 1);

@@ -17,9 +17,8 @@ class Spiral_Tower_Floor_Manager
         add_action('init', array($this, 'create_floor_author_role'));
 
         // Add meta boxes (using specific CPT hook)
-        // *** MODIFIED: Hook name points to the potentially renamed function below ***
         add_action('add_meta_boxes_floor', array($this, 'add_floor_settings_meta_box'));
-        add_action('add_meta_boxes_floor', array($this, 'add_custom_script_meta_box')); // Keep existing script metabox hook
+        add_action('add_meta_boxes_floor', array($this, 'add_custom_script_meta_box'));
 
         // Save post meta (using specific CPT hook)
         add_action('save_post_floor', array($this, 'save_floor_meta'));
@@ -35,6 +34,11 @@ class Spiral_Tower_Floor_Manager
         add_action('pre_get_posts', array($this, 'floor_number_orderby'));
         add_filter('wp_insert_post_empty_content', array($this, 'prevent_duplicate_floor_numbers'), 10, 2);
         add_action('admin_notices', array($this, 'display_floor_error_message'));
+        
+        // Modify author dropdown users for classic editor / PHP contexts
+        add_filter('wp_dropdown_users_args', array($this, 'modify_classic_author_dropdown_args'), 10, 2); 
+        // *** NEW: Modify author list for REST API (Block Editor) ***
+        add_filter('rest_user_query', array($this, 'modify_rest_user_query_for_authors'), 10, 2);
 
         // Floor author specific features
         add_filter('user_has_cap', array($this, 'restrict_floor_editing'), 10, 3);
@@ -60,17 +64,86 @@ class Spiral_Tower_Floor_Manager
         // Modify frontend queries to exclude hidden floors
         add_action('pre_get_posts', array($this, 'exclude_hidden_floors_from_frontend'));
 
-        // *** Hide "Add New" buttons for floor authors ***
+        // Hide "Add New" buttons for floor authors
         add_action('admin_menu', array($this, 'hide_add_new_for_floor_authors'));
         add_action('admin_head', array($this, 'hide_add_new_button_css'));
         
-        // *** Block creation attempts via direct URL access ***
+        // Block creation attempts via direct URL access
         add_action('admin_init', array($this, 'block_floor_creation_for_authors'));
-
     }
 
-    // --- Functions below are kept as they were in your original code UNLESS MODIFIED ---
+    /**
+     * Modify the arguments for the classic editor author dropdown.
+     * (Renamed from modify_floor_author_dropdown_args for clarity)
+     *
+     * @param array $query_args Arguments passed to get_users().
+     * @param array $dropdown_args Arguments passed to wp_dropdown_users().
+     * @return array Modified query arguments.
+     */
+    public function modify_classic_author_dropdown_args($query_args, $dropdown_args)
+    {
+        $screen = get_current_screen();
+        if ($screen && $screen->post_type === 'floor' && $screen->base === 'post' && isset($dropdown_args['name']) && $dropdown_args['name'] === 'post_author_override') {
+            $allowed_roles = array('floor_author', 'author', 'editor', 'administrator');
+            $query_args['role__in'] = $allowed_roles;
+            if (isset($query_args['who']) && $query_args['who'] === 'authors') {
+                unset($query_args['who']);
+            }
+        }
+        return $query_args;
+    }
 
+    /**
+     * *** NEW: Modify the WP_User_Query args for REST API user requests using 'who=authors'. ***
+     * This ensures 'Floor Author' role is included in Block Editor's author selection.
+     *
+     * @param array $query_args WP_User_Query arguments.
+     * @param WP_REST_Request $request The REST API request object.
+     * @return array Modified query arguments.
+     */
+    public function modify_rest_user_query_for_authors($query_args, $request) {
+        // Check if the REST API request for users has 'who=authors'.
+        if (isset($request['who']) && $request['who'] === 'authors') {
+            
+            // The 'who=authors' parameter in WP_User_Query implies:
+            // 1. 'edit_posts' capability
+            // 2. User level > 0 (this is legacy and often excludes custom roles like 'floor_author')
+            // We want to include 'floor_author' role if they have 'edit_posts',
+            // regardless of the legacy user level.
+
+            // Define the roles that should be considered authors.
+            // Your 'floor_author' role has 'edit_posts' capability.
+            // Standard roles like 'author', 'editor', 'administrator' also have 'edit_posts'.
+            $author_roles = array('floor_author', 'author', 'editor', 'administrator');
+            
+            // If role__in is already set, merge with it, otherwise set it.
+            if (isset($query_args['role__in']) && is_array($query_args['role__in'])) {
+                 $query_args['role__in'] = array_unique(array_merge($query_args['role__in'], $author_roles));
+            } else {
+                $query_args['role__in'] = $author_roles;
+            }
+
+            // Explicitly ensure the 'edit_posts' capability requirement is present,
+            // as this is the core intent of 'who=authors'.
+            if (isset($query_args['capability']) && is_array($query_args['capability'])) {
+                $query_args['capability'] = array_unique(array_merge($query_args['capability'], array('edit_posts')));
+            } else {
+                 $query_args['capability'] = array('edit_posts');
+            }
+            
+            // Unset 'who' to prevent its specific (and problematic user_level) logic.
+            // Our 'role__in' and 'capability' settings are now more explicit and inclusive.
+            if (isset($query_args['who'])) {
+                unset($query_args['who']);
+            }
+        }
+        return $query_args;
+    }
+
+    // --- (Rest of your class methods remain unchanged) ---
+
+    // ... (register_floor_post_type, create_floor_author_role, etc. as before) ...
+    
     /**
      * Register Floor Custom Post Type
      */
@@ -541,7 +614,7 @@ class Spiral_Tower_Floor_Manager
             });
             </script>
             <?php
-        }        
+        }       
     }
 
 
@@ -594,8 +667,8 @@ class Spiral_Tower_Floor_Manager
                 style="width: 100%; min-height: 250px; font-family: monospace; background-color: #f0f0f1; color: #1e1e1e; border: 1px solid #949494; padding: 10px;"
                 id="floor_custom_script_inside_field" name="floor_custom_script_inside_field"
                 placeholder="<?php esc_attr_e('<script>...</script> or <style>...</style> etc.', 'spiral-tower'); ?>"><?php
-                   echo esc_textarea($value);
-                   ?></textarea>
+                    echo esc_textarea($value);
+                    ?></textarea>
             <p><em><strong style="color: #d63638;"><?php _e('Warning:', 'spiral-tower'); ?></strong>
                     <?php _e('Code entered here will be output directly inside the floor content. Ensure it is valid and trust the source.', 'spiral-tower'); ?></em>
             </p>
@@ -618,8 +691,8 @@ class Spiral_Tower_Floor_Manager
                 style="width: 100%; min-height: 250px; font-family: monospace; background-color: #f0f0f1; color: #1e1e1e; border: 1px solid #949494; padding: 10px;"
                 id="floor_custom_script_outside_field" name="floor_custom_script_outside_field"
                 placeholder="<?php esc_attr_e('<script>...</script> or <style>...</style> etc.', 'spiral-tower'); ?>"><?php
-                   echo esc_textarea($value);
-                   ?></textarea>
+                    echo esc_textarea($value);
+                    ?></textarea>
             <p><em><strong style="color: #d63638;"><?php _e('Warning:', 'spiral-tower'); ?></strong>
                     <?php _e('Code entered here will be output directly in the floor interface. Ensure it is valid and trust the source.', 'spiral-tower'); ?></em>
             </p>
@@ -665,7 +738,7 @@ class Spiral_Tower_Floor_Manager
         if (current_user_can('administrator')) {
             $fields_to_save['_floor_achievement_title'] = isset($_POST['floor_achievement_title']) ? sanitize_text_field($_POST['floor_achievement_title']) : null;
             $fields_to_save['_floor_achievement_image'] = isset($_POST['floor_achievement_image']) ? esc_url_raw($_POST['floor_achievement_image']) : null;
-        }        
+        }       
 
         foreach ($fields_to_save as $meta_key => $value) {
             if ($value !== null) { // Field was submitted
@@ -718,8 +791,6 @@ class Spiral_Tower_Floor_Manager
             }
         }
     }
-
-    // --- All functions below this point are UNCHANGED from your original code ---
 
     /**
      * Add Floor Number to REST API
@@ -1105,60 +1176,40 @@ class Spiral_Tower_Floor_Manager
         // this function should NOT add any 'meta_query' that would hide it.
         // The floor should be findable by its permalink if it's published.
         if ($query->is_singular('floor')) {
-            // Uncomment the next line for debugging if issues persist after this change:
-            // error_log('Spiral Tower: Singular floor view detected, exclude_hidden_floors_from_frontend is bailing out. Query vars: ' . print_r($query->query_vars, true));
             return;
         }
-    
-        // For other types of queries (like archives, search results, or potentially the main blog
-        // page if floors are mixed in), we want to exclude hidden floors.
-        // Determine if the current query *could* include 'floor' posts in a list/archive context.
     
         $apply_filter = false;
     
         if ($query->is_post_type_archive('floor')) {
-            // This is an archive page for the 'floor' post type (e.g., /floor/)
             $apply_filter = true;
         } elseif ($query->is_tax(get_object_taxonomies('floor'))) {
-            // This is a taxonomy archive page for a taxonomy associated with 'floor'
             $apply_filter = true;
         } elseif ($query->is_search()) {
-            // For any search results page.
-            // Hidden floors should not appear in search results.
             $apply_filter = true;
         } else {
-            // This handles other general queries (e.g., home page, date archives, author archives).
-            // Only apply the filter if 'floor' is explicitly part of the query's post types,
-            // or if the query's post_type is empty (which might include 'floor' if modified by other code).
             $queried_post_type = $query->get('post_type');
             $can_include_floors = false;
     
-            if (empty($queried_post_type)) { // Could be main blog loop, potentially modified to include floors
-                // Be cautious here. If floors are not meant to appear on main blog, this might be too broad.
-                // For now, let's assume if post_type is empty, we don't interfere unless explicitly told.
-                // To include this case if floors can appear on home/blog:
-                // $can_include_floors = true; // (if you mix floors into the main blog loop for example)
+            if (empty($queried_post_type)) { 
+                // Potentially apply if floors can appear in main blog loop. For safety, let's not by default.
             } elseif ($queried_post_type === 'floor') {
                 $can_include_floors = true;
             } elseif (is_array($queried_post_type) && in_array('floor', $queried_post_type)) {
                 $can_include_floors = true;
             }
     
-            if ($can_include_floors && !$query->is_singular()) { // Double check it's not any other singular page
+            if ($can_include_floors && !$query->is_singular()) { 
                 $apply_filter = true;
             }
         }
     
         if ($apply_filter) {
-            // error_log('Spiral Tower: Applying hidden floor filter for a list/archive/search query. Query vars: ' . print_r($query->query_vars, true));
-    
             $meta_query_args = $query->get('meta_query');
             if (!is_array($meta_query_args)) {
                 $meta_query_args = array();
             }
     
-            // Add the clause to exclude hidden floors.
-            // This clause will be ANDed by default with other top-level clauses in the meta_query.
             $meta_query_args[] = array(
                 'relation' => 'OR',
                 array(

@@ -1631,25 +1631,52 @@ const spiralTowerDisk = () => ({
                 option: `Ask to **EXPLORE** other realities through the Nexus.`,
                 line: `Zephyrian's eyes light up with genuine pleasure.
                 
-                "A kindred spirit!" he exclaims. "Not content with a simple wish, but curious about what lies beyond... Yes, I can guide you through the Nexus to other realities.
-                
-                "It would be a journey of unknown duration and destination. We might visit worlds where magic flows like water, or places where the laws of nature are utterly different from your home. We could explore alternate histories, possible futures, or realms entirely separate from the timeline you know."
-                
-                He extends his hand. "If you truly wish this, come. I have visited a thousand realities and barely scratched the surface of what exists. Together, perhaps we could explore a thousand more."
-                
+                "A kindred spirit!" he exclaims. "Not content with a simple wish, but curious about what lies beyond... Yes, I can guide you through the Nexus to other realities.                
+                "It would be a journey of unknown duration and destination. We might visit worlds where magic flows like water, or places where the laws of nature are utterly different from your home. We could explore alternate histories, possible futures, or realms entirely separate from the timeline you know."                              
                 His expression grows serious. "But know that such journeys change a person. You may never see your home reality the same way again, if you see it at all. This is not a choice to make lightly."`
               },
               {
                 option: `Ask to **STUDY** with Zephyrian.`,
-                line: `The Archmage considers you thoughtfully, stroking his star-white beard.
-                
-                "A student..." he muses. "It has been centuries since I took an apprentice. My last one eventually built her own tower, though not nearly as interesting as this one." He smiles at the memory.
-                
-                "You have shown aptitude, determination, and wisdom in your journey here. These are the foundations upon which great magic can be built." He paces slowly, considering.
-                
-                "Very well. If that is your wish, I will teach you. Not merely spells and incantations, but the true nature of reality and how it may be shaped. Your training would take decades, perhaps centuries—but time works differently here at the tower's apex. When you eventually returned to your world, you might find that little time has passed."
-                
-                He stops pacing and faces you directly. "Be certain this is what you want. The path of magic is rewarding but demanding. It will transform you in ways you cannot predict."`
+                line: `The Archmage considers you thoughtfully, stroking his star-white beard.                
+                "It has been centuries since I took an apprentice. My last one eventually built her own tower, though not nearly as interesting as this one." He smiles at the memory.                
+                "You have shown aptitude, determination, and wisdom in your journey here. These are the foundations upon which great magic can be built." He paces slowly, considering.                
+                "Very well. If that is your wish, I will teach you. Not merely spells and incantations, but the true nature of reality and how it may be shaped. Your training would take decades, perhaps centuries—but time works differently here at the tower's apex."                
+                He stops pacing and faces you directly. "Be certain this is what you want. The path of magic is rewarding but demanding. Start by reading these books."`,
+                onSelected: ({disk, println, getRoom, enterRoom}) => {
+                  // Get the current room
+                  const room = getRoom('infinity_chamber');
+                  
+                  // Clear all existing exits
+                  room.exits = [];
+                  
+                  // Add only the URL exit
+                  room.exits.push({ 
+                    dir: 'portal', 
+                    id: '/floor/250/library-portal-floor/', 
+                    isURL: true
+                  });
+                  
+                  // Remove Zephyrian from characters array
+                  disk.characters = disk.characters.filter(char => 
+                    !(char.name.includes('Zephyrian') || char.name.includes('archmage'))
+                  );
+                  
+                  // Also remove him from the room directly
+                  room.desc = room.desc.replace(/The \*\*ARCHMAGE ZEPHYRIAN\*\* himself stands before the Nexus.+?ancient face\./g, 
+                    "The room is now empty except for the swirling portal.");
+                  
+                  // Make Zephyrian item inaccessible 
+                  room.items = room.items.filter(item => 
+                    !(item.name.includes('Zephyrian') || item.name.includes('archmage'))
+                  );
+                  
+                  // Prevent talk command from working
+                  disk.conversant = undefined;
+                  disk.conversation = undefined;
+                  
+                  println(`\nA swirling **PORTAL** has appeared. It is your only way forward. Zephyrian has vanished.`);
+                },
+                removeOnRead: true,                
               },
               {
                 option: `Accuse him of **ABANDONING** his responsibilities to the tower.`,
@@ -2104,7 +2131,7 @@ const spiralTowerDisk = () => ({
         }
       ]
     },
-    // Character 10: Archmage Zephyrian
+    // Character 10: Archmage Zephyrian -THESE ARE THE ONES ACTUALLY USED
     {
       name: ['Archmage Zephyrian', 'Zephyrian', 'archmage'],
       roomId: 'infinity_chamber',
@@ -2214,11 +2241,46 @@ const spiralTowerDisk = () => ({
         },
         {
           option: `Ask to **EXPLORE** other realities through the Nexus.`,
-          line: `Zephyrian's eyes light up with genuine pleasure. "A kindred spirit!" he exclaims. "Not content with a simple wish, but curious about what lies beyond... Yes, I can guide you through the Nexus to other realities. "It would be a journey of unknown duration and destination. We might visit worlds where magic flows like water, or places where the laws of nature are utterly different from your home. We could explore alternate histories, possible futures, or realms entirely separate from the timeline you know. If you truly wish this, come. I have visited a thousand realities and barely scratched the surface of what exists. Together, perhaps we could explore a thousand more. Know that such journeys change a person. You may never see your home reality the same way again, if you see it at all. This is not a choice to make lightly."`
+          line: `Zephyrian's eyes light up with genuine pleasure. "A kindred spirit!" he exclaims. "Not content with a simple wish, but curious about what lies beyond... Yes, I can guide you through the Nexus to other realities. "It would be a journey of unknown duration and destination. We might visit worlds where magic flows like water, or places where the laws of nature are utterly different from your home. We could explore alternate histories, possible futures, or realms entirely separate from the timeline you know. If you truly wish this, come. I have visited a thousand realities and barely scratched the surface of what exists. Know that such journeys change a person. You may never see your home reality the same way again, if you see it at all. This is not a choice to make lightly."`
         },
         {
           option: `Ask to **STUDY** with Zephyrian.`,
-          line: `The Archmage considers you thoughtfully, stroking his star-white beard. "A student..." he muses. "It has been centuries since I took an apprentice. My last one eventually built her own tower, though not nearly as interesting as this one." He smiles at the memory. "You have shown aptitude, determination, and wisdom in your journey here. These are the foundations upon which great magic can be built." He paces slowly, considering. "Very well. If that is your wish, I will teach you. Your training would take decades, perhaps centuries—but time works differently here at the tower's apex." He stops pacing and faces you directly. "Be certain this is what you want. The path of magic is rewarding but demanding. It will transform you in ways you cannot predict."`
+          line: `The Archmage considers you thoughtfully, stroking his star-white beard. "A student..." he muses. "It has been centuries since I took an apprentice. My last one eventually built her own tower, though not nearly as interesting as this one." He smiles at the memory. "You have shown aptitude, determination, and wisdom in your journey here. These are the foundations upon which great magic can be built." He paces slowly, considering. "Very well. If that is your wish, I will teach you. Your training would take decades, perhaps centuries—but time works differently here at the tower's apex." He stops pacing and faces you directly. "Be certain this is what you want. The path of magic is rewarding but demanding. It will transform you in ways you cannot predict. Start by reading these books."`,
+          onSelected: ({disk, println, getRoom, enterRoom}) => {
+            // Get the current room
+            const room = getRoom('infinity_chamber');
+            
+            // Clear all existing exits
+            room.exits = [];
+            
+            // Add only the URL exit
+            room.exits.push({ 
+              dir: 'portal', 
+              id: '/floor/250/library-portal-floor/', 
+              isURL: true
+            });
+            
+            // Remove Zephyrian from characters array
+            disk.characters = disk.characters.filter(char => 
+              !(char.name.includes('Zephyrian') || char.name.includes('archmage'))
+            );
+            
+            // Also remove him from the room directly
+            room.desc = room.desc.replace(/The \*\*ARCHMAGE ZEPHYRIAN\*\* himself stands before the Nexus.+?ancient face\./g, 
+              "The room is now empty except for the swirling portal.");
+            
+            // Make Zephyrian item inaccessible 
+            room.items = room.items.filter(item => 
+              !(item.name.includes('Zephyrian') || item.name.includes('archmage'))
+            );
+            
+            // Prevent talk command from working
+            disk.conversant = undefined;
+            disk.conversation = undefined;
+            
+            println(`\nA swirling **PORTAL** has appeared. It is your only way forward. Zephyrian has vanished.`);
+          },
+          removeOnRead: true,           
         },
         {
           option: `Accuse him of **ABANDONING** his responsibilities to the tower.`,

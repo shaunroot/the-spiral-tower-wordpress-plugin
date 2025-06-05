@@ -26,64 +26,6 @@ SpiralTower.transitions = (function () {
 
     // Define transition types
     const transitionTypes = {
-
-        // Let's fix the fade-blur exit function - it might be missing some elements
-
-        'fade-blur': {
-            enter: (wrapper, title, tl) => {
-                // ... enter function stays the same ...
-            },
-
-            exit: (wrapper, title, tl) => {
-                console.log('fade-blur EXIT called with:', { wrapper: !!wrapper, title: !!title });
-
-                if (title) {
-                    console.log('Animating title exit');
-                    tl.to(title, {
-                        opacity: 0,
-                        scale: 1.5,
-                        duration: durations.exit,
-                        ease: 'power2.in'
-                    }, 0);
-                } else {
-                    console.log('No title element found for exit animation');
-                }
-
-                // Animate content exit
-                const content = document.querySelector('.spiral-tower-floor-content');
-                if (content) {
-                    console.log('Animating content exit');
-                    tl.to(content, {
-                        opacity: 0,
-                        filter: 'blur(10px)',
-                        duration: durations.exit * 0.8,
-                        ease: 'power2.in'
-                    }, 0.05);
-                } else {
-                    console.log('No content element found for exit animation');
-                }
-
-                if (wrapper) {
-                    console.log('Animating wrapper exit');
-                    tl.to(wrapper, {
-                        opacity: 0,
-                        filter: 'blur(20px)',
-                        duration: durations.exit,
-                        ease: 'power2.in'
-                    }, 0.1);
-                } else {
-                    console.log('No wrapper element found for exit animation');
-                }
-
-                // FORCE a minimum animation even if no elements found
-                if (!title && !content && !wrapper) {
-                    console.log('No elements found, adding dummy animation');
-                    tl.to({}, { duration: durations.exit }, 0);
-                }
-
-                console.log('fade-blur exit setup complete, timeline duration should be:', durations.exit);
-            }
-        },
         'cross-fade': {
             enter: (wrapper, title, tl) => {
                 if (wrapper) {

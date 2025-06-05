@@ -8,8 +8,23 @@ $current_post_type = get_post_type($current_post_id);
 $post_id = get_the_ID();
 $has_liked = function_exists('spiral_tower_has_user_liked') ? spiral_tower_has_user_liked($post_id) : false;
 $like_count = function_exists('spiral_tower_get_like_count') ? spiral_tower_get_like_count($post_id) : 0;
-$current_floor_number = $floor_number;// get_post_meta(get_the_ID(), '_floor_number', true);
+//  = $floor_number;// get_post_meta(get_the_ID(), '_floor_number', true);
 // $current_floor_number = !empty($current_floor_number) ? intval($current_floor_number) : null;
+
+
+if ($current_post_type === 'floor') {
+    // For floors, get the data directly
+    $current_floor_number = get_post_meta(get_the_ID(), '_floor_number', true);    
+} elseif ($current_post_type === 'room') {
+    // For rooms, get the parent floor ID first
+    $parent_floor_id = get_post_meta(get_the_ID(), '_room_floor_id', true);
+    
+    if ($parent_floor_id) {
+        // Get floor number and alt text from the parent floor
+        $current_floor_number = get_post_meta($parent_floor_id, '_floor_number', true);
+    }		
+}
+
 
 // Get users who liked this post (array of display names)
 $like_users = function_exists('spiral_tower_get_users_who_liked') ? spiral_tower_get_users_who_liked($post_id) : array();
@@ -257,7 +272,7 @@ if ($has_liked) {
         <a href="<?php echo esc_url($profile_url); ?>" class="profile-popup-link">
             <div class="profile-popup-content">
                 <div class="author-info">
-                    <p>Floor created by <span class="author-name"><?php echo esc_html($author->display_name); ?></span>
+                    <p>Created by <span class="author-name"><?php echo esc_html($author->display_name); ?></span>
                     </p>
                 </div>
                 <div class="author-avatar-container">
@@ -344,6 +359,7 @@ if ($has_liked) {
     <?php endif; ?>
     <?php // ----- END: Floor Navigation Up/Down ----- ?>
 
+    <!-- <div id="button-debug" style="white-space: nowrap;"> [<?php echo $current_floor_number; ?>]</div> -->
 </div>
 
 
