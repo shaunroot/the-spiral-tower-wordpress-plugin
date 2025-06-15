@@ -254,7 +254,7 @@ SpiralTower.core = (function () {
     }
 
     /**
-     * NEW: Initializes the User Profile Activity Accordion if present on the page (WP Admin).
+     * Initializes the User Profile Activity Accordion if present on the page (WP Admin).
      */
     function initUserProfileActivityAccordion() {
         const ACCORDION_MODULE_NAME = 'userProfileActivity';

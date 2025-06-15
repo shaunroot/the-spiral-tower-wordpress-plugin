@@ -119,6 +119,8 @@ class Spiral_Tower_Plugin
 
         add_action('template_redirect', array($this, 'redirect_404_to_void'), 1);
         add_filter('template_include', array($this, 'handle_404_template'), 99);
+
+        add_action('init', array($this, 'setup_tower_stats_page'));
     }
 
     /**
@@ -396,6 +398,13 @@ class Spiral_Tower_Plugin
      */
     public function floor_template($template)
     {
+        if (is_page('about')) {
+            $stats_template = SPIRAL_TOWER_PLUGIN_DIR . 'templates/about.php';
+            if (file_exists($stats_template)) {
+                return $stats_template;
+            }
+        }
+
         $use_plugin_template = false;
         $post_id = get_the_ID(); // Get current post/page ID
 
@@ -464,9 +473,10 @@ class Spiral_Tower_Plugin
         $current_url = $_SERVER['REQUEST_URI'];
         $is_stairs_page = (rtrim($current_url, '/') === '/stairs' || $current_url === '/stairs/');
         $is_void_page = (rtrim($current_url, '/') === '/the-void' || $current_url === '/the-void/' || is_404());
+        $is_about_page = (rtrim($current_url, '/') === '/about' || $current_url === '/about/'); // ADD THIS LINE
 
         // Check if it's a floor, room, or a page using the floor template
-        if (is_singular('floor') || is_singular('room') || $is_stairs_page || $is_void_page) {
+        if (is_singular('floor') || is_singular('room') || $is_stairs_page || $is_void_page || $is_about_page) { // ADD $is_about_page HERE
             $load_assets = true;
         } elseif (is_page($post_id)) {
             $use_floor_meta = get_post_meta($post_id, '_use_floor_template', true);
@@ -688,10 +698,11 @@ class Spiral_Tower_Plugin
         // Create floor author role
         $this->floor_manager->create_floor_author_role();
 
-
+        // Set up pages
         $this->setup_stairs_page();
         $this->register_void_template();
         $this->setup_void_page();
+        $this->setup_tower_stats_page();
 
         // Flush rewrite rules ONCE on activation
         flush_rewrite_rules();
@@ -704,6 +715,247 @@ class Spiral_Tower_Plugin
     {
         // Flush rewrite rules ONCE on deactivation
         flush_rewrite_rules();
+    }
+
+
+    /**
+     * Setup the about page
+     */
+    public function setup_tower_stats_page() // You can rename this method too if you want
+    {
+        // Check if the about page already exists
+        $about_page = get_page_by_path('about');
+
+        // If the page doesn't exist, create it
+        if (!$about_page) {
+            $about_page_args = array(
+                'post_title' => 'About the Tower',
+                'post_name' => 'about',
+                'post_status' => 'publish',
+                'post_type' => 'page',
+                'post_content' => 'Loading statistics...', // Simple content, template handles display
+                'post_author' => 1,
+                'comment_status' => 'closed'
+            );
+            wp_insert_post($about_page_args);
+        }
+
+        add_shortcode('spiral_tower_stats', array($this, 'render_tower_stats_shortcode'));
+    }
+
+    public function render_tower_stats_shortcode($atts)
+    {
+
+        error_log("Stats shortcode called");
+
+        // Check if get_tower_statistics exists
+        if (!method_exists($this, 'get_tower_statistics')) {
+            return '<p>Error: Statistics method not found</p>';
+        }
+
+        $stats = $this->get_tower_statistics();
+        error_log("Stats retrieved: " . print_r($stats, true));
+
+        ob_start();
+        ?>
+        <div class="tower-stats-container">
+            <div class="stats-overview">
+                <div class="stat-card">
+                    <h3>Total Floors</h3>
+                    <div class="stat-number"><?php echo esc_html($stats['total_floors']); ?></div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Locations</h3>
+                    <div class="stat-number"><?php echo esc_html($stats['total_locations']); ?></div>
+                </div>
+            </div>
+
+            <div class="stats-leaderboards">
+                <!-- Top 10 Creators -->
+                <div class="leaderboard">
+                    <h3>Top Creators</h3>
+                    <div class="leaderboard-list">
+                        <?php foreach ($stats['top_creators'] as $index => $creator): ?>
+                            <a href="/u/<?php echo esc_html($creator['name']); ?>">
+                                <div class="leaderboard-item">
+                                    <span class="rank">#<?php echo $index + 1; ?></span>
+                                    <span class="name"><?php echo esc_html($creator['name']); ?></span>
+                                    <span class="count"><?php echo esc_html($creator['total_content']); ?> locations</span>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- Top 10 Explorers -->
+                <div class="leaderboard">
+                    <h3>Top Explorers</h3>
+                    <div class="leaderboard-list">
+                        <?php foreach ($stats['top_explorers'] as $index => $explorer): ?>
+                            <a href="/u/<?php echo esc_html($explorer['name']); ?>">
+                            <div class="leaderboard-item">
+                                <span class="rank">#<?php echo $index + 1; ?></span>
+                                <span class="name"><?php echo esc_html($explorer['name']); ?></span>
+                                <span class="count"><?php echo esc_html($explorer['visits']); ?> visits</span>
+                            </div>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- Top 10 Most Liked Users -->
+                <div class="leaderboard">
+                    <h3>Most Liked</h3>
+                    <div class="leaderboard-list">
+                        <?php foreach ($stats['most_liked_users'] as $index => $user): ?>
+                            <a href="/u/<?php echo esc_html($user['name']); ?>">
+                            <div class="leaderboard-item">
+                                <span class="rank">#<?php echo $index + 1; ?></span>
+                                <span class="name"><?php echo esc_html($user['name']); ?></span>
+                                <span class="count"><?php echo esc_html($user['likes_received']); ?> likes</span>
+                            </div>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- Top 10 Users Giving Most Likes -->
+                <div class="leaderboard">
+                    <h3>Most Admiring</h3>
+                    <div class="leaderboard-list">
+                        <?php foreach ($stats['most_generous_users'] as $index => $user): ?>
+                            <a href="/u/<?php echo esc_html($user['name']); ?>">
+                            <div class="leaderboard-item">
+                                <span class="rank">#<?php echo $index + 1; ?></span>
+                                <span class="name"><?php echo esc_html($user['name']); ?></span>
+                                <span class="count"><?php echo esc_html($user['likes_given']); ?> likes given</span>
+                            </div>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Get tower statistics data
+     */
+    private function get_tower_statistics()
+    {
+        global $wpdb;
+
+        $total_floors = wp_count_posts('floor')->publish;
+        $total_rooms = wp_count_posts('room')->publish;
+        $total_locations = $total_floors + $total_rooms;
+
+        // Top 10 Creators (Floor Authors ranked by published floors + rooms)
+        $creators_query = "
+    SELECT 
+        p.post_author as user_id,
+        u.display_name,
+        SUM(CASE WHEN p.post_type = 'floor' THEN 1 ELSE 0 END) as floor_count,
+        SUM(CASE WHEN p.post_type = 'room' THEN 1 ELSE 0 END) as room_count,
+        COUNT(*) as total_content
+    FROM {$wpdb->posts} p
+    JOIN {$wpdb->users} u ON p.post_author = u.ID
+    WHERE p.post_type IN ('floor', 'room') 
+    AND p.post_status = 'publish'
+    GROUP BY p.post_author, u.display_name
+    ORDER BY total_content DESC
+    LIMIT 10
+";
+
+        $creators = $wpdb->get_results($creators_query);
+        $top_creators = array();
+        foreach ($creators as $creator) {
+            $top_creators[] = array(
+                'name' => $creator->display_name,
+                'total_content' => $creator->total_content // Use the COUNT(*) result directly
+            );
+        }
+
+        $creators = $wpdb->get_results($creators_query);
+        $top_creators = array();
+        foreach ($creators as $creator) {
+            $top_creators[] = array(
+                'name' => $creator->display_name,
+                'total_content' => $creator->floor_count + $creator->room_count
+            );
+        }
+
+        // Top 10 Explorers (users with most unique floor/room visits)
+        $logs_table = $wpdb->prefix . 'spiral_tower_logs';
+        $explorers_query = "
+        SELECT u.display_name, COUNT(DISTINCT CONCAT(l.post_type, '-', l.post_id)) as unique_visits
+        FROM {$logs_table} l
+        JOIN {$wpdb->users} u ON l.user_id = u.ID
+        WHERE l.user_id IS NOT NULL AND l.user_id > 0
+        GROUP BY l.user_id, u.display_name
+        ORDER BY unique_visits DESC
+        LIMIT 10
+    ";
+
+        $explorers = $wpdb->get_results($explorers_query);
+        $top_explorers = array();
+        foreach ($explorers as $explorer) {
+            $top_explorers[] = array(
+                'name' => $explorer->display_name,
+                'visits' => $explorer->unique_visits
+            );
+        }
+
+        // Top 10 Most Liked Users (users whose content receives the most likes)
+        $likes_table = $wpdb->prefix . 'spiral_tower_likes';
+        $most_liked_query = "
+        SELECT u.display_name, COUNT(l.id) as likes_received
+        FROM {$likes_table} l
+        JOIN {$wpdb->posts} p ON l.post_id = p.ID
+        JOIN {$wpdb->users} u ON p.post_author = u.ID
+        WHERE p.post_type IN ('floor', 'room')
+        GROUP BY p.post_author, u.display_name
+        ORDER BY likes_received DESC
+        LIMIT 10
+    ";
+
+        $most_liked = $wpdb->get_results($most_liked_query);
+        $most_liked_users = array();
+        foreach ($most_liked as $user) {
+            $most_liked_users[] = array(
+                'name' => $user->display_name,
+                'likes_received' => $user->likes_received
+            );
+        }
+
+        // Top 10 Most Generous Users (users who give the most likes)
+        $most_generous_query = "
+        SELECT u.display_name, COUNT(l.id) as likes_given
+        FROM {$likes_table} l
+        JOIN {$wpdb->users} u ON l.user_id = u.ID
+        GROUP BY l.user_id, u.display_name
+        ORDER BY likes_given DESC
+        LIMIT 10
+    ";
+
+        $most_generous = $wpdb->get_results($most_generous_query);
+        $most_generous_users = array();
+        foreach ($most_generous as $user) {
+            $most_generous_users[] = array(
+                'name' => $user->display_name,
+                'likes_given' => $user->likes_given
+            );
+        }
+
+        return array(
+            'total_floors' => $total_floors,
+            'total_locations' => $total_locations,
+            'top_creators' => $top_creators,
+            'top_explorers' => $top_explorers,
+            'most_liked_users' => $most_liked_users,
+            'most_generous_users' => $most_generous_users
+        );
     }
 }
 
@@ -1124,6 +1376,10 @@ function spiral_tower_main_page()
     ?>
     <div class="wrap">
         <h1>Spiral Tower Dashboard</h1>
+        <div class="notice notice-info">
+            <p><strong>📊 Public Stats Page:</strong> Your tower statistics are now publicly available at <a
+                    href="<?php echo home_url('/about/'); ?>" target="_blank"><?php echo home_url('/about/'); ?></a></p>
+        </div>
         <p>Welcome to the Spiral Tower administration center.</p>
 
         <div class="tower-dashboard-stats">
@@ -1233,6 +1489,12 @@ function spiral_tower_main_page()
                     <h3>User Management</h3>
                     <p>View user profiles with detailed activity tracking.</p>
                     <a href="<?php echo admin_url('users.php'); ?>" class="button">Manage Users</a>
+                </div>
+
+                <div class="action-card">
+                    <h3>About Page</h3>
+                    <p>View the public about page with tower statistics.</p>
+                    <a href="<?php echo home_url('/about/'); ?>" target="_blank" class="button">View About Page</a>
                 </div>
             </div>
         </div>
@@ -1380,7 +1642,6 @@ function spiral_tower_logs_page()
                     <h3>Total Floor Visits</h3>
                     <p class="stat-number">
                         <?php
-                        // Get total floor visits if the method exists
                         if (method_exists($log_manager, 'get_total_visits')) {
                             echo $log_manager->get_total_visits('floor');
                         } else {
@@ -1394,7 +1655,6 @@ function spiral_tower_logs_page()
                     <h3>Total Room Visits</h3>
                     <p class="stat-number">
                         <?php
-                        // Get total room visits if the method exists
                         if (method_exists($log_manager, 'get_total_visits')) {
                             echo $log_manager->get_total_visits('room');
                         } else {
@@ -1408,7 +1668,6 @@ function spiral_tower_logs_page()
                     <h3>Unique Visitors</h3>
                     <p class="stat-number">
                         <?php
-                        // Get unique visitors if the method exists
                         if (method_exists($log_manager, 'get_unique_visitors_count')) {
                             echo $log_manager->get_unique_visitors_count();
                         } else {
@@ -1420,12 +1679,7 @@ function spiral_tower_logs_page()
             </div>
 
             <h2>User Activity Management</h2>
-            <p>Detailed user activity tracking is available in individual user profiles. Each user's profile shows:</p>
-            <ul>
-                <li>Floors visited and not visited</li>
-                <li>Rooms visited and not visited</li>
-                <li>Activity timeline and statistics</li>
-            </ul>
+            <p>Detailed user activity tracking is available in individual user profiles.</p>
             <p><a href="<?php echo admin_url('users.php'); ?>" class="button button-primary">View Users</a></p>
 
         </div>

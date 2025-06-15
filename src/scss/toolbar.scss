@@ -19,13 +19,13 @@ $margin-large: 80px;
   bottom: 15px;
   right: 75px;
   z-index: 9999 !important;
-  background: rgba(0, 0, 0, 0.6);
   overflow: visible;
   opacity: 0.8;
 
   >a,
   >div {
     // Direct children buttons
+    background: rgba(0, 0, 0, 0.6);
     display: flex; // Use flex for centering icon
     justify-content: center;
     align-items: center;
@@ -61,6 +61,10 @@ $margin-large: 80px;
     fill: white;
     opacity: 0.8;
     pointer-events: none;
+  }
+
+  #button-your-profile {
+    margin-right: 8px;
   }
 
   /* Add this to your CSS */
@@ -507,4 +511,8 @@ $margin-large: 80px;
 #button-floor-up svg,
 #button-floor-down svg {
   pointer-events: none; // <- ensure SVG doesn't block events on the parent
+}
+
+.dom-tooltip {
+  min-width: 100px;
 }

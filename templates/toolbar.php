@@ -1,6 +1,7 @@
 <?php
 $current_post_id = get_the_ID();
 $current_post_type = get_post_type($current_post_id);
+$current_user = wp_get_current_user();
 ?>
 
 <?php
@@ -14,15 +15,15 @@ $like_count = function_exists('spiral_tower_get_like_count') ? spiral_tower_get_
 
 if ($current_post_type === 'floor') {
     // For floors, get the data directly
-    $current_floor_number = get_post_meta(get_the_ID(), '_floor_number', true);    
+    $current_floor_number = get_post_meta(get_the_ID(), '_floor_number', true);
 } elseif ($current_post_type === 'room') {
     // For rooms, get the parent floor ID first
     $parent_floor_id = get_post_meta(get_the_ID(), '_room_floor_id', true);
-    
+
     if ($parent_floor_id) {
         // Get floor number and alt text from the parent floor
         $current_floor_number = get_post_meta($parent_floor_id, '_floor_number', true);
-    }		
+    }
 }
 
 
@@ -102,6 +103,23 @@ if ($has_liked) {
     <?php // ----- END: Text Only Toggle Button HTML ----- ?>
 
 
+
+    <?php // ----- START: User Profile Button ----- ?>
+    <div id="button-your-profile" class="tooltip-trigger" data-tooltip="Your Profile">
+        <a href="/u/<?php echo esc_html( $current_user->display_name ); ?>">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="10" r="3" />
+            <path d="M6 18c1.5-2 4-3 6-3s4.5 1 6 3" />
+        </svg>
+    </a>
+    </div>
+    <?php // ----- END: User Profile Button ----- ?>
+
+
+
+
     <?php // ----- START: Edit Post Button (Conditional) ----- ?>
     <?php
 
@@ -129,7 +147,7 @@ if ($has_liked) {
     <?php
     // Check if the current user can edit portals (adjust capability check as needed)
     // Using 'edit_posts' as a general capability, same as Create Portal button
-    if (current_user_can('edit_posts')):
+    if (current_user_can('edit_post', get_the_ID())):
         // Define the URL for the portal editing page (standard WP list table)
         $edit_portals_url = admin_url('edit.php?post_type=portal'); // Assumes 'portal' CPT slug
         ?>
@@ -165,7 +183,7 @@ if ($has_liked) {
     <?php // ----- START: Create Portal Button ----- ?>
     <?php
     // Check if the current user can create portals
-    if (current_user_can('edit_posts')):
+    if (current_user_can('edit_post', get_the_ID())):
 
         // Set up the portal creation URL with the current page as the origin
         $create_portal_url = admin_url('post-new.php?post_type=portal');
@@ -257,6 +275,8 @@ if ($has_liked) {
             <circle cx="12" cy="7" r="4" />
         </svg>
     </div>
+
+
 
     <div id="user-profile-popup" style="display: none; width: 280px; height: 70px;">
         <?php

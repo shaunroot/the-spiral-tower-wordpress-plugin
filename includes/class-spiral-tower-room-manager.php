@@ -44,11 +44,11 @@ class Spiral_Tower_Room_Manager
         // Add AJAX handler for typeahead
         add_action('wp_ajax_spiral_tower_search_floors', array($this, 'ajax_search_floors'));
 
-        // *** NEW: Hide "Add New" buttons for floor authors ***
+        // Hide "Add New" buttons for floor authors ***
         add_action('admin_menu', array($this, 'hide_add_new_for_floor_authors'));
         add_action('admin_head', array($this, 'hide_add_new_button_css'));
-        
-        // *** NEW: Block creation attempts via direct URL access ***
+
+        // Block creation attempts via direct URL access ***
         add_action('admin_init', array($this, 'block_room_creation_for_authors'));
     }
 
@@ -97,7 +97,7 @@ class Spiral_Tower_Room_Manager
     }
 
     /**
-     * *** MODIFIED: Add proper admin access capabilities ***
+     * Add proper admin access capabilities ***
      * Add room capabilities to floor_author role
      */
     private function add_room_capabilities_to_floor_author()
@@ -125,7 +125,7 @@ class Spiral_Tower_Room_Manager
                 'delete_rooms' => false,
                 'delete_published_rooms' => false,
                 'delete_others_rooms' => false,
-                'publish_rooms' => false
+                'publish_rooms' => true
             ];
             foreach ($caps_to_deny as $cap => $value) {
                 $role->add_cap($cap, $value);
@@ -156,12 +156,12 @@ class Spiral_Tower_Room_Manager
     }
 
     /**
-     * *** NEW: Block room creation via redirect for floor authors ***
+     * Block room creation via redirect for floor authors ***
      */
     public function block_room_creation_for_authors()
     {
         global $pagenow;
-        
+
         if ($pagenow === 'post-new.php' && isset($_GET['post_type']) && $_GET['post_type'] === 'room') {
             $user = wp_get_current_user();
             if (in_array('floor_author', (array) $user->roles) && !current_user_can('administrator') && !current_user_can('editor')) {
@@ -171,7 +171,7 @@ class Spiral_Tower_Room_Manager
     }
 
     /**
-     * *** MODIFIED: Check role properly ***
+     * Check role properly ***
      */
     public function hide_add_new_for_floor_authors()
     {
@@ -182,7 +182,7 @@ class Spiral_Tower_Room_Manager
     }
 
     /**
-     * *** MODIFIED: Check role properly ***
+     * Check role properly ***
      */
     public function hide_add_new_button_css()
     {
@@ -576,68 +576,68 @@ class Spiral_Tower_Room_Manager
             echo '<hr>';
             echo '<p><strong>Custom Achievement (Admin Only):</strong><br>';
             echo '<small>If set, visitors will earn this achievement when they visit this room.</small></p>';
-            
+
             // Achievement Title
             echo '<p>';
             echo '<label for="room_achievement_title">Achievement Title:</label>';
             echo '<input type="text" id="room_achievement_title" name="room_achievement_title" value="' . esc_attr($achievement_title) . '" style="width:100%" placeholder="e.g., Guardian of the Secret Chamber">';
             echo '</p>';
-            
+
             // Achievement Image Upload
             echo '<p>';
             echo '<label for="room_achievement_image">Achievement Image:</label><br>';
             echo '<input type="text" id="room_achievement_image" name="room_achievement_image" value="' . esc_attr($achievement_image) . '" style="width:80%" placeholder="Image URL or select from media library" />';
             echo '<button type="button" class="button" id="room_achievement_image_button" style="margin-left:5px;">Select Image</button>';
-            
+
             // Image preview
             if (!empty($achievement_image)) {
                 echo '<br><img src="' . esc_url($achievement_image) . '" style="max-width:100px; max-height:100px; margin-top:10px; border:1px solid #ddd;" />';
             }
             echo '</p>';
-            
+
             // Add JavaScript for media uploader (similar to floor version)
             ?>
             <script type="text/javascript">
-            jQuery(document).ready(function($) {
-                var mediaUploader;
-                
-                $('#room_achievement_image_button').click(function(e) {
-                    e.preventDefault();
-                    
-                    if (mediaUploader) {
+                jQuery(document).ready(function ($) {
+                    var mediaUploader;
+
+                    $('#room_achievement_image_button').click(function (e) {
+                        e.preventDefault();
+
+                        if (mediaUploader) {
+                            mediaUploader.open();
+                            return;
+                        }
+
+                        mediaUploader = wp.media({
+                            title: 'Select Achievement Image',
+                            button: {
+                                text: 'Use This Image'
+                            },
+                            multiple: false,
+                            library: {
+                                type: 'image'
+                            }
+                        });
+
+                        mediaUploader.on('select', function () {
+                            var attachment = mediaUploader.state().get('selection').first().toJSON();
+                            $('#room_achievement_image').val(attachment.url);
+
+                            var $preview = $('#room_achievement_image').siblings('img');
+                            if ($preview.length) {
+                                $preview.attr('src', attachment.url);
+                            } else {
+                                $('#room_achievement_image').after('<br><img src="' + attachment.url + '" style="max-width:100px; max-height:100px; margin-top:10px; border:1px solid #ddd;" />');
+                            }
+                        });
+
                         mediaUploader.open();
-                        return;
-                    }
-                    
-                    mediaUploader = wp.media({
-                        title: 'Select Achievement Image',
-                        button: {
-                            text: 'Use This Image'
-                        },
-                        multiple: false,
-                        library: {
-                            type: 'image'
-                        }
                     });
-                    
-                    mediaUploader.on('select', function() {
-                        var attachment = mediaUploader.state().get('selection').first().toJSON();
-                        $('#room_achievement_image').val(attachment.url);
-                        
-                        var $preview = $('#room_achievement_image').siblings('img');
-                        if ($preview.length) {
-                            $preview.attr('src', attachment.url);
-                        } else {
-                            $('#room_achievement_image').after('<br><img src="' + attachment.url + '" style="max-width:100px; max-height:100px; margin-top:10px; border:1px solid #ddd;" />');
-                        }
-                    });
-                    
-                    mediaUploader.open();
                 });
-            });
             </script>
             <?php
-        }        
+        }
 
         // Enqueue color picker scripts if needed for admin
         wp_enqueue_style('wp-color-picker');
@@ -841,7 +841,7 @@ class Spiral_Tower_Room_Manager
                     delete_post_meta($post_id, '_room_achievement_title');
                 }
             }
-            
+
             if (isset($_POST['room_achievement_image'])) {
                 $achievement_image = esc_url_raw($_POST['room_achievement_image']);
                 if (!empty($achievement_image)) {
@@ -850,7 +850,7 @@ class Spiral_Tower_Room_Manager
                     delete_post_meta($post_id, '_room_achievement_image');
                 }
             }
-        }        
+        }
     }
 
     /**
@@ -1059,15 +1059,12 @@ class Spiral_Tower_Room_Manager
     }
 
     /**
-     * Only allow floor authors to edit rooms on their floors
+     * Simplified room editing restriction
      */
     public function restrict_room_editing($allcaps, $caps, $args)
     {
-        $cap_check = $args[0];
-
-        if (
-            !in_array($cap_check, ['edit_post', 'delete_post', 'publish_posts', 'edit_published_posts', 'delete_published_posts'])
-        ) {
+        // Only check room-related capabilities
+        if (!isset($args[0]) || strpos($args[0], 'room') === false) {
             return $allcaps;
         }
 
@@ -1084,31 +1081,38 @@ class Spiral_Tower_Room_Manager
         }
 
         $user = get_userdata($user_id);
-        if (!$user || !in_array('floor_author', (array) $user->roles)) {
-            if (array_intersect(['administrator', 'editor'], (array) $user->roles)) {
-                return $allcaps;
-            }
+        if (!$user) {
             return $allcaps;
         }
 
-        if (current_user_can('edit_others_rooms') || current_user_can('delete_others_rooms')) {
+        // Allow full access for admins and editors
+        if (array_intersect(['administrator', 'editor'], (array) $user->roles)) {
             return $allcaps;
         }
 
+        // Only restrict floor_author users
+        if (!in_array('floor_author', (array) $user->roles)) {
+            return $allcaps;
+        }
+
+        // For floor authors, check if they own the parent floor
         $room_floor_id = get_post_meta($post->ID, '_room_floor_id', true);
         if (!$room_floor_id) {
-            foreach ($caps as $cap) {
-                $allcaps[$cap] = false;
+            // No parent floor - deny access
+            if (strpos($args[0], 'edit_others_') !== false || strpos($args[0], 'delete_others_') !== false) {
+                $allcaps[$args[0]] = false;
             }
             return $allcaps;
         }
 
         $floor_of_room = get_post($room_floor_id);
         if (!$floor_of_room || $floor_of_room->post_author != $user_id) {
-            foreach ($caps as $cap) {
-                $allcaps[$cap] = false;
+            // Room belongs to a floor not authored by this user
+            if (strpos($args[0], 'edit_others_') !== false || strpos($args[0], 'delete_others_') !== false) {
+                $allcaps[$args[0]] = false;
             }
         }
+
         return $allcaps;
     }
 
@@ -1165,7 +1169,7 @@ class Spiral_Tower_Room_Manager
 
         $search_term = isset($_GET['term']) ? sanitize_text_field($_GET['term']) : '';
 
-        // *** MODIFIED: Restrict floor search based on user role ***
+        // Restrict floor search based on user role ***
         $user = wp_get_current_user();
         $args = array(
             'post_type' => 'floor',
@@ -1188,7 +1192,7 @@ class Spiral_Tower_Room_Manager
             )
         );
 
-        // *** NEW: If user is floor_author, only show their own floors ***
+        // If user is floor_author, only show their own floors ***
         if (in_array('floor_author', (array) $user->roles) && !current_user_can('edit_others_floors')) {
             $args['author'] = $user->ID;
         }

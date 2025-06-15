@@ -44,9 +44,6 @@ class Spiral_Tower_Log_Manager {
         // Add meta boxes for visitors list in admin
         add_action('add_meta_boxes_floor', array($this, 'add_visitor_meta_boxes_floor'));
         add_action('add_meta_boxes_room', array($this, 'add_visitor_meta_boxes_room'));
-
-        // Add admin menu page for logs
-        add_action('admin_menu', array($this, 'add_logs_admin_page'));
     }
 
     /**
@@ -182,17 +179,45 @@ class Spiral_Tower_Log_Manager {
         echo '</div>';
     }
 
+/**
+ * Get total visits by post type (for statistics)
+ */
+public function get_total_visits($post_type = null) {
+    global $wpdb;
+    
+    if ($post_type) {
+        $query = $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$this->table_name} WHERE post_type = %s AND user_id IS NOT NULL AND user_id > 0",
+            $post_type
+        );
+    } else {
+        $query = "SELECT COUNT(*) FROM {$this->table_name} WHERE user_id IS NOT NULL AND user_id > 0";
+    }
+    
+    return $wpdb->get_var($query);
+}
+
+/**
+ * Get unique visitors count (for statistics)
+ */
+public function get_unique_visitors_count() {
+    global $wpdb;
+    
+    $query = "SELECT COUNT(DISTINCT user_id) FROM {$this->table_name} WHERE user_id IS NOT NULL AND user_id > 0";
+    return $wpdb->get_var($query);
+}    
+
     /**
      * Add the admin page for logs.
      */
     public function add_logs_admin_page() {
         add_submenu_page(
-            'edit.php?post_type=floor',          // Parent slug (Floors CPT)
-            'Tower Logs',                        // Page title
-            'Tower Logs',                        // Menu title
-            'manage_options',                    // Capability required
-            'spiral-tower-logs',                 // Menu slug
-            array($this, 'render_logs_page')     // Function to display the page
+            'spiral-tower',                  // Parent menu slug
+            'Tower Logs',                    // Page title
+            'Tower Logs',                    // Menu title
+            'manage_options',                // Capability required
+            'spiral-tower-logs',             // Menu slug
+            'spiral_tower_logs_page'         // Callback function - THIS needs to exist
         );
     }
 

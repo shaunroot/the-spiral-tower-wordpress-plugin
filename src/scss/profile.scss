@@ -223,9 +223,13 @@
   }
 
 .edit-profile-section {
-  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px; /* space between buttons */
+  margin-top: 20px;
   
-  .edit-profile-button {
+  .profile-button {
     display: inline-block;
     padding: 6px 14px;
     background: rgba(255, 255, 255, 0.2);
@@ -234,6 +238,12 @@
     font-size: 0.9em;
     text-decoration: none;
     transition: background 0.2s;
+
+    display: inline-block;
+    min-width: 72px;
+    margin: 0 8px;
+    text-align: center;
+    font-family: 'Metamorphous', serif;   
     
     &:hover {
       background: rgba(255, 255, 255, 0.3);

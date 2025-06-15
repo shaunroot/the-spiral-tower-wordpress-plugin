@@ -1145,3 +1145,34 @@ requestAnimationFrame(print);
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
   module.exports = loadDisk;
 }
+
+function checkCrystalSequence() {
+  const correctSequence = ['white', 'green', 'orange', 'blue'];
+  
+  // Only check when we have 4 crystals
+  if (disk.crystalSequence.length === correctSequence.length) {
+    const isCorrect = disk.crystalSequence.every((color, index) => color === correctSequence[index]);
+    
+    if (isCorrect) {
+      println(`All crystals light up simultaneously and remain brightly lit. The violent winds suddenly calm, forming a visible path of solidified air across the chasm!`);
+      
+      disk.crystalSequenceSolved = true;
+      
+      // Remove the block from the north exit
+      const room = getRoom('chasm_bridge');
+      const northExit = room.exits.find(exit => exit.dir === 'north');
+      if (northExit && northExit.block) {
+        delete northExit.block;
+      }
+      
+      println(`You can now cross safely to the northern side of the chasm.`);
+    } else {
+      println(`The sequence is incorrect. The crystals flicker and reset. You'll need to try the correct sequence: white, green, red, blue.`);
+      disk.crystalSequence = [];
+    }
+  } else if (disk.crystalSequence.length < correctSequence.length) {
+    // Just for debugging - show progress
+    println(`Crystal ${disk.crystalSequence.length} of 4 activated. Sequence so far: ${disk.crystalSequence.join(', ')}`);
+    console.log(`Crystal ${disk.crystalSequence.length} of 4 activated. Sequence so far: ${disk.crystalSequence.join(', ')}`);
+  }
+}

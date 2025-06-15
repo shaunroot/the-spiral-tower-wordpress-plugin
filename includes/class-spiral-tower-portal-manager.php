@@ -82,7 +82,7 @@ class Spiral_Tower_Portal_Manager
     }
 
     /**
-     * AJAX handler for floor search 
+     * AJAX handler for floor search with achievement filtering
      */
     public function ajax_search_floors()
     {
@@ -114,7 +114,23 @@ class Spiral_Tower_Portal_Manager
             // For destinations (or no context), show all floors - no restrictions
         }
 
-        // FIXED: Enhanced search filter to include floor number and alt text
+        // Filter out floors with achievements for non-admin users ***
+        if (!current_user_can('administrator')) {
+            $args['meta_query'] = array(
+                'relation' => 'OR',
+                array(
+                    'key' => '_floor_achievement_title',
+                    'compare' => 'NOT EXISTS'
+                ),
+                array(
+                    'key' => '_floor_achievement_title',
+                    'value' => '',
+                    'compare' => '='
+                )
+            );
+        }
+
+        // Enhanced search filter to include floor number and alt text
         add_filter('posts_where', function ($where) use ($search_term) {
             global $wpdb;
             if (!empty($search_term)) {
@@ -174,7 +190,7 @@ class Spiral_Tower_Portal_Manager
     }
 
     /**
-     * AJAX handler for room search
+     * AJAX handler for room search with achievement filtering
      */
     public function ajax_search_rooms()
     {
@@ -192,12 +208,7 @@ class Spiral_Tower_Portal_Manager
             'post_status' => 'publish',
             'orderby' => 'title',
             'order' => 'ASC',
-            'meta_query' => array(
-                array(
-                    'key' => 'fake_key_to_trigger_join',
-                    'compare' => 'NOT EXISTS'
-                )
-            ),
+            'meta_query' => array(),
             'suppress_filters' => false
         );
 
@@ -227,6 +238,22 @@ class Spiral_Tower_Portal_Manager
                 }
             }
             // For destinations (or no context), show all rooms - no restrictions
+        }
+
+        // Filter out rooms with achievements for non-admin users ***
+        if (!current_user_can('administrator')) {
+            $args['meta_query'][] = array(
+                'relation' => 'OR',
+                array(
+                    'key' => '_room_achievement_title',
+                    'compare' => 'NOT EXISTS'
+                ),
+                array(
+                    'key' => '_room_achievement_title',
+                    'value' => '',
+                    'compare' => '='
+                )
+            );
         }
 
         // Add search filter

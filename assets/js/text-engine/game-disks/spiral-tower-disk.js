@@ -253,21 +253,32 @@ const spiralTowerDisk = () => ({
         {
           name: ['dais', 'stone dais', 'platform'],
           desc: `The stone dais is about waist-high and perfectly circular. Its surface contains four shallow, symbol-shaped indentations: a flame, a wave, a cloud, and a leaf. They seem designed to hold correspondingly shaped objects.`,
-          // In the Element Hall's dais onUse function, change this:
           onUse() {
             const hasAllTokens = disk.inventory.some(item => item.name.includes('fire token')) &&
               disk.inventory.some(item => item.name.includes('water token')) &&
               disk.inventory.some(item => item.name.includes('air token')) &&
               disk.inventory.some(item => item.name.includes('earth token'));
-
+        
             if (hasAllTokens) {
               println(`You place each elemental token in its corresponding indentation. As the final token clicks into place, they all begin to glow brightly. The dais slowly rotates, and a fifth doorway shimmers into existence on the wall—a doorway marked with all four elemental symbols combined.
-    
-              The doorway leads **NORTHWEST** to a previously hidden chamber.`);
-
+        
+              The doorway leads **NORTHWEST** to a previously hidden chamber.
+              
+              Additionally, you hear a deep harmonic resonance throughout the tower, and the magical barrier blocking the upward staircase dissolves!`);
+        
               const room = getRoom('element_hall');
-              room.exits.push({ dir: 'northwest', id: 'moonlight_chamber' });
-
+              
+              // Add the moonlight chamber exit
+              if (!room.exits.find(exit => exit.dir === 'northwest')) {
+                room.exits.push({ dir: 'northwest', id: 'moonlight_chamber' });
+              }
+        
+              // Remove the block from the upward exit
+              const upExit = room.exits.find(exit => exit.dir === 'up');
+              if (upExit && upExit.block) {
+                delete upExit.block;
+              }
+        
               // Remove tokens from inventory
               disk.inventory = disk.inventory.filter(item =>
                 !item.name.includes('fire token') &&
@@ -275,8 +286,19 @@ const spiralTowerDisk = () => ({
                 !item.name.includes('air token') &&
                 !item.name.includes('earth token')
               );
+              
+              // Set flag to remember this has been done
+              disk.elementalPuzzleSolved = true;
+              
             } else {
-              println(`The indentations in the dais seem to be waiting for something to be placed in them.`);
+              const tokenCount = ['fire token', 'water token', 'air token', 'earth token']
+                .filter(token => disk.inventory.some(item => item.name.includes(token))).length;
+              
+              if (tokenCount === 0) {
+                println(`The indentations in the dais seem to be waiting for something to be placed in them. You sense they require items from the four elemental chambers.`);
+              } else {
+                println(`You have ${tokenCount} of the 4 required elemental tokens. You need to collect tokens from all four elemental chambers before the dais will activate.`);
+              }
             }
           }
         },
@@ -315,8 +337,23 @@ const spiralTowerDisk = () => ({
         { dir: 'south', id: 'air_chamber' },
         { dir: 'west', id: 'earth_chamber' },
         { dir: 'down', id: 'foyer' },
-        { dir: 'up', id: 'illusion_gallery' }
-      ]
+        { 
+          dir: 'up', 
+          id: 'illusion_gallery',
+          block: `A shimmering magical barrier blocks the upward staircase. Ancient runes around the barrier glow softly, and you sense that it requires the completion of some elemental harmony to pass. The dais in the center of the room seems to be the key.`
+        }
+      ],
+      onEnter() {
+        // Check if puzzle was already solved
+        if (disk.elementalPuzzleSolved) {
+          const room = getRoom('element_hall');
+          const upExit = room.exits.find(exit => exit.dir === 'up');
+          if (upExit && upExit.block) {
+            delete upExit.block;
+            println(`The magical barrier remains dissolved from when you solved the elemental puzzle.`);
+          }
+        }
+      }      
     },
     {
       id: 'fire_chamber',
@@ -619,7 +656,7 @@ const spiralTowerDisk = () => ({
       
       The chamber has a peaceful, timeless quality. It feels like a place between worlds.
       
-      The exit back to the Elemental Hall lies to the **EAST**.`,
+      The exit back to the Elemental Hall lies to the **SOUTHEAST**.`,
       items: [
         {
           name: ['lunar mirror', 'mirror', 'moon mirror'],
@@ -640,7 +677,7 @@ const spiralTowerDisk = () => ({
           }
         },
         {
-          name: ['truth monocle', 'monocle', 'crystal lens'],
+          name: ['truth monocle', 'monocle'],
           desc: `A small crystal monocle rests on the edge of the basin, glinting in the silver-blue light. It seems designed to reveal hidden truths.`,
           isTakeable: true,
           onTake() {
@@ -648,16 +685,35 @@ const spiralTowerDisk = () => ({
           },
           onUse() {
             if (disk.roomId === 'illusion_gallery') {
-              println(`You hold the truth monocle to your eye and survey the Illusion Gallery. The confusing reflections and false doorways immediately become obvious—you can clearly see which paths are real and which are illusions. The way to the upward staircase is now evident.`);
+              println(`You hold the truth monocle to your eye and survey the Illusion Gallery. The confusing reflections and false doorways immediately become obvious—you can clearly see which paths are real and which are illusions. The way to the shimmering portal is now evident.`);
+              
               disk.illusionPathFound = true;
+              
+              // Remove the block from the PORTAL exit (not UP)
+              const room = getRoom('illusion_gallery');
+              const portalExit = room.exits.find(exit => exit.dir === 'portal');
+              if (portalExit && portalExit.block) {
+                delete portalExit.block;
+                println(`You can now clearly see the path to the portal.`);
+              }
+            } else if (disk.roomId === 'mirage_desert') {
+              println(`Through the truth monocle, the mirages in the desert fade away, revealing the true path to the oasis. You can now proceed safely.`);
+              disk.desertPathFound = true;
+              
+              // Remove block from northeast exit if it exists
+              const room = getRoom('mirage_desert');
+              const neExit = room.exits.find(exit => exit.dir === 'northeast');
+              if (neExit && neExit.block) {
+                delete neExit.block;
+              }
             } else {
               println(`You look through the truth monocle. The world appears largely the same, but with subtle differences—colors are more vivid, edges more defined, and you sense you would be able to see through any deliberate deceptions.`);
             }
           }
-        }
+        }        
       ],
       exits: [
-        { dir: 'east', id: 'element_hall' },
+        { dir: 'southeast', id: 'element_hall' },
       ]
     },
     {
@@ -826,7 +882,7 @@ const spiralTowerDisk = () => ({
 
             if (!disk.inventory.some(item => item.name.includes('feather'))) {
               disk.inventory.push({
-                name: ['phoenix feather', 'feather', 'red feather'],
+                name: ['phoenix feather', 'feather'],
                 desc: `A feather that appears to be made of metal with the colors of fire—red fading to gold at the tip. Despite its metallic composition, it's incredibly light and occasionally emits tiny sparks.`,
                 onUse() {
                   if (disk.roomId === 'air_chamber') {
@@ -982,22 +1038,23 @@ const spiralTowerDisk = () => ({
         { dir: 'west', id: 'garden_atrium' },
       ]
     },
+    
     {
       id: 'illusion_gallery',
       name: 'The Illusion Gallery',
       desc: `This disorienting chamber stretches in impossible directions. Mirrors line the walls, floor, and ceiling, creating infinite reflections that shift and change even when you stand still. Pathways appear and vanish as light plays through the room.
-      
-      **DOORWAYS** that lead nowhere alternate with **MIRRORS** that are actually passages. Your own reflection sometimes acts independently, moving differently or vanishing entirely.
-      
-      In the center floats a large crystal **PRISM** that casts rainbow light throughout the gallery, further complicating the illusions.
-      
-      The stairway continues **UP** to the next level of the tower, though you'll need to find the true path through the illusions to reach it. The stairs also go back **DOWN** to the Elemental Hall.`,
+    
+        **DOORWAYS** that lead nowhere alternate with **MIRRORS** that are actually passages. Your own reflection sometimes acts independently, moving differently or vanishing entirely.
+    
+        In the center floats a large crystal **PRISM** that casts rainbow light throughout the gallery, further complicating the illusions.
+    
+        Through the shifting illusions, you glimpse what appears to be a **PORTAL** leading to another realm entirely. The stairs also go back **DOWN** to the Elemental Hall.`,
       items: [
         {
           name: ['prism', 'crystal prism', 'floating crystal'],
           desc: `A large multifaceted crystal hovers at the center of the gallery, rotating slowly. It captures light from an unseen source and splits it into rainbow beams that dance across the mirrored surfaces, creating and dissolving illusions throughout the space.`,
           onUse() {
-            println(`You reach out to touch the prism. Your hand passes through several illusory versions before finding the real crystal. As your fingers make contact, the room briefly stabilizes—illusions fade, and you can see the true layout of the gallery, including the correct path to the upward staircase.
+            println(`You reach out to touch the prism. Your hand passes through several illusory versions before finding the real crystal. As your fingers make contact, the room briefly stabilizes—illusions fade, and you can see the true layout of the gallery, including a shimmering portal that leads deeper into the tower.
             
             But the effect only lasts a moment before the illusions return in full force.`);
           }
@@ -1016,90 +1073,85 @@ const spiralTowerDisk = () => ({
             if (disk.inventory.some(item => item.name.includes('truth monocle'))) {
               println(`You hold up the truth monocle to examine the mirrors. Through it, you can clearly see which mirrors are actually passages—they appear slightly rippled, like the surface of water, rather than perfectly reflective.
               
-              You identify the correct sequence of reflective passages that will lead you to the stairway up.`);
+              You identify the correct path through the reflective passages that leads to the mysterious portal.`);
+              
               disk.illusionPathFound = true;
+              
+              // Remove the block from the portal exit
+              const room = getRoom('illusion_gallery');
+              const portalExit = room.exits.find(exit => exit.dir === 'portal');
+              if (portalExit && portalExit.block) {
+                delete portalExit.block;
+                println(`You can now clearly see the path to the portal.`);
+              }
             } else {
               println(`You touch one of the mirrors. Your hand meets cool, solid glass. But is it actually a mirror, or an illusion of one? And might some of these reflective surfaces actually be doorways? It's disorienting and confusing.`);
+            }
+          }
+        },
+        {
+          name: ['portal', 'shimmering portal', 'dimensional gateway'],
+          desc: `A circular area that ripples like the surface of a pond, barely visible through the maze of illusions. It seems to lead to another realm entirely.`,
+          onUse() {
+            if (disk.illusionPathFound) {
+              println(`You step through the shimmering portal...`);
+              goDir('portal');
+            } else {
+              println(`You can't find a clear path to the portal through all these illusions. You need a way to see through them first.`);
             }
           }
         }
       ],
       exits: [
         { dir: 'down', id: 'element_hall' },
-        { dir: 'up', id: 'observatory_approach', block: `You try to find the path upward, but the illusions confuse your sense of direction. You keep ending up back where you started. There must be a way to see through these illusions.` },
+        { 
+          dir: 'portal', 
+          id: 'dream_nexus', 
+          block: `You try to reach the portal, but the illusions confuse your sense of direction. Every path you take leads back to where you started. The mirrors show contradictory directions, and you can't tell which passages are real. You need a way to see through these illusions first.` 
+        },
       ],
       onEnter() {
-        // Add this code to properly update the Illusion Gallery exit
-        const illusionGallery = getRoom('illusion_gallery');
-        if (illusionGallery) {
-          // Set the illusionPathFound flag to true
-          disk.illusionPathFound = true;
-
-          // Find the 'up' exit and remove its block
-          const upExit = illusionGallery.exits.find(exit => exit.dir === 'up');
-          if (upExit && upExit.block) {
-            delete upExit.block;
-            println(`You can now clearly see the path to the upward staircase. The illusions part before you, revealing the true way forward.`);
+        // Check if player has already solved the illusion
+        if (disk.illusionPathFound) {
+          const illusionGallery = getRoom('illusion_gallery');
+          const portalExit = illusionGallery.exits.find(exit => exit.dir === 'portal');
+          if (portalExit && portalExit.block) {
+            delete portalExit.block;
+            println(`The path through the illusions remains clear from your previous use of the truth monocle, leading to the shimmering portal.`);
           }
         }
       }
     },
+
     {
       id: 'observatory_approach',
       name: 'Observatory Approach',
       desc: `A grand spiral staircase ascends through this vertical chamber toward a domed ceiling far above. The walls are painted with cosmic scenes—swirling galaxies, shining stars, and celestial beings that subtly move when you're not looking directly at them.
       
-      **CONSTELLATIONS** painted on the ceiling shift to match the actual night sky outside the tower. A **MODEL** of the solar system floats in the center of the chamber, planets orbiting a glowing sun.
+      However, the staircase above appears to be blocked by an impenetrable magical barrier, and there seem to be no other exits from this chamber.
       
-      The stairs lead **UP** to the Observatory and **DOWN** to the Illusion Gallery. A strange misty **PORTAL** glimmers on one wall.`,
+      **CONSTELLATIONS** painted on the ceiling shift to match the actual night sky outside the tower. A **MODEL** of the solar system floats in the center of the chamber, planets orbiting a glowing sun.`,
       items: [
         {
           name: ['constellations', 'star patterns', 'celestial map'],
           desc: `The constellations painted on the ceiling shift and change, perfectly matching the current positions of the stars outside. Some formations are familiar, while others depict mythological beings and magical creatures you've never seen in the actual night sky.`,
           onUse() {
-            println(`You study the constellations closely. As you focus on one—a pattern resembling a spiral tower—the stars comprising it briefly shine brighter, and you hear a faint whisper: "As above, so below. The key to ascension lies in understanding this principle."`)
+            println(`You study the constellations closely. As you focus on one—a pattern resembling a spiral tower—the stars comprising it briefly shine brighter, and you hear a faint whisper: "The path to ascension requires completing all trials, not seeking shortcuts."`);
           }
         },
         {
           name: ['model', 'planetary model', 'solar system'],
-          desc: `A perfect miniature of the solar system hovers in midair. Planets orbit the central sun at their correct relative speeds, complete with rotating moons and occasional comets. The detail is extraordinary—you can even see weather patterns on the planets if you look closely enough.`,
+          desc: `A perfect miniature of the solar system hovers in midair. The detail is extraordinary, but it seems to be merely decorative in this blocked chamber.`,
           onUse() {
-            println(`You reach out to touch the model. Your finger passes through the sun and emerges unburned, though you feel a gentle warmth. As you interact with the model, you notice a small object orbiting beyond the outermost planet—a tiny silver **KEY** caught in a perpetual orbit.`);
-
-            if (!disk.inventory.some(item => item.name.includes('observatory key'))) {
-              println(`With careful timing, you manage to pluck the key from its orbit.`);
-
-              disk.inventory.push({
-                name: ['observatory key', 'silver key', 'celestial key'],
-                desc: `A small silver key with stars and moons etched into its surface. It occasionally twinkles as if reflecting starlight, even in darkness.`,
-                onUse() {
-                  if (disk.roomId === 'observatory') {
-                    println(`You insert the observatory key into the lock on the telescope controls. With a series of soft clicks, the massive instrument unlocks, allowing you to adjust its position and focus.`);
-                    const observatory = getRoom('observatory');
-                    observatory.telescopeUnlocked = true;
-                  } else {
-                    println(`You examine the silver key, which continues to twinkle mysteriously. It looks like it would fit a small, precision lock.`);
-                  }
-                }
-              });
-            }
-          }
-        },
-        {
-          name: ['portal', 'misty portal', 'shimmering gateway'],
-          desc: `A circular area on one wall ripples like the surface of a pond. Misty tendrils occasionally extend from it before retreating back into the shimmering surface. Through the haze, you can make out what appears to be another chamber of the tower, though one you haven't seen before.`,
-          onUse() {
-            println(`You cautiously extend your hand toward the portal. The surface ripples around your fingers, cool and slightly tingly. It seems stable enough to step through, though you have no way of knowing exactly where it leads.`);
-            goDir('portal');
+            println(`You reach out to touch the model, but it phases through your fingers like an illusion. This chamber seems cut off from the tower's main progression.`);
           }
         }
       ],
       exits: [
-        { dir: 'up', id: 'observatory' },
-        { dir: 'down', id: 'illusion_gallery' },
-        { dir: 'portal', id: 'dream_nexus' },
+        // No exits - this is now a dead end to prevent shortcuts
       ]
     },
+
     {
       id: 'dream_nexus',
       name: 'Dream Nexus',
@@ -1109,7 +1161,7 @@ const spiralTowerDisk = () => ({
       
       The **DREAM WEAVER**, a tall figure with opalescent skin and eyes like distant stars, sits cross-legged on a floating cushion, weaving threads of dreams into patterns.
       
-      The **PORTAL** back to the Observatory Approach shimmers on one wall, and **VOID** that appears to lead nowhere else entirely.`,
+      A swirling **VOID** appears to lead to a desert realm, the only visible exit from this dream space.`,
       items: [
         {
           name: ['dreamcatcher', 'giant dreamcatcher', 'dream web'],
@@ -1128,21 +1180,38 @@ const spiralTowerDisk = () => ({
             
             "Few find their way here by chance," they say in a voice that seems to come from within your own mind rather than from their mouth. "You seek the tower's peak, do you not? The realm where reality itself bends to will?
             
-            "I cannot guide you directly, but I can offer this."
+            "The path forward leads through trials of truth and perception. The desert of illusions awaits, where only those who can distinguish reality from mirage may proceed."
             
-            The Weaver's long fingers pluck a thread from the air and weave it into a small circle, which solidifies into pizza. He throws it on the floor.`);
-
+            The Weaver gestures toward the swirling void. "I cannot offer shortcuts, for the journey itself transforms the traveler."`);
+    
+            // Only give truth monocle if they don't have one
             if (!disk.inventory.some(item => item.name.includes('truth monocle'))) {
+              println(`\nThe Weaver's long fingers pluck a thread from the air and weave it into a small circle, which solidifies into a crystal monocle.
+              
+              "This will aid you in seeing past deceptions, but remember—some truths are harder to bear than comfortable lies."`);
+              
               disk.inventory.push({
-                name: ['truth monocle', 'monocle', 'crystal lens'],
+                name: ['truth monocle', 'monocle'],
                 desc: `A small monocle made from dream-crystal. When you look through it, illusions and falsehoods become transparent, revealing the truth beneath.`,
                 onUse() {
                   if (disk.roomId === 'illusion_gallery') {
-                    println(`You hold the truth monocle to your eye and survey the Illusion Gallery. The confusing reflections and false doorways immediately become obvious—you can clearly see which paths are real and which are illusions. The way to the upward staircase is now evident.`);
+                    println(`You hold the truth monocle to your eye and survey the Illusion Gallery. The confusing reflections and false doorways immediately become obvious—you can clearly see which paths are real and which are illusions. The way to the portal is now evident.`);
                     disk.illusionPathFound = true;
+                    
+                    const room = getRoom('illusion_gallery');
+                    const portalExit = room.exits.find(exit => exit.dir === 'portal');
+                    if (portalExit && portalExit.block) {
+                      delete portalExit.block;
+                    }
                   } else if (disk.roomId === 'mirage_desert') {
                     println(`Through the truth monocle, the mirages in the desert fade away, revealing the true path to the oasis. You can now proceed safely.`);
                     disk.desertPathFound = true;
+                    
+                    const room = getRoom('mirage_desert');
+                    const neExit = room.exits.find(exit => exit.dir === 'northeast');
+                    if (neExit && neExit.block) {
+                      delete neExit.block;
+                    }
                   } else {
                     println(`You look through the truth monocle. The world appears largely the same, but with subtle differences—colors are more vivid, edges more defined, and you sense you would be able to see through any deliberate deceptions.`);
                   }
@@ -1153,10 +1222,11 @@ const spiralTowerDisk = () => ({
         }
       ],
       exits: [
-        { dir: 'portal', id: 'observatory_approach' },
         { dir: 'void', id: 'mirage_desert' },
       ]
     },
+
+
     {
       id: 'mirage_desert',
       name: 'Mirage Desert',
@@ -1284,87 +1354,154 @@ const spiralTowerDisk = () => ({
       id: 'chasm_bridge',
       name: 'The Phantom Bridge',
       desc: `You stand at the edge of an impossibly wide chasm that cuts through this level of the tower. Far below, mists swirl in unfathomable depths. The opposite side is visible but seems impossibly distant given the tower's dimensions from outside.
-      
-      Violent **WINDS** howl through the chasm, strong enough to throw a person off balance. There's no physical bridge in sight, though there are stone platforms on both sides where one might have stood.
-      
-      A **PEDESTAL** with curious indentations stands on your side of the chasm. Ancient runes carved into it glow faintly with magical energy.
-      
-      Near the edge, several **CRYSTALS** of different colors are embedded in the stone, pulsing with inner light in a rhythmic pattern.
-      
-      The only exits are **SOUTH** back to the oasis, or **NORTH** across the chasm—if you can find a way to cross it.`,
-      items: [
-        {
-          name: ['winds', 'howling winds', 'violent air'],
-          desc: `Powerful gusts of wind rush through the chasm, carrying echoes of whispers that almost sound like words. The air here has an unnatural quality—the winds blow in seemingly contradictory directions simultaneously, creating dangerous turbulence.`,
-          onUse() {
-            println(`You cautiously extend your hand into the full force of the wind. It's incredibly powerful, nearly pushing you off balance even with just one arm exposed. Crossing without some form of protection or control over the winds would be suicide.`);
-          }
-        },
-        {
-          name: ['pedestal', 'stone pedestal', 'rune stand'],
-          desc: `A waist-high pedestal of dark stone stands at the edge of the chasm. Its top surface contains several shallow indentations and a circular crystal lens in the center. Runes around the edge glow with a pale blue light.`,
-          onUse() {
-            println(`You examine the pedestal carefully. The runes appear to reference perception and reality. As you place your hands on its surface, the pedestal hums softly, and the crystal lens in its center begins to glow more brightly.
-            
-            You notice that when viewed through the lens, the violent winds seem to slow, revealing patterns within their chaotic movement.`);
+    
+        Violent **WINDS** howl through the chasm, strong enough to throw a person off balance. There's no physical bridge in sight, though there are stone platforms on both sides where one might have stood.
+    
+        A **PEDESTAL** with curious indentations stands on your side of the chasm. Ancient runes carved into it glow faintly with magical energy.
+    
+        Near the edge, four **CRYSTALS** of different colors are embedded in the stone, pulsing with inner light in a rhythmic pattern.
+    
+        The only exits are **SOUTH** back to the oasis, or **NORTH** across the chasm—if you can find a way to cross it.`,
 
-            if (!disk.chasmPedestalActivated) {
-              disk.chasmPedestalActivated = true;
-              println(`You've activated the pedestal. It seems to be linked somehow to the pulsing crystals along the edge of the chasm.`);
+        items: [
+          {
+            name: ['winds', 'howling winds', 'violent air'],
+            desc: `Powerful gusts of wind rush through the chasm, carrying echoes of whispers that almost sound like words. The air here has an unnatural quality—the winds blow in seemingly contradictory directions simultaneously, creating dangerous turbulence.`,
+            onUse() {
+              println(`You cautiously extend your hand into the full force of the wind. It's incredibly powerful, nearly pushing you off balance even with just one arm exposed. Crossing without some form of protection or control over the winds would be suicide.`);
             }
-          }
-        },
-        {
-          name: ['chasm', 'gap', 'abyss'],
-          desc: `The chasm is impossibly wide, at least fifty feet across, with no visible bottom—just swirling mists far below. The far side has a similar stone platform and what appears to be a doorway carved into the wall.`,
-          onUse() {
-            println(`You peer carefully over the edge of the chasm. The depth is dizzying, with swirling mists obscuring any view of the bottom. Occasionally, strange lights flash within the mists, suggesting that something unusual exists down there. The gap is clearly too wide to jump, and the winds too violent for any conventional crossing method.`);
-          }
-        },
-        {
-          name: ['crystals', 'colored crystals', 'glowing stones'],
-          desc: `Four crystals are embedded in the stone near the edge of the chasm—one red, one blue, one white, and one green. They pulse with inner light in what seems like a random pattern, but you sense there might be some order to it.`,
-          onUse() {
-            if (!disk.chasmPedestalActivated) {
-              println(`The crystals pulse with magical energy, but don't seem to respond to your touch. Perhaps they're linked to something else in the room.`);
-              return;
-            }
-
-            if (!disk.crystalSequenceSolved) {
-              println(`As you touch the crystals, you notice they respond to your interaction. The pedestal's lens reveals a pattern in the winds—they shift in a specific sequence: white, green, red, blue.
+          },
+          {
+            name: ['pedestal', 'stone pedestal', 'rune stand'],
+            desc: `A waist-high pedestal of dark stone stands at the edge of the chasm. Its top surface contains several shallow indentations and a circular crystal lens in the center. Runes around the edge glow with a pale blue light.`,
+            onUse() {
+              println(`You examine the pedestal carefully. The runes appear to reference perception and reality. As you place your hands on its surface, the pedestal hums softly, and the crystal lens in its center begins to glow more brightly.
               
-              When you touch the crystals in that same sequence, they all light up simultaneously and remain brightly lit. The violent winds suddenly calm, forming a visible path of solidified air across the chasm!`);
-
-              disk.crystalSequenceSolved = true;
-
-              // Remove the block from the north exit
-              const exit = getExit('north', getRoom('chasm_bridge').exits);
-              if (exit) {
-                delete exit.block;
+              Looking through the lens, you can now see patterns in the chaotic winds. They shift in a specific sequence that seems to correspond to the four elements: first the light winds of AIR swirl upward, then the heavy energies of EARTH press downward, followed by the fierce heat of FIRE blazing across, and finally the flowing currents of WATER completing the cycle.
+              
+              The four crystals embedded nearby seem to pulse in rhythm with this pattern.`);
+        
+              if (!disk.chasmPedestalActivated) {
+                disk.chasmPedestalActivated = true;
+                println(`\nThe pedestal is now activated. You can now interact with the individual colored crystals around the chasm's edge.`);
               }
-
-              println(`You can now cross safely to the northern side of the chasm.`);
-            } else {
-              println(`The crystals are already activated, maintaining the bridge of solidified air across the chasm. You can now cross safely to the north.`);
+            }
+          },
+          {
+            name: ['crystals', 'four crystals'],
+            desc: `Four crystals are embedded in the stone near the edge of the chasm—a clear BLUE CRYSTAL, a deep ORANGE CRYSTAL, a ruby GREEN CRYSTAL, and a sapphire WHITE CRYSTAL. They pulse with inner light and seem to be waiting for activation in some specific order.`,
+            onUse() {
+              if (!disk.chasmPedestalActivated) {
+                println(`The crystals pulse with magical energy, but don't seem to respond to your touch. You need to activate the pedestal first to understand the pattern.`);
+                return;
+              }
+        
+              println(`The crystals are ready to be activated, but you need to touch each one individually in the correct sequence.              
+              You see a BLUE CRYSTAL, an ORANGE CRYSTAL, a GREEN CRYSTAL, and a WHITE CRYSTAL.`);
+            }
+          },
+          // Individual crystal interactions
+          {
+            name: ['white crystal', 'air crystal', 'clear crystal'],
+            desc: `A clear white crystal that seems to contain swirling mists. It represents the element of air.`,
+            onUse() {
+              if (!disk.chasmPedestalActivated) {
+                println(`The crystal doesn't respond. You need to activate the pedestal first.`);
+                return;
+              }
+              
+              if (disk.crystalSequenceSolved) {
+                println(`The crystal is already activated as part of the completed sequence.`);
+                return;
+              }
+        
+              disk.crystalSequence = disk.crystalSequence || [];
+              disk.crystalSequence.push('white');
+              println(`You touch the white crystal. It flares with brilliant light and begins to glow steadily.`);
+              checkCrystalSequence();
+            }
+          },
+          {
+            name: ['green crystal', 'earth crystal'],
+            desc: `A deep green crystal that pulses with earthy energy. It represents the element of earth.`,
+            onUse() {
+              if (!disk.chasmPedestalActivated) {
+                println(`The crystal doesn't respond. You need to activate the pedestal first.`);
+                return;
+              }
+              
+              if (disk.crystalSequenceSolved) {
+                println(`The crystal is already activated as part of the completed sequence.`);
+                return;
+              }
+        
+              disk.crystalSequence = disk.crystalSequence || [];
+              disk.crystalSequence.push('green');
+              println(`You touch the green crystal. It flares with brilliant light and begins to glow steadily.`);
+              checkCrystalSequence();
+            }
+          },
+          {
+            name: ['orange crystal', 'fire crystal', 'ruby crystal'],
+            desc: `An orange crystal that pulses with inner fire.`,
+            onUse() {
+              if (!disk.chasmPedestalActivated) {
+                println(`The crystal doesn't respond. You need to activate the pedestal first.`);
+                return;
+              }
+              
+              if (disk.crystalSequenceSolved) {
+                println(`The crystal is already activated as part of the completed sequence.`);
+                return;
+              }
+        
+              disk.crystalSequence = disk.crystalSequence || [];
+              disk.crystalSequence.push('orange');
+              println(`You touch the orange crystal. It flares with brilliant light and begins to glow steadily.`);
+              checkCrystalSequence();
+            }
+          },
+          {
+            name: ['blue crystal', 'water crystal', 'sapphire crystal'],
+            desc: `A sapphire blue crystal that seems to contain flowing water. It represents the element of water.`,
+            onUse() {
+              if (!disk.chasmPedestalActivated) {
+                println(`The crystal doesn't respond. You need to activate the pedestal first.`);
+                return;
+              }
+              
+              if (disk.crystalSequenceSolved) {
+                println(`The crystal is already activated as part of the completed sequence.`);
+                return;
+              }
+        
+              disk.crystalSequence = disk.crystalSequence || [];
+              disk.crystalSequence.push('blue');
+              println(`You touch the blue crystal. It flares with brilliant light and begins to glow steadily.`);
+              checkCrystalSequence();
             }
           }
-        }
-      ],
+        ],
+
       exits: [
         { dir: 'south', id: 'true_oasis' },
-        { dir: 'north', id: 'time_vault', block: `You look across the yawning chasm. There's no bridge or obvious way to cross, and the violent winds would make any attempt at jumping suicidal. You'll need to find a way to get across safely.` },
+        { 
+          dir: 'north', 
+          id: 'time_vault', 
+          block: `You look across the yawning chasm. The violent winds make crossing impossible without some way to stabilize them. You'll need to solve the puzzle of the colored crystals and pedestal first.` 
+        },
       ],
       onEnter() {
         if (disk.crystalSequenceSolved) {
           const exit = getExit('north', getRoom('chasm_bridge').exits);
-          if (exit) {
+          if (exit && exit.block) {
             delete exit.block;
+            println(`The bridge of solidified air remains in place from when you solved the crystal sequence, allowing safe passage across the chasm.`);
           }
-          println(`The bridge of solidified air remains in place, allowing safe passage across the chasm.`);
         }
       }
     },
-
+  
     {
       id: 'time_vault',
       name: 'The Time Vault',
@@ -2024,7 +2161,7 @@ const spiralTowerDisk = () => ({
                   }
                 }
               });
-              println(`The blue robot hands you the small brass device. "The red crystal responds to fire, blue to water, white to air, and green to earth. When all four glow simultaneously, it indicates a point where the elements converge—potentially significant locations in the tower's magical ecosystem."`);
+              println(`The blue robot hands you the small brass device. "The orange crystal responds to fire, blue to water, white to air, and green to earth. When all four glow simultaneously, it indicates a point where the elements converge—potentially significant locations in the tower's magical ecosystem."`);
             } else {
               println(`"I see you already possess an elemental detection device," the robot observes. "Multiple detectors can create interference patterns that yield false readings. Your existing device should be sufficient for standard explorations."`);
             }
@@ -2071,7 +2208,7 @@ const spiralTowerDisk = () => ({
             if (!disk.inventory.some(item => item.name.includes('navigation crystal'))) {
               disk.inventory.push({
                 name: ['navigation crystal', 'tower schematic', 'map crystal'],
-                desc: `A small disc of red crystal that projects a three-dimensional schematic of the tower's upper levels when held up to light. Certain sections appear incomplete or shift between multiple possible configurations.`,
+                desc: `A small disc of crystals that projects a three-dimensional schematic of the tower's upper levels when held up to light. Certain sections appear incomplete or shift between multiple possible configurations.`,
                 onUse() {
                   if (disk.roomId === 'observatory_approach' || disk.roomId === 'observatory') {
                     println(`You hold the crystal up to the light. It projects a detailed schematic of the observatory and surrounding chambers. You notice a hidden connection between the Time Vault and the Infinity Chamber that isn't apparent from normal observation—a shortcut that might bypass some of the tower's final challenges.`);

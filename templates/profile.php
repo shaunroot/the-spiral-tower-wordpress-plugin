@@ -80,19 +80,21 @@ $avatar_url = $spiral_tower_plugin->user_profile_manager->get_user_avatar_url($u
 
             <?php if (!empty($user->user_url)): ?>
                 <div class="profile-website">
-                    <a href="<?php echo esc_url($user->user_url); ?>" target="_blank" rel="nofollow">
+                    <a href="<?php echo esc_url($user->user_url); ?>" rel="nofollow">
                         <?php echo esc_html(preg_replace('#^https?://#', '', $user->user_url)); ?>
                     </a>
                 </div>
             <?php endif; ?>
 
-            <?php if ($is_own_profile): ?>
-                <div class="edit-profile-section">
-                    <a href="<?php echo esc_url(get_edit_profile_url()); ?>" class="edit-profile-button">
+            <div class="edit-profile-section">
+                <?php if ($is_own_profile): ?>
+                    <a href="<?php echo esc_url(get_edit_profile_url()); ?>" class="profile-button">
                         Edit Profile
                     </a>
-                </div>
-            <?php endif; ?>
+                    <a href="<?php echo wp_logout_url(); ?>" class="profile-button">Log Out</a>
+                <?php endif; ?>               
+            </div>
+
         </header>
 
         <?php
@@ -170,7 +172,7 @@ $avatar_url = $spiral_tower_plugin->user_profile_manager->get_user_avatar_url($u
 
                                     <div class="achievement-image">
                                         <?php if ($is_earned): ?>
-                                            <img src="<?php echo esc_url($achievement['image']); ?>" 
+                                            <img src="<?php echo esc_url($achievement['image']); ?>"
                                                 data-description="<?php echo esc_html($achievement['description']); ?>" />
                                         <?php else: ?>
                                             <img src="<?php echo esc_url(SPIRAL_TOWER_PLUGIN_URL . 'assets/images/achievements/locked.png'); ?>"

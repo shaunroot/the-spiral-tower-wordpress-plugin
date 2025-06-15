@@ -34,10 +34,10 @@ class Spiral_Tower_Floor_Manager
         add_action('pre_get_posts', array($this, 'floor_number_orderby'));
         add_filter('wp_insert_post_empty_content', array($this, 'prevent_duplicate_floor_numbers'), 10, 2);
         add_action('admin_notices', array($this, 'display_floor_error_message'));
-        
+
         // Modify author dropdown users for classic editor / PHP contexts
-        add_filter('wp_dropdown_users_args', array($this, 'modify_classic_author_dropdown_args'), 10, 2); 
-        // *** NEW: Modify author list for REST API (Block Editor) ***
+        add_filter('wp_dropdown_users_args', array($this, 'modify_classic_author_dropdown_args'), 10, 2);
+        // Modify author list for REST API (Block Editor)
         add_filter('rest_user_query', array($this, 'modify_rest_user_query_for_authors'), 10, 2);
 
         // Floor author specific features
@@ -67,9 +67,16 @@ class Spiral_Tower_Floor_Manager
         // Hide "Add New" buttons for floor authors
         add_action('admin_menu', array($this, 'hide_add_new_for_floor_authors'));
         add_action('admin_head', array($this, 'hide_add_new_button_css'));
-        
+
         // Block creation attempts via direct URL access
         add_action('admin_init', array($this, 'block_floor_creation_for_authors'));
+
+        // Better admin search
+        add_action('pre_get_posts', array($this, 'enhance_floor_admin_search'));
+
+        // Let uses publish their own posts
+        add_filter('wp_insert_post_data', array($this, 'ensure_floor_author_can_publish'), 10, 2);
+
     }
 
     /**
@@ -94,17 +101,18 @@ class Spiral_Tower_Floor_Manager
     }
 
     /**
-     * *** NEW: Modify the WP_User_Query args for REST API user requests using 'who=authors'. ***
+     * Modify the WP_User_Query args for REST API user requests using 'who=authors'. ***
      * This ensures 'Floor Author' role is included in Block Editor's author selection.
      *
      * @param array $query_args WP_User_Query arguments.
      * @param WP_REST_Request $request The REST API request object.
      * @return array Modified query arguments.
      */
-    public function modify_rest_user_query_for_authors($query_args, $request) {
+    public function modify_rest_user_query_for_authors($query_args, $request)
+    {
         // Check if the REST API request for users has 'who=authors'.
         if (isset($request['who']) && $request['who'] === 'authors') {
-            
+
             // The 'who=authors' parameter in WP_User_Query implies:
             // 1. 'edit_posts' capability
             // 2. User level > 0 (this is legacy and often excludes custom roles like 'floor_author')
@@ -115,10 +123,10 @@ class Spiral_Tower_Floor_Manager
             // Your 'floor_author' role has 'edit_posts' capability.
             // Standard roles like 'author', 'editor', 'administrator' also have 'edit_posts'.
             $author_roles = array('floor_author', 'author', 'editor', 'administrator');
-            
+
             // If role__in is already set, merge with it, otherwise set it.
             if (isset($query_args['role__in']) && is_array($query_args['role__in'])) {
-                 $query_args['role__in'] = array_unique(array_merge($query_args['role__in'], $author_roles));
+                $query_args['role__in'] = array_unique(array_merge($query_args['role__in'], $author_roles));
             } else {
                 $query_args['role__in'] = $author_roles;
             }
@@ -128,9 +136,9 @@ class Spiral_Tower_Floor_Manager
             if (isset($query_args['capability']) && is_array($query_args['capability'])) {
                 $query_args['capability'] = array_unique(array_merge($query_args['capability'], array('edit_posts')));
             } else {
-                 $query_args['capability'] = array('edit_posts');
+                $query_args['capability'] = array('edit_posts');
             }
-            
+
             // Unset 'who' to prevent its specific (and problematic user_level) logic.
             // Our 'role__in' and 'capability' settings are now more explicit and inclusive.
             if (isset($query_args['who'])) {
@@ -143,7 +151,7 @@ class Spiral_Tower_Floor_Manager
     // --- (Rest of your class methods remain unchanged) ---
 
     // ... (register_floor_post_type, create_floor_author_role, etc. as before) ...
-    
+
     /**
      * Register Floor Custom Post Type
      */
@@ -186,7 +194,7 @@ class Spiral_Tower_Floor_Manager
     }
 
     /**
-     * *** MODIFIED: Add proper admin access capabilities ***
+     * Add proper admin access capabilities ***
      * Create Floor Author Role
      */
     public function create_floor_author_role()
@@ -200,7 +208,7 @@ class Spiral_Tower_Floor_Manager
                     'read' => true,
                     'edit_posts' => true, // *** CHANGED: Need this for admin access ***
                     'delete_posts' => false,
-                    'publish_posts' => false,
+                    'publish_posts' => true,
                     'upload_files' => true,
                     'edit_floor' => true,
                     'edit_floors' => true,
@@ -212,7 +220,7 @@ class Spiral_Tower_Floor_Manager
                     'delete_floors' => false,
                     'delete_published_floors' => false,
                     'delete_others_floors' => false,
-                    'publish_floors' => false,
+                    'publish_floors' => true,
                     'create_floors' => true // *** Keep for admin access ***
                 )
             );
@@ -239,10 +247,10 @@ class Spiral_Tower_Floor_Manager
                 }
             }
         } else {
-            // *** NEW: Update existing role if it exists ***
             $role = get_role('floor_author');
             if ($role) {
-                $role->add_cap('edit_posts', true); // Make sure this is set
+                $role->add_cap('edit_posts', true);
+                $role->add_cap('publish_posts', true);
                 $role->add_cap('read', true);
                 $role->add_cap('upload_files', true);
                 $role->add_cap('edit_floor', true);
@@ -256,12 +264,47 @@ class Spiral_Tower_Floor_Manager
     }
 
     /**
-     * *** NEW: Block floor creation via redirect for floor authors ***
+     * Ensure floor authors can publish their own floors without status change
+     */
+    public function ensure_floor_author_can_publish($data, $postarr)
+    {
+        // Only apply to floor posts
+        if (!isset($data['post_type']) || $data['post_type'] !== 'floor') {
+            return $data;
+        }
+
+        // Only apply when a post is being updated (has an ID)
+        if (!isset($postarr['ID']) || empty($postarr['ID'])) {
+            return $data;
+        }
+
+        $post_id = $postarr['ID'];
+        $post = get_post($post_id);
+
+        // Check if this is a floor author editing their own published floor
+        $current_user = wp_get_current_user();
+        if (!$current_user || !in_array('floor_author', (array) $current_user->roles)) {
+            return $data;
+        }
+
+        // Check if they own this floor and it was previously published
+        if ($post && $post->post_author == $current_user->ID && $post->post_status === 'publish') {
+            // Keep it published if they're editing their own published floor
+            if ($data['post_status'] === 'pending' || $data['post_status'] === 'draft') {
+                $data['post_status'] = 'publish';
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * *** Block floor creation via redirect for floor authors ***
      */
     public function block_floor_creation_for_authors()
     {
         global $pagenow;
-        
+
         if ($pagenow === 'post-new.php' && isset($_GET['post_type']) && $_GET['post_type'] === 'floor') {
             $user = wp_get_current_user();
             if (in_array('floor_author', (array) $user->roles) && !current_user_can('administrator') && !current_user_can('editor')) {
@@ -271,7 +314,7 @@ class Spiral_Tower_Floor_Manager
     }
 
     /**
-     * *** MODIFIED: Check capability properly ***
+     * *** Check capability properly ***
      */
     public function hide_add_new_for_floor_authors()
     {
@@ -282,7 +325,7 @@ class Spiral_Tower_Floor_Manager
     }
 
     /**
-     * *** MODIFIED: Check capability properly ***
+     * *** Check capability properly ***
      */
     public function hide_add_new_button_css()
     {
@@ -401,7 +444,7 @@ class Spiral_Tower_Floor_Manager
 
     /**
      * Add Floor Settings Meta Box
-     * *** MODIFIED: Renamed function and added new fields ***
+     * Renamed function and added new fields ***
      */
     public function add_floor_settings_meta_box() // Renamed from add_floor_number_meta_box
     {
@@ -417,7 +460,7 @@ class Spiral_Tower_Floor_Manager
 
     /**
      * Display Floor Settings Meta Box Content
-     * *** MODIFIED: Renamed function and added new fields ***
+     * Renamed function and added new fields ***
      */
     public function display_floor_settings_meta_box($post) // Renamed from display_floor_number_meta_box
     {
@@ -440,7 +483,7 @@ class Spiral_Tower_Floor_Manager
         $bg_position_y = get_post_meta($post->ID, '_starting_background_position_y', true) ?: 'center';
         $achievement_title = get_post_meta($post->ID, '_floor_achievement_title', true);
         $achievement_image = get_post_meta($post->ID, '_floor_achievement_image', true);
-    
+
 
         // --- Floor Number ---
         echo '<p>';
@@ -548,73 +591,73 @@ class Spiral_Tower_Floor_Manager
             echo '<hr>';
             echo '<p><strong>Custom Achievement (Admin Only):</strong><br>';
             echo '<small>If set, visitors will earn this achievement when they visit this floor.</small></p>';
-            
+
             // Achievement Title
             echo '<p>';
             echo '<label for="floor_achievement_title">Achievement Title:</label>';
             echo '<input type="text" id="floor_achievement_title" name="floor_achievement_title" value="' . esc_attr($achievement_title) . '" style="width:100%" placeholder="e.g., Explorer of the Mystic Library">';
             echo '</p>';
-            
+
             // Achievement Image Upload
             echo '<p>';
             echo '<label for="floor_achievement_image">Achievement Image:</label><br>';
             echo '<input type="text" id="floor_achievement_image" name="floor_achievement_image" value="' . esc_attr($achievement_image) . '" style="width:80%" placeholder="Image URL or select from media library" />';
             echo '<button type="button" class="button" id="floor_achievement_image_button" style="margin-left:5px;">Select Image</button>';
-            
+
             // Image preview
             if (!empty($achievement_image)) {
                 echo '<br><img src="' . esc_url($achievement_image) . '" style="max-width:100px; max-height:100px; margin-top:10px; border:1px solid #ddd;" />';
             }
             echo '</p>';
-            
+
             // Add JavaScript for media uploader
             ?>
             <script type="text/javascript">
-            jQuery(document).ready(function($) {
-                var mediaUploader;
-                
-                $('#floor_achievement_image_button').click(function(e) {
-                    e.preventDefault();
-                    
-                    // If the uploader object has already been created, reopen the dialog
-                    if (mediaUploader) {
+                jQuery(document).ready(function ($) {
+                    var mediaUploader;
+
+                    $('#floor_achievement_image_button').click(function (e) {
+                        e.preventDefault();
+
+                        // If the uploader object has already been created, reopen the dialog
+                        if (mediaUploader) {
+                            mediaUploader.open();
+                            return;
+                        }
+
+                        // Create the media uploader
+                        mediaUploader = wp.media({
+                            title: 'Select Achievement Image',
+                            button: {
+                                text: 'Use This Image'
+                            },
+                            multiple: false,
+                            library: {
+                                type: 'image'
+                            }
+                        });
+
+                        // When an image is selected, run a callback
+                        mediaUploader.on('select', function () {
+                            var attachment = mediaUploader.state().get('selection').first().toJSON();
+                            $('#floor_achievement_image').val(attachment.url);
+
+                            // Update or add preview image
+                            var $preview = $('#floor_achievement_image').siblings('img');
+                            if ($preview.length) {
+                                $preview.attr('src', attachment.url);
+                            } else {
+                                $('#floor_achievement_image').after('<br><img src="' + attachment.url + '" style="max-width:100px; max-height:100px; margin-top:10px; border:1px solid #ddd;" />');
+                            }
+                        });
+
+                        // Open the uploader dialog
                         mediaUploader.open();
-                        return;
-                    }
-                    
-                    // Create the media uploader
-                    mediaUploader = wp.media({
-                        title: 'Select Achievement Image',
-                        button: {
-                            text: 'Use This Image'
-                        },
-                        multiple: false,
-                        library: {
-                            type: 'image'
-                        }
                     });
-                    
-                    // When an image is selected, run a callback
-                    mediaUploader.on('select', function() {
-                        var attachment = mediaUploader.state().get('selection').first().toJSON();
-                        $('#floor_achievement_image').val(attachment.url);
-                        
-                        // Update or add preview image
-                        var $preview = $('#floor_achievement_image').siblings('img');
-                        if ($preview.length) {
-                            $preview.attr('src', attachment.url);
-                        } else {
-                            $('#floor_achievement_image').after('<br><img src="' + attachment.url + '" style="max-width:100px; max-height:100px; margin-top:10px; border:1px solid #ddd;" />');
-                        }
-                    });
-                    
-                    // Open the uploader dialog
-                    mediaUploader.open();
                 });
-            });
             </script>
             <?php
-        }       
+        }
     }
 
 
@@ -667,8 +710,8 @@ class Spiral_Tower_Floor_Manager
                 style="width: 100%; min-height: 250px; font-family: monospace; background-color: #f0f0f1; color: #1e1e1e; border: 1px solid #949494; padding: 10px;"
                 id="floor_custom_script_inside_field" name="floor_custom_script_inside_field"
                 placeholder="<?php esc_attr_e('<script>...</script> or <style>...</style> etc.', 'spiral-tower'); ?>"><?php
-                    echo esc_textarea($value);
-                    ?></textarea>
+                   echo esc_textarea($value);
+                   ?></textarea>
             <p><em><strong style="color: #d63638;"><?php _e('Warning:', 'spiral-tower'); ?></strong>
                     <?php _e('Code entered here will be output directly inside the floor content. Ensure it is valid and trust the source.', 'spiral-tower'); ?></em>
             </p>
@@ -691,8 +734,8 @@ class Spiral_Tower_Floor_Manager
                 style="width: 100%; min-height: 250px; font-family: monospace; background-color: #f0f0f1; color: #1e1e1e; border: 1px solid #949494; padding: 10px;"
                 id="floor_custom_script_outside_field" name="floor_custom_script_outside_field"
                 placeholder="<?php esc_attr_e('<script>...</script> or <style>...</style> etc.', 'spiral-tower'); ?>"><?php
-                    echo esc_textarea($value);
-                    ?></textarea>
+                   echo esc_textarea($value);
+                   ?></textarea>
             <p><em><strong style="color: #d63638;"><?php _e('Warning:', 'spiral-tower'); ?></strong>
                     <?php _e('Code entered here will be output directly in the floor interface. Ensure it is valid and trust the source.', 'spiral-tower'); ?></em>
             </p>
@@ -738,7 +781,7 @@ class Spiral_Tower_Floor_Manager
         if (current_user_can('administrator')) {
             $fields_to_save['_floor_achievement_title'] = isset($_POST['floor_achievement_title']) ? sanitize_text_field($_POST['floor_achievement_title']) : null;
             $fields_to_save['_floor_achievement_image'] = isset($_POST['floor_achievement_image']) ? esc_url_raw($_POST['floor_achievement_image']) : null;
-        }       
+        }
 
         foreach ($fields_to_save as $meta_key => $value) {
             if ($value !== null) { // Field was submitted
@@ -848,10 +891,10 @@ class Spiral_Tower_Floor_Manager
         // Only run on the front-end for singular floor views
         if (is_singular('floor')) {
             $floor_id = get_the_ID();
-            
+
             // Check for "send to void" specifically, NOT "hidden"
             $send_to_void = get_post_meta($floor_id, '_floor_send_to_void', true);
-    
+
             if ($send_to_void === '1') {
                 // Redirect to the void page instead of showing 404
                 wp_redirect(home_url('/the-void/'), 302); // 302 = temporary redirect
@@ -914,6 +957,10 @@ class Spiral_Tower_Floor_Manager
                 $new_columns['floor_number'] = 'Floor Number';
                 $new_columns['floor_number_alt_text'] = 'Floor Number Alt Text';
             }
+            // Add last modified after the date column
+            if ($key === 'date') {
+                $new_columns['last_modified'] = 'Last Modified';
+            }
         }
         return $new_columns;
     }
@@ -942,6 +989,24 @@ class Spiral_Tower_Floor_Manager
                 echo '<span style="color: #ccc;">—</span>';
             }
         }
+
+        // NEW: Handle last modified column
+        if ($column === 'last_modified') {
+            $post = get_post($post_id);
+            if ($post) {
+                $modified_time = get_post_modified_time('Y/m/d g:i:s A', false, $post);
+                $modified_timestamp = get_post_modified_time('U', false, $post);
+
+                // Show relative time if recent, otherwise show full date
+                $time_diff = time() - $modified_timestamp;
+                if ($time_diff < DAY_IN_SECONDS) {
+                    $relative_time = human_time_diff($modified_timestamp, time()) . ' ago';
+                    echo '<span title="' . esc_attr($modified_time) . '">' . esc_html($relative_time) . '</span>';
+                } else {
+                    echo '<span title="' . esc_attr($modified_time) . '">' . esc_html(get_post_modified_time('M j, Y', false, $post)) . '</span>';
+                }
+            }
+        }
     }
 
     /**
@@ -951,6 +1016,7 @@ class Spiral_Tower_Floor_Manager
     {
         $columns['floor_number'] = 'floor_number';
         $columns['floor_number_alt_text'] = 'floor_number_alt_text';
+        $columns['last_modified'] = 'modified'; // WordPress built-in orderby parameter
         return $columns;
     }
 
@@ -962,17 +1028,21 @@ class Spiral_Tower_Floor_Manager
         if (!is_admin() || !$query->is_main_query()) {
             return;
         }
-
+    
         if ($query->get('post_type') === 'floor') {
             $orderby = $query->get('orderby');
-
+    
             if ($orderby === 'floor_number') {
                 // Use posts_orderby filter to create custom SQL that includes all posts
                 add_filter('posts_orderby', array($this, 'custom_floor_number_orderby_sql'), 10, 2);
-
+    
             } elseif ($orderby === 'floor_number_alt_text') {
                 // Use posts_orderby filter for alt text too
                 add_filter('posts_orderby', array($this, 'custom_floor_alt_text_orderby_sql'), 10, 2);
+                
+            } elseif ($orderby === 'modified') {
+                // WordPress handles this automatically, but we can ensure it works
+                $query->set('orderby', 'modified');
             }
         }
     }
@@ -1171,16 +1241,16 @@ class Spiral_Tower_Floor_Manager
         if (is_admin() || !$query->is_main_query()) {
             return;
         }
-    
+
         // CRITICAL: If WordPress has determined this is a query for a single 'floor' page,
         // this function should NOT add any 'meta_query' that would hide it.
         // The floor should be findable by its permalink if it's published.
         if ($query->is_singular('floor')) {
             return;
         }
-    
+
         $apply_filter = false;
-    
+
         if ($query->is_post_type_archive('floor')) {
             $apply_filter = true;
         } elseif ($query->is_tax(get_object_taxonomies('floor'))) {
@@ -1190,26 +1260,26 @@ class Spiral_Tower_Floor_Manager
         } else {
             $queried_post_type = $query->get('post_type');
             $can_include_floors = false;
-    
-            if (empty($queried_post_type)) { 
+
+            if (empty($queried_post_type)) {
                 // Potentially apply if floors can appear in main blog loop. For safety, let's not by default.
             } elseif ($queried_post_type === 'floor') {
                 $can_include_floors = true;
             } elseif (is_array($queried_post_type) && in_array('floor', $queried_post_type)) {
                 $can_include_floors = true;
             }
-    
-            if ($can_include_floors && !$query->is_singular()) { 
+
+            if ($can_include_floors && !$query->is_singular()) {
                 $apply_filter = true;
             }
         }
-    
+
         if ($apply_filter) {
             $meta_query_args = $query->get('meta_query');
             if (!is_array($meta_query_args)) {
                 $meta_query_args = array();
             }
-    
+
             $meta_query_args[] = array(
                 'relation' => 'OR',
                 array(
@@ -1225,5 +1295,79 @@ class Spiral_Tower_Floor_Manager
             $query->set('meta_query', $meta_query_args);
         }
     }
+
+
+    /**
+     * Add this method to your Spiral_Tower_Floor_Manager class
+     */
+
+    /**
+     * Enhance admin search to include floor number and alt text
+     */
+    public function enhance_floor_admin_search($query)
+    {
+        // Only run in admin, on main query, for floor post type, when search is happening
+        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== 'floor' || !$query->is_search()) {
+            return;
+        }
+
+        $search_term = $query->get('s');
+        if (empty($search_term)) {
+            return;
+        }
+
+        // Don't set meta_query - let the SQL search handle everything
+        // Just add the custom SQL search filter
+        add_filter('posts_search', array($this, 'modify_floor_search_sql'), 10, 2);
+    }
+
+    /**
+     * Modify the SQL search to combine title/content search with meta search using OR
+     */
+    public function modify_floor_search_sql($search, $query)
+    {
+        global $wpdb;
+
+        // Only apply to our floor searches
+        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== 'floor' || !$query->is_search()) {
+            return $search;
+        }
+
+        $search_term = $query->get('s');
+        if (empty($search_term)) {
+            return $search;
+        }
+
+        // Remove this filter to prevent infinite loops
+        remove_filter('posts_search', array($this, 'modify_floor_search_sql'), 10);
+
+        // Build the search SQL that includes both post fields AND meta fields
+        $search_term_like = '%' . $wpdb->esc_like($search_term) . '%';
+
+        $search = " AND (
+        ({$wpdb->posts}.post_title LIKE %s) 
+        OR ({$wpdb->posts}.post_content LIKE %s)
+        OR EXISTS (
+            SELECT 1 FROM {$wpdb->postmeta} 
+            WHERE {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID 
+            AND {$wpdb->postmeta}.meta_key = '_floor_number' 
+            AND {$wpdb->postmeta}.meta_value LIKE %s
+        )
+        OR EXISTS (
+            SELECT 1 FROM {$wpdb->postmeta} 
+            WHERE {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID 
+            AND {$wpdb->postmeta}.meta_key = '_floor_number_alt_text' 
+            AND {$wpdb->postmeta}.meta_value LIKE %s
+        )
+    )";
+
+        // Prepare the query with the search term for all placeholders
+        $search = $wpdb->prepare($search, $search_term_like, $search_term_like, $search_term_like, $search_term_like);
+
+        return $search;
+    }
+
+
+
 
 } // End Class Spiral_Tower_Floor_Manager
