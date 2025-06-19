@@ -103,8 +103,11 @@ class Spiral_Tower_Like_Manager
             return;
         }
 
+        // Get current user ID
+        $user_id = get_current_user_id();
+
         // Toggle like status
-        $is_liked = $this->toggle_like($post_id);
+        $is_liked = $this->toggle_like($post_id, $user_id);
 
         // Get updated like count
         $like_count = $this->get_like_count($post_id);

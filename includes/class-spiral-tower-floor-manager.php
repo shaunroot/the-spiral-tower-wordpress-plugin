@@ -956,6 +956,7 @@ class Spiral_Tower_Floor_Manager
             if ($key === 'title') {
                 $new_columns['floor_number'] = 'Floor Number';
                 $new_columns['floor_number_alt_text'] = 'Floor Number Alt Text';
+                $new_columns['unique_visits'] = 'Unique Visits'; // ADD THIS LINE
             }
             // Add last modified after the date column
             if ($key === 'date') {
@@ -972,7 +973,6 @@ class Spiral_Tower_Floor_Manager
     {
         if ($column === 'floor_number') {
             $floor_number = get_post_meta($post_id, '_floor_number', true);
-
             if ($floor_number !== '' && is_numeric($floor_number)) {
                 echo esc_html($floor_number);
             } else {
@@ -982,7 +982,6 @@ class Spiral_Tower_Floor_Manager
 
         if ($column === 'floor_number_alt_text') {
             $floor_number_alt_text = get_post_meta($post_id, '_floor_number_alt_text', true);
-
             if ($floor_number_alt_text !== '') {
                 echo esc_html($floor_number_alt_text);
             } else {
@@ -990,14 +989,27 @@ class Spiral_Tower_Floor_Manager
             }
         }
 
-        // NEW: Handle last modified column
+        // ADD THIS NEW SECTION
+        if ($column === 'unique_visits') {
+            global $wpdb;
+            $logs_table = $wpdb->prefix . 'spiral_tower_logs';
+
+            $visit_count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(DISTINCT user_id) FROM $logs_table 
+             WHERE post_id = %d AND post_type = 'floor' AND user_id IS NOT NULL AND user_id > 1",
+                $post_id
+            ));
+
+            echo $visit_count ? esc_html($visit_count) : '0';
+        }
+
+        // Handle last modified column (existing code)
         if ($column === 'last_modified') {
             $post = get_post($post_id);
             if ($post) {
                 $modified_time = get_post_modified_time('Y/m/d g:i:s A', false, $post);
                 $modified_timestamp = get_post_modified_time('U', false, $post);
 
-                // Show relative time if recent, otherwise show full date
                 $time_diff = time() - $modified_timestamp;
                 if ($time_diff < DAY_IN_SECONDS) {
                     $relative_time = human_time_diff($modified_timestamp, time()) . ' ago';
@@ -1016,7 +1028,8 @@ class Spiral_Tower_Floor_Manager
     {
         $columns['floor_number'] = 'floor_number';
         $columns['floor_number_alt_text'] = 'floor_number_alt_text';
-        $columns['last_modified'] = 'modified'; // WordPress built-in orderby parameter
+        $columns['unique_visits'] = 'unique_visits';
+        $columns['last_modified'] = 'modified';
         return $columns;
     }
 
@@ -1028,23 +1041,36 @@ class Spiral_Tower_Floor_Manager
         if (!is_admin() || !$query->is_main_query()) {
             return;
         }
-    
+
         if ($query->get('post_type') === 'floor') {
             $orderby = $query->get('orderby');
-    
+
             if ($orderby === 'floor_number') {
-                // Use posts_orderby filter to create custom SQL that includes all posts
                 add_filter('posts_orderby', array($this, 'custom_floor_number_orderby_sql'), 10, 2);
-    
             } elseif ($orderby === 'floor_number_alt_text') {
-                // Use posts_orderby filter for alt text too
                 add_filter('posts_orderby', array($this, 'custom_floor_alt_text_orderby_sql'), 10, 2);
-                
+            } elseif ($orderby === 'unique_visits') { // ADD THIS SECTION
+                add_filter('posts_orderby', array($this, 'custom_unique_visits_orderby_sql'), 10, 2);
             } elseif ($orderby === 'modified') {
-                // WordPress handles this automatically, but we can ensure it works
                 $query->set('orderby', 'modified');
             }
         }
+    }
+
+    public function custom_unique_visits_orderby_sql($orderby, $query)
+    {
+        global $wpdb;
+
+        if ($query->get('post_type') === 'floor' && $query->get('orderby') === 'unique_visits') {
+            $order = $query->get('order') === 'ASC' ? 'ASC' : 'DESC';
+            $logs_table = $wpdb->prefix . 'spiral_tower_logs';
+
+            $orderby = "(SELECT COUNT(DISTINCT user_id) FROM {$logs_table} WHERE {$logs_table}.post_id = {$wpdb->posts}.ID AND {$logs_table}.post_type = 'floor' AND {$logs_table}.user_id IS NOT NULL AND {$logs_table}.user_id > 1) $order";
+
+            remove_filter('posts_orderby', array($this, 'custom_unique_visits_orderby_sql'), 10);
+        }
+
+        return $orderby;
     }
 
     /**

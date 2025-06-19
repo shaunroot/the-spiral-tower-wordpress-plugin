@@ -33,6 +33,7 @@ require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-like-manager
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-log-manager.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-user-profile-manager.php';
 require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-achievement-manager.php';
+require_once SPIRAL_TOWER_PLUGIN_DIR . 'includes/class-spiral-tower-exploration-achievements-manager.php';
 
 
 /**
@@ -89,6 +90,7 @@ class Spiral_Tower_Plugin
         $this->log_manager = new Spiral_Tower_Log_Manager();
         $this->user_profile_manager = new Spiral_Tower_User_Profile_Manager();
         $this->achievement_manager = new Spiral_Tower_Achievement_Manager();
+        $this->exploration_achievements_manager = new Spiral_Tower_Exploration_Achievements_Manager();
 
         // Inject Log_Manager into User_Profile_Manager
         if (method_exists($this->user_profile_manager, 'set_log_manager')) {
@@ -691,6 +693,7 @@ class Spiral_Tower_Plugin
         $this->room_manager->register_room_post_type();
         $this->portal_manager->register_portal_post_type();
         $this->achievement_manager->create_user_achievements_table();
+        $this->exploration_achievements_manager->create_exploration_achievements_table();
 
         // Add rewrite rules (now done inside floor manager init)
         // $this->floor_manager->add_floor_rewrite_rules(); // Might be redundant if called in manager __construct
@@ -745,16 +748,12 @@ class Spiral_Tower_Plugin
 
     public function render_tower_stats_shortcode($atts)
     {
-
-        error_log("Stats shortcode called");
-
         // Check if get_tower_statistics exists
         if (!method_exists($this, 'get_tower_statistics')) {
             return '<p>Error: Statistics method not found</p>';
         }
 
         $stats = $this->get_tower_statistics();
-        error_log("Stats retrieved: " . print_r($stats, true));
 
         ob_start();
         ?>
@@ -793,12 +792,12 @@ class Spiral_Tower_Plugin
                     <div class="leaderboard-list">
                         <?php foreach ($stats['top_explorers'] as $index => $explorer): ?>
                             <a href="/u/<?php echo esc_html($explorer['name']); ?>">
-                            <div class="leaderboard-item">
-                                <span class="rank">#<?php echo $index + 1; ?></span>
-                                <span class="name"><?php echo esc_html($explorer['name']); ?></span>
-                                <span class="count"><?php echo esc_html($explorer['visits']); ?> visits</span>
-                            </div>
-                        </a>
+                                <div class="leaderboard-item">
+                                    <span class="rank">#<?php echo $index + 1; ?></span>
+                                    <span class="name"><?php echo esc_html($explorer['name']); ?></span>
+                                    <span class="count"><?php echo esc_html($explorer['visits']); ?> visits</span>
+                                </div>
+                            </a>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -809,12 +808,12 @@ class Spiral_Tower_Plugin
                     <div class="leaderboard-list">
                         <?php foreach ($stats['most_liked_users'] as $index => $user): ?>
                             <a href="/u/<?php echo esc_html($user['name']); ?>">
-                            <div class="leaderboard-item">
-                                <span class="rank">#<?php echo $index + 1; ?></span>
-                                <span class="name"><?php echo esc_html($user['name']); ?></span>
-                                <span class="count"><?php echo esc_html($user['likes_received']); ?> likes</span>
-                            </div>
-                        </a>
+                                <div class="leaderboard-item">
+                                    <span class="rank">#<?php echo $index + 1; ?></span>
+                                    <span class="name"><?php echo esc_html($user['name']); ?></span>
+                                    <span class="count"><?php echo esc_html($user['likes_received']); ?> likes</span>
+                                </div>
+                            </a>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -825,12 +824,12 @@ class Spiral_Tower_Plugin
                     <div class="leaderboard-list">
                         <?php foreach ($stats['most_generous_users'] as $index => $user): ?>
                             <a href="/u/<?php echo esc_html($user['name']); ?>">
-                            <div class="leaderboard-item">
-                                <span class="rank">#<?php echo $index + 1; ?></span>
-                                <span class="name"><?php echo esc_html($user['name']); ?></span>
-                                <span class="count"><?php echo esc_html($user['likes_given']); ?> likes given</span>
-                            </div>
-                        </a>
+                                <div class="leaderboard-item">
+                                    <span class="rank">#<?php echo $index + 1; ?></span>
+                                    <span class="name"><?php echo esc_html($user['name']); ?></span>
+                                    <span class="count"><?php echo esc_html($user['likes_given']); ?> likes given</span>
+                                </div>
+                            </a>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -840,63 +839,139 @@ class Spiral_Tower_Plugin
         return ob_get_clean();
     }
 
-    /**
-     * Get tower statistics data
-     */
-    private function get_tower_statistics()
+    public function get_tower_statistics($start_date = null, $end_date = null)
     {
         global $wpdb;
 
+        // Default to last 7 days if no dates provided
+        if (!$start_date) {
+            $start_date = date('Y-m-d', strtotime('-7 days'));
+        }
+        if (!$end_date) {
+            $end_date = date('Y-m-d');
+        }
+
+        // Convert to full datetime range
+        $range_start = $start_date . ' 00:00:00';
+        $range_end = $end_date . ' 23:59:59';
+
+        // Basic counts
         $total_floors = wp_count_posts('floor')->publish;
         $total_rooms = wp_count_posts('room')->publish;
         $total_locations = $total_floors + $total_rooms;
 
-        // Top 10 Creators (Floor Authors ranked by published floors + rooms)
-        $creators_query = "
-    SELECT 
-        p.post_author as user_id,
-        u.display_name,
-        SUM(CASE WHEN p.post_type = 'floor' THEN 1 ELSE 0 END) as floor_count,
-        SUM(CASE WHEN p.post_type = 'room' THEN 1 ELSE 0 END) as room_count,
-        COUNT(*) as total_content
-    FROM {$wpdb->posts} p
-    JOIN {$wpdb->users} u ON p.post_author = u.ID
-    WHERE p.post_type IN ('floor', 'room') 
-    AND p.post_status = 'publish'
-    GROUP BY p.post_author, u.display_name
-    ORDER BY total_content DESC
-    LIMIT 10
-";
+        // Date range counts
+        $floors_in_range = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->posts} 
+         WHERE post_type = 'floor' AND post_status = 'publish' 
+         AND post_date >= %s AND post_date <= %s",
+            $range_start,
+            $range_end
+        ));
 
-        $creators = $wpdb->get_results($creators_query);
-        $top_creators = array();
-        foreach ($creators as $creator) {
-            $top_creators[] = array(
-                'name' => $creator->display_name,
-                'total_content' => $creator->total_content // Use the COUNT(*) result directly
-            );
-        }
+        $rooms_in_range = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->posts} 
+         WHERE post_type = 'room' AND post_status = 'publish' 
+         AND post_date >= %s AND post_date <= %s",
+            $range_start,
+            $range_end
+        ));
 
-        $creators = $wpdb->get_results($creators_query);
-        $top_creators = array();
-        foreach ($creators as $creator) {
-            $top_creators[] = array(
-                'name' => $creator->display_name,
-                'total_content' => $creator->floor_count + $creator->room_count
-            );
-        }
+        $portals_in_range = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->posts} 
+         WHERE post_type = 'portal' AND post_status = 'publish' 
+         AND post_date >= %s AND post_date <= %s",
+            $range_start,
+            $range_end
+        ));
 
-        // Top 10 Explorers (users with most unique floor/room visits)
+        $locations_in_range = $floors_in_range + $rooms_in_range;
+
+        // Unclaimed locations (author = 1)
+        $unclaimed_locations = $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->posts} 
+         WHERE post_type IN ('floor', 'room') AND post_status = 'publish' AND post_author = 1"
+        );
+
+        // Exploration stats from logs table
         $logs_table = $wpdb->prefix . 'spiral_tower_logs';
+        $unique_explorations_all_time = 0;
+        $unique_explorations_in_range = 0;
+        $undiscovered_locations = 0;
+        $achievements_in_range = 0;
+
+        if ($wpdb->get_var("SHOW TABLES LIKE '$logs_table'") == $logs_table) {
+            // Total unique explorations (exclude user ID 1)
+            $unique_explorations_all_time = $wpdb->get_var(
+                "SELECT COUNT(DISTINCT CONCAT(user_id, '-', post_id, '-', post_type)) 
+             FROM $logs_table WHERE user_id IS NOT NULL AND user_id > 1"
+            );
+
+            // Date range unique explorations (exclude user ID 1)
+            $unique_explorations_in_range = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(DISTINCT CONCAT(user_id, '-', post_id, '-', post_type)) 
+             FROM $logs_table WHERE user_id IS NOT NULL AND user_id > 1 
+             AND date_created >= %s AND date_created <= %s",
+                $range_start,
+                $range_end
+            ));
+
+            // Undiscovered locations
+            $discovered_location_ids = $wpdb->get_col(
+                "SELECT DISTINCT post_id FROM $logs_table WHERE user_id IS NOT NULL AND user_id > 1"
+            );
+
+            if (!empty($discovered_location_ids)) {
+                $discovered_ids_string = implode(',', array_map('intval', $discovered_location_ids));
+                $undiscovered_locations = $wpdb->get_var(
+                    "SELECT COUNT(*) FROM {$wpdb->posts} 
+                 WHERE post_type IN ('floor', 'room') AND post_status = 'publish' 
+                 AND ID NOT IN ($discovered_ids_string)"
+                );
+            } else {
+                $undiscovered_locations = $total_locations;
+            }
+        }
+
+        // Achievements in date range
+        $achievements_table = $wpdb->prefix . 'spiral_tower_user_achievements';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$achievements_table'") == $achievements_table) {
+            $achievements_in_range = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM $achievements_table 
+             WHERE awarded_date >= %s AND awarded_date <= %s",
+                $range_start,
+                $range_end
+            ));
+        }
+
+        // Existing leaderboard queries (keep these the same)
+        $creators_query = "
+        SELECT p.post_author as user_id, u.display_name,
+               SUM(CASE WHEN p.post_type = 'floor' THEN 1 ELSE 0 END) as floor_count,
+               SUM(CASE WHEN p.post_type = 'room' THEN 1 ELSE 0 END) as room_count,
+               COUNT(*) as total_content
+        FROM {$wpdb->posts} p
+        JOIN {$wpdb->users} u ON p.post_author = u.ID
+        WHERE p.post_type IN ('floor', 'room') AND p.post_status = 'publish'
+        GROUP BY p.post_author, u.display_name
+        ORDER BY total_content DESC LIMIT 10";
+
+        $creators = $wpdb->get_results($creators_query);
+        $top_creators = array();
+        foreach ($creators as $creator) {
+            $top_creators[] = array(
+                'name' => $creator->display_name,
+                'total_content' => $creator->total_content
+            );
+        }
+
         $explorers_query = "
         SELECT u.display_name, COUNT(DISTINCT CONCAT(l.post_type, '-', l.post_id)) as unique_visits
         FROM {$logs_table} l
         JOIN {$wpdb->users} u ON l.user_id = u.ID
-        WHERE l.user_id IS NOT NULL AND l.user_id > 0
+        WHERE l.user_id IS NOT NULL AND l.user_id > 1
         GROUP BY l.user_id, u.display_name
-        ORDER BY unique_visits DESC
-        LIMIT 10
-    ";
+        ORDER BY unique_visits DESC LIMIT 10";
 
         $explorers = $wpdb->get_results($explorers_query);
         $top_explorers = array();
@@ -907,7 +982,6 @@ class Spiral_Tower_Plugin
             );
         }
 
-        // Top 10 Most Liked Users (users whose content receives the most likes)
         $likes_table = $wpdb->prefix . 'spiral_tower_likes';
         $most_liked_query = "
         SELECT u.display_name, COUNT(l.id) as likes_received
@@ -916,9 +990,7 @@ class Spiral_Tower_Plugin
         JOIN {$wpdb->users} u ON p.post_author = u.ID
         WHERE p.post_type IN ('floor', 'room')
         GROUP BY p.post_author, u.display_name
-        ORDER BY likes_received DESC
-        LIMIT 10
-    ";
+        ORDER BY likes_received DESC LIMIT 10";
 
         $most_liked = $wpdb->get_results($most_liked_query);
         $most_liked_users = array();
@@ -929,15 +1001,12 @@ class Spiral_Tower_Plugin
             );
         }
 
-        // Top 10 Most Generous Users (users who give the most likes)
         $most_generous_query = "
         SELECT u.display_name, COUNT(l.id) as likes_given
         FROM {$likes_table} l
         JOIN {$wpdb->users} u ON l.user_id = u.ID
         GROUP BY l.user_id, u.display_name
-        ORDER BY likes_given DESC
-        LIMIT 10
-    ";
+        ORDER BY likes_given DESC LIMIT 10";
 
         $most_generous = $wpdb->get_results($most_generous_query);
         $most_generous_users = array();
@@ -951,6 +1020,16 @@ class Spiral_Tower_Plugin
         return array(
             'total_floors' => $total_floors,
             'total_locations' => $total_locations,
+            'floors_in_range' => $floors_in_range,
+            'rooms_in_range' => $rooms_in_range,
+            'portals_in_range' => $portals_in_range,
+            'locations_in_range' => $locations_in_range,
+            'achievements_in_range' => $achievements_in_range,
+            'unclaimed_locations' => $unclaimed_locations,
+            'unique_explorations_all_time' => $unique_explorations_all_time,
+            'unique_explorations_in_range' => $unique_explorations_in_range,
+            'undiscovered_locations' => $undiscovered_locations,
+            'date_range' => $start_date . ' to ' . $end_date,
             'top_creators' => $top_creators,
             'top_explorers' => $top_explorers,
             'most_liked_users' => $most_liked_users,
@@ -1349,9 +1428,6 @@ function spiral_tower_add_admin_menu()
     register_setting('spiral_tower_settings', 'spiral_tower_dalle_api_endpoint');
 }
 
-/**
- * Display the main Spiral Tower dashboard page
- */
 function spiral_tower_main_page()
 {
     global $spiral_tower_plugin;
@@ -1360,10 +1436,17 @@ function spiral_tower_main_page()
         wp_die(__('You do not have sufficient permissions to access this page.'));
     }
 
+    // Handle date inputs
+    $start_date = isset($_GET['start_date']) ? sanitize_text_field($_GET['start_date']) : date('Y-m-d', strtotime('-7 days'));
+    $end_date = isset($_GET['end_date']) ? sanitize_text_field($_GET['end_date']) : date('Y-m-d');
+
     // Get some basic stats
     $floor_count = wp_count_posts('floor');
     $room_count = wp_count_posts('room');
     $portal_count = wp_count_posts('portal');
+
+    // Get stats with date range
+    $stats = $spiral_tower_plugin->get_tower_statistics($start_date, $end_date);
 
     // Get achievement stats
     $total_achievements_awarded = 0;
@@ -1382,124 +1465,89 @@ function spiral_tower_main_page()
         </div>
         <p>Welcome to the Spiral Tower administration center.</p>
 
+        <!-- Date Range Form -->
+        <div class="date-range-form"
+            style="background: #fff; padding: 20px; margin: 20px 0; border: 1px solid #ccd0d4; border-radius: 4px;">
+            <h2>Date Range for Weekly Stats</h2>
+            <form method="get" style="display: flex; align-items: center; gap: 15px;">
+                <input type="hidden" name="page" value="spiral-tower">
+                <label for="start_date">Start Date:</label>
+                <input type="date" id="start_date" name="start_date" value="<?php echo esc_attr($start_date); ?>">
+                <label for="end_date">End Date:</label>
+                <input type="date" id="end_date" name="end_date" value="<?php echo esc_attr($end_date); ?>">
+                <input type="submit" class="button button-primary" value="Update Stats">
+            </form>
+        </div>
+
         <div class="tower-dashboard-stats">
             <div class="dashboard-stat-box">
                 <h3>Published Floors</h3>
                 <p class="stat-number"><?php echo $floor_count->publish ?? 0; ?></p>
+                <p class="stat-weekly">+<?php echo $stats['floors_in_range']; ?> in date range</p>
                 <a href="<?php echo admin_url('edit.php?post_type=floor'); ?>" class="button">Manage Floors</a>
             </div>
 
             <div class="dashboard-stat-box">
                 <h3>Published Rooms</h3>
                 <p class="stat-number"><?php echo $room_count->publish ?? 0; ?></p>
+                <p class="stat-weekly">+<?php echo $stats['rooms_in_range']; ?> in date range</p>
                 <a href="<?php echo admin_url('edit.php?post_type=room'); ?>" class="button">Manage Rooms</a>
             </div>
 
             <div class="dashboard-stat-box">
                 <h3>Published Portals</h3>
                 <p class="stat-number"><?php echo $portal_count->publish ?? 0; ?></p>
+                <p class="stat-weekly">+<?php echo $stats['portals_in_range']; ?> in date range</p>
                 <a href="<?php echo admin_url('edit.php?post_type=portal'); ?>" class="button">Manage Portals</a>
             </div>
 
             <div class="dashboard-stat-box">
-                <h3>Achievements Awarded</h3>
-                <p class="stat-number"><?php echo $total_achievements_awarded; ?></p>
-                <a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>" class="button">View
-                    Achievement Log</a>
+                <h3>Total Locations</h3>
+                <p class="stat-number"><?php echo $stats['total_locations']; ?></p>
+                <p class="stat-weekly">+<?php echo $stats['locations_in_range']; ?> in date range</p>
+                <a href="#" class="button" disabled>Floors + Rooms</a>
             </div>
         </div>
 
-        <?php if (!empty($recent_achievement_awards)): ?>
-            <div class="tower-recent-achievements">
-                <h2>Recent Achievement Awards</h2>
-                <div class="achievement-awards-list">
-                    <table class="wp-list-table widefat fixed striped">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Achievement</th>
-                                <th>Points</th>
-                                <th>Date Awarded</th>
-                                <th>Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($recent_achievement_awards as $award): ?>
-                                <tr>
-                                    <td>
-                                        <?php
-                                        $user_edit_link = get_edit_user_link($award->user_id);
-                                        $user_name = $award->user_name ?: $award->user_login ?: 'Unknown User';
-                                        if ($user_edit_link) {
-                                            echo '<a href="' . esc_url($user_edit_link) . '">' . esc_html($user_name) . '</a>';
-                                        } else {
-                                            echo esc_html($user_name);
-                                        }
-                                        ?>
-                                    </td>
-                                    <td>
-                                        <div class="achievement-info">
-                                            <?php if (isset($award->icon)): ?>
-                                                <span class="dashicons <?php echo esc_attr($award->icon); ?>"></span>
-                                            <?php endif; ?>
-                                            <strong><?php echo esc_html($award->title ?? $award->achievement_key); ?></strong>
-                                            <?php if (isset($award->description)): ?>
-                                                <br><small><?php echo esc_html($award->description); ?></small>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                    <td><?php echo esc_html($award->points ?? '—'); ?></td>
-                                    <td><?php echo esc_html(mysql2date('F j, Y g:i a', $award->awarded_date)); ?></td>
-                                    <td><?php echo esc_html($award->notes ?: '—'); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                    <p><a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>">View Full Achievement Log
-                            →</a></p>
-                </div>
+        <div class="tower-dashboard-stats">
+            <div class="dashboard-stat-box">
+                <h3>Achievements Awarded</h3>
+                <p class="stat-number"><?php echo $total_achievements_awarded; ?></p>
+                <p class="stat-weekly">+<?php echo $stats['achievements_in_range']; ?> in date range</p>
+                <a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>" class="button">View
+                    Achievement Log</a>
             </div>
-        <?php endif; ?>
 
-        <div class="tower-dashboard-actions">
-            <h2>Quick Actions</h2>
-            <div class="dashboard-actions-grid">
-                <div class="action-card">
-                    <h3>Tower Settings</h3>
-                    <p>Configure DALL-E API settings and other plugin options.</p>
-                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-settings'); ?>"
-                        class="button button-primary">Open Settings</a>
-                </div>
+            <div class="dashboard-stat-box">
+                <h3>Unclaimed Locations</h3>
+                <p class="stat-number"><?php echo $stats['unclaimed_locations']; ?></p>
+                <p class="stat-weekly">Available for adoption</p>
+                <a href="<?php echo admin_url('users.php'); ?>" class="button">Manage Users</a>
+            </div>
 
-                <div class="action-card">
-                    <h3>Tower Logs</h3>
-                    <p>View activity logs and user statistics for all tower locations.</p>
-                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-logs'); ?>"
-                        class="button button-primary">View Logs</a>
-                </div>
+            <div class="dashboard-stat-box">
+                <h3>Unique Explorations</h3>
+                <p class="stat-number"><?php echo $stats['unique_explorations_all_time']; ?></p>
+                <p class="stat-weekly">+<?php echo $stats['unique_explorations_in_range']; ?> in date range</p>
+                <a href="<?php echo admin_url('admin.php?page=spiral-tower-logs'); ?>" class="button">View Logs</a>
+            </div>
 
-                <div class="action-card">
-                    <h3>Achievement Log</h3>
-                    <p>View all achievement awards and filter by achievement type.</p>
-                    <a href="<?php echo admin_url('admin.php?page=spiral-tower-achievements'); ?>"
-                        class="button button-primary">View Achievement Log</a>
-                </div>
-
-                <div class="action-card">
-                    <h3>User Management</h3>
-                    <p>View user profiles with detailed activity tracking.</p>
-                    <a href="<?php echo admin_url('users.php'); ?>" class="button">Manage Users</a>
-                </div>
-
-                <div class="action-card">
-                    <h3>About Page</h3>
-                    <p>View the public about page with tower statistics.</p>
-                    <a href="<?php echo home_url('/about/'); ?>" target="_blank" class="button">View About Page</a>
-                </div>
+            <div class="dashboard-stat-box">
+                <h3>Undiscovered Locations</h3>
+                <p class="stat-number"><?php echo $stats['undiscovered_locations']; ?></p>
+                <p class="stat-weekly">Never been visited</p>
+                <a href="#" class="button" disabled>Awaiting Explorers</a>
             </div>
         </div>
 
         <style>
+            .stat-weekly {
+                font-size: 12px;
+                color: #666;
+                margin: 5px 0 10px 0;
+                font-style: italic;
+            }
+
             .tower-dashboard-stats {
                 display: flex;
                 gap: 20px;

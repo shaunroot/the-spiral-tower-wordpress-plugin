@@ -47,6 +47,15 @@ class Spiral_Tower_Portal_Manager
         // Add AJAX handlers for typeahead
         add_action('wp_ajax_portal_search_floors', array($this, 'ajax_search_floors'));
         add_action('wp_ajax_portal_search_rooms', array($this, 'ajax_search_rooms'));
+
+        // Hide Gutenberg editor for portals
+        add_filter('use_block_editor_for_post_type', array($this, 'disable_gutenberg_for_portals'), 10, 2);
+
+        // Hide content editor entirely for portals
+        add_action('admin_init', array($this, 'remove_portal_editor_support'));
+
+        // Add custom CSS to hide remaining editor elements
+        add_action('admin_head', array($this, 'hide_portal_editor_css'));
     }
 
     /**
@@ -79,6 +88,8 @@ class Spiral_Tower_Portal_Manager
         wp_send_json_success(array(
             'permalink' => $permalink
         ));
+
+        $this->set_portal_metabox_positions();
     }
 
     /**
@@ -622,6 +633,81 @@ class Spiral_Tower_Portal_Manager
         $destination_room_title = $destination_room_id ? get_the_title($destination_room_id) : '';
 
         ?>
+        <div class="portal-instructions"
+            style="background: #f0f6fc; border: 1px solid #c3d7ef; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #0073aa;">
+                <span class="dashicons dashicons-info" style="margin-right: 5px;"></span>
+                Portal Creation Guide - <i>Now your thinking with portals!</i>
+            </h3>
+
+            <?php
+            // Check for URL parameters
+            $url_origin_type = isset($_GET['origin_type']) ? sanitize_text_field($_GET['origin_type']) : '';
+            $url_origin_floor_id = isset($_GET['origin_floor_id']) ? intval($_GET['origin_floor_id']) : 0;
+
+            if ($url_origin_type === 'floor' && $url_origin_floor_id) {
+                $floor = get_post($url_origin_floor_id);
+                if ($floor) {
+                    $floor_number = get_post_meta($url_origin_floor_id, '_floor_number', true);
+                    $floor_name = $floor_number ? "Floor #$floor_number: " . $floor->post_title : $floor->post_title;
+                    ?>
+                    <div
+                        style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; padding: 10px; margin-bottom: 15px;">
+                        <p style="margin: 0; color: #0c5460;">
+                            <span class="dashicons dashicons-yes-alt" style="color: #28a745; margin-right: 5px;"></span>
+                            <strong>Origin pre-filled:</strong> This portal will appear on
+                            <strong><?php echo esc_html($floor_name); ?></strong>
+                        </p>
+                    </div>
+                    <?php
+                }
+            }
+            ?>
+
+            <div>
+                <h4 style="margin-bottom: 5px; color: #2c3e50;">Instructions</h4>
+                <p>
+                    Give your portal a title above. This is the text the user will see on the page.
+                    You only need to set the featured image if you are creating a custom portal.
+                    That image will be shown where ever you place the portal.
+                </p>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <h4 style="margin-bottom: 5px; color: #2c3e50;">📍 Origin & Destination</h4>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
+                        <li><strong>Origin:</strong> Where portal appears</li>
+                        <li><strong>Destination:</strong> Where visitors go</li>
+                        <li>Can link to floors, rooms, or external URLs</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="margin-bottom: 5px; color: #2c3e50;">🎨 Portal Types</h4>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
+                        <li><strong>Text:</strong> Simple clickable text in a box that the user can see</li>
+                        <li><strong>Gateway/Vortex/Door:</strong> Not in use yet. Have ideas?</li>
+                        <li><strong>Custom:</strong> Your own image</li>
+                        <li><strong>Invisible:</strong> Hidden clickable area. The text will be visible when hovered or in text
+                            only view.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 10px; margin-top: 15px;">
+                <strong style="color: #856404;">💡 Tips:</strong>
+                <span style="color: #856404; font-size: 13px;">
+                    Position = You can set exact values here, but it is a lot eassier to drag portals on live pages
+                </span>
+            </div>
+
+            <div style="text-align: right; margin-top: 10px;">
+                <button type="button" class="button button-small"
+                    onclick="this.parentElement.parentElement.style.display='none'">
+                    Hide Guide
+                </button>
+            </div>
+        </div>
+
         <style>
             .portal-typeahead-container {
                 position: relative;
@@ -1755,4 +1841,96 @@ class Spiral_Tower_Portal_Manager
         return $label;
     }
 
+    /**
+     * Disable Gutenberg block editor for portals
+     */
+    public function disable_gutenberg_for_portals($use_block_editor, $post_type)
+    {
+        if ($post_type === 'portal') {
+            return false;
+        }
+        return $use_block_editor;
+    }
+
+    /**
+     * Remove editor support entirely from portal post type
+     */
+    public function remove_portal_editor_support()
+    {
+        remove_post_type_support('portal', 'editor');
+    }
+
+    /**
+     * Hide any remaining editor elements with CSS
+     */
+    public function hide_portal_editor_css()
+    {
+        $screen = get_current_screen();
+        if ($screen && $screen->post_type === 'portal') {
+            ?>
+            <style type="text/css">
+                /* Hide the content editor area */
+                #postdivrich,
+                #wp-content-editor-container,
+                #wp-content-wrap,
+                .wp-editor-container,
+                #content-tmce,
+                #content-html,
+                #wp-content-editor-tools,
+                #ed_toolbar,
+                .wp-editor-tabs,
+                #postdiv {
+                    display: none !important;
+                }
+
+                /* Hide the slug/permalink area - more specific selectors */
+                #edit-slug-box,
+                #sample-permalink,
+                .edit-slug,
+                .sample-permalink,
+                #titlediv #edit-slug-box,
+                #titlediv .sample-permalink {
+                    display: none !important;
+                }
+
+                /* Hide any permalink-related elements that might show up */
+                .permalink-edit-section,
+                .permalink-display,
+                #view-post-btn {
+                    display: none !important;
+                }
+            </style>
+            <?php
+        }
+    }
+
+    /**
+     * Set default meta box positions for portals
+     */
+    public function set_portal_metabox_positions()
+    {
+        add_action('admin_init', function () {
+            $screen = get_current_screen();
+            if ($screen && $screen->post_type === 'portal') {
+                // Force specific meta boxes to the right side
+                add_filter('get_user_option_meta-box-order_portal', array($this, 'force_portal_metabox_order'));
+            }
+        });
+    }
+
+    /**
+     * Force meta box order for portals
+     */
+    public function force_portal_metabox_order($order)
+    {
+        // If no custom order is set, use our default
+        if (empty($order)) {
+            $order = array(
+                'side' => 'submitdiv,authordiv,postimagediv', // Publish, Author, Featured Image on right
+                'normal' => 'portal_settings_meta_box', // Portal Settings on left
+                'advanced' => ''
+            );
+        }
+        return $order;
+    }
 } // End Class        

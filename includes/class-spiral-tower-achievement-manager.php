@@ -28,22 +28,22 @@ class Spiral_Tower_Achievement_Manager
     {
         // Define achievements in code
         $this->define_achievements();
-        
+
         // DON'T create table on every init - remove this line:
         // add_action('init', array($this, 'create_user_achievements_table'));
-        
+
         // Add admin menu for achievement log (with higher priority than parent menu)
         add_action('admin_menu', array($this, 'add_achievement_log_menu'), 25);
-        
+
         // Add AJAX handlers
         add_action('wp_ajax_spiral_tower_get_achievement_log', array($this, 'ajax_get_achievement_log'));
         add_action('wp_ajax_spiral_tower_delete_achievement', array($this, 'ajax_delete_achievement'));
         add_action('wp_ajax_spiral_tower_update_achievement_table', array($this, 'ajax_update_achievement_table'));
-        
+
         // Hook into floor and room viewing to check for achievements
         add_action('template_redirect', array($this, 'check_floor_achievement'));
         add_action('template_redirect', array($this, 'check_room_achievement'));
-        
+
         // Add achievement data to frontend - use wp_head instead of wp_footer
         add_action('wp_head', array($this, 'add_achievement_data_to_frontend'), 20);
     }
@@ -103,7 +103,7 @@ class Spiral_Tower_Achievement_Manager
                 'hidden' => false,
                 'repeatable' => false
             ),
-            
+
             // --- Visiting Achievements ---
             'wanderer' => array(
                 'title' => 'Wanderer',
@@ -152,13 +152,202 @@ class Spiral_Tower_Achievement_Manager
                 'icon' => 'dashicons-airplane',
                 'hidden' => false,
                 'repeatable' => false
+            ),
+
+            // --- Like Giving Achievements ---
+            'endorser' => array(
+                'title' => 'Endorser',
+                'description' => 'Give 1 like',
+                'points' => 1,
+                'icon' => 'dashicons-thumbs-up',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'well_wisher' => array(
+                'title' => 'Well-wisher',
+                'description' => 'Give 10 likes',
+                'points' => 1,
+                'icon' => 'dashicons-awards',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'fan' => array(
+                'title' => 'Fan',
+                'description' => 'Give 25 likes',
+                'points' => 1,
+                'icon' => 'dashicons-star-filled',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'admirer' => array(
+                'title' => 'Admirer',
+                'description' => 'Give 50 likes',
+                'points' => 1,
+                'icon' => 'dashicons-welcome-learn-more',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'lover' => array(
+                'title' => 'Lover',
+                'description' => 'Give 100 likes',
+                'points' => 1,
+                'icon' => 'dashicons-heart',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+
+            // --- Like Receiving Achievements ---
+            'liked' => array(
+                'title' => 'Liked',
+                'description' => 'Receive 1 like',
+                'points' => 1,
+                'icon' => 'dashicons-yes',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'appreciated' => array(
+                'title' => 'Appreciated',
+                'description' => 'Receive 10 likes',
+                'points' => 1,
+                'icon' => 'dashicons-yes-alt',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'admired' => array(
+                'title' => 'Admired',
+                'description' => 'Receive 50 likes',
+                'points' => 1,
+                'icon' => 'dashicons-star-half',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'revered' => array(
+                'title' => 'Revered',
+                'description' => 'Receive 100 likes',
+                'points' => 1,
+                'icon' => 'dashicons-star-filled',
+                'hidden' => false,
+                'repeatable' => false
+            ),
+            'beloved' => array(
+                'title' => 'Beloved',
+                'description' => 'Receive 250 likes',
+                'points' => 1,
+                'icon' => 'dashicons-heart',
+                'hidden' => false,
+                'repeatable' => false
             )
         );
-        
+
         // Add image URLs after defining achievements
         foreach ($this->achievements as $key => &$achievement) {
             $achievement['image'] = $this->get_achievement_image_url($key);
         }
+    }
+
+    /**
+     * Check like giving achievements for a user
+     */
+    private function check_like_giving_achievements($user_id)
+    {
+        global $wpdb;
+
+        // Get total likes given by this user
+        $likes_table = $wpdb->prefix . 'spiral_tower_likes';
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$likes_table'") === $likes_table;
+        if (!$table_exists) {
+            return; // No likes table, no achievements to check
+        }
+
+        $likes_given = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$likes_table} WHERE user_id = %d",
+            $user_id
+        ));
+
+        $count = intval($likes_given);
+
+        // Check achievements in ascending order for proper notification order
+        $thresholds = array(
+            1 => 'endorser',
+            10 => 'well_wisher',
+            25 => 'fan',
+            50 => 'admirer',
+            100 => 'lover'
+        );
+
+        foreach ($thresholds as $threshold => $achievement_key) {
+            if ($count >= $threshold && !$this->user_has_achievement($user_id, $achievement_key)) {
+                $this->award_achievement($user_id, $achievement_key, "Gave {$count} likes");
+            }
+        }
+    }
+
+    /**
+     * Check like receiving achievements for a user
+     */
+    private function check_like_receiving_achievements($user_id)
+    {
+        global $wpdb;
+
+        // Get total likes received by this user on their content
+        $likes_table = $wpdb->prefix . 'spiral_tower_likes';
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$likes_table'") === $likes_table;
+        if (!$table_exists) {
+            return; // No likes table, no achievements to check
+        }
+
+        $likes_received = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(l.id) 
+             FROM {$likes_table} l
+             JOIN {$wpdb->posts} p ON l.post_id = p.ID
+             WHERE p.post_author = %d AND p.post_type IN ('floor', 'room')",
+            $user_id
+        ));
+
+        $count = intval($likes_received);
+
+        // Check achievements in ascending order for proper notification order
+        $thresholds = array(
+            1 => 'liked',
+            10 => 'appreciated',
+            50 => 'admired',
+            100 => 'revered',
+            250 => 'beloved'
+        );
+
+        foreach ($thresholds as $threshold => $achievement_key) {
+            if ($count >= $threshold && !$this->user_has_achievement($user_id, $achievement_key)) {
+                $this->award_achievement($user_id, $achievement_key, "Received {$count} likes");
+            }
+        }
+    }
+
+    /**
+     * Check exploration achievements for a user
+     */
+    private function check_exploration_achievements($user_id)
+    {
+        global $spiral_tower_plugin;
+
+        // Get exploration achievements manager
+        if (!isset($spiral_tower_plugin->exploration_achievements_manager)) {
+            return; // Exploration achievements manager not available
+        }
+
+        $exploration_manager = $spiral_tower_plugin->exploration_achievements_manager;
+        $exploration_manager->check_exploration_achievements($user_id);
+    }
+
+    /**
+     * Add a newly awarded achievement to the queue (for exploration achievements)
+     */
+    public function add_newly_awarded_achievement($achievement_data)
+    {
+        $this->newly_awarded_achievements[] = $achievement_data;
     }
 
     /**
@@ -175,11 +364,17 @@ class Spiral_Tower_Achievement_Manager
             'fields' => 'ids'
         ));
         $count = count($creation_count);
-        
+
         // Check achievements in ascending order (smallest first) for proper notification order
-        $thresholds = array(1 => 'writer', 5 => 'architect', 10 => 'mythmaker', 
-                           20 => 'world_builder', 50 => 'aetherforger', 100 => 'dreamer');
-        
+        $thresholds = array(
+            1 => 'writer',
+            5 => 'architect',
+            10 => 'mythmaker',
+            20 => 'world_builder',
+            50 => 'aetherforger',
+            100 => 'dreamer'
+        );
+
         foreach ($thresholds as $threshold => $achievement_key) {
             if ($count >= $threshold && !$this->user_has_achievement($user_id, $achievement_key)) {
                 $this->award_achievement($user_id, $achievement_key, "Created {$count} floors/rooms");
@@ -193,7 +388,7 @@ class Spiral_Tower_Achievement_Manager
     private function check_visit_achievements($user_id)
     {
         global $wpdb;
-        
+
         // Single DB call to get unique visit count
         $log_table = $wpdb->prefix . 'spiral_tower_logs';
         $visit_count = $wpdb->get_var($wpdb->prepare(
@@ -206,11 +401,17 @@ class Spiral_Tower_Achievement_Manager
             $user_id
         ));
         $count = intval($visit_count);
-        
+
         // Check achievements in ascending order (smallest first) for proper notification order
-        $thresholds = array(10 => 'wanderer', 50 => 'traveler', 100 => 'adventurer', 
-                           250 => 'explorer', 500 => 'seeker', 1000 => 'voyager');
-        
+        $thresholds = array(
+            10 => 'wanderer',
+            50 => 'traveler',
+            100 => 'adventurer',
+            250 => 'explorer',
+            500 => 'seeker',
+            1000 => 'voyager'
+        );
+
         foreach ($thresholds as $threshold => $achievement_key) {
             if ($count >= $threshold && !$this->user_has_achievement($user_id, $achievement_key)) {
                 $this->award_achievement($user_id, $achievement_key, "Visited {$count} unique floors/rooms");
@@ -270,8 +471,7 @@ class Spiral_Tower_Achievement_Manager
     }
 
     /**
-     * Get achievement definition, including dynamic floor/room achievements
-     * Updated version that checks for dynamic achievements
+     * Get achievement definition, including dynamic floor/room achievements and exploration achievements
      */
     public function get_achievement($key)
     {
@@ -280,13 +480,24 @@ class Spiral_Tower_Achievement_Manager
             return $this->achievements[$key];
         }
 
+        // Check for exploration achievements
+        if (strpos($key, 'exploration_') === 0) {
+            global $spiral_tower_plugin;
+            if (isset($spiral_tower_plugin->exploration_achievements_manager)) {
+                $exploration_achievement = $spiral_tower_plugin->exploration_achievements_manager->get_exploration_achievement_definition($key);
+                if ($exploration_achievement) {
+                    return $exploration_achievement;
+                }
+            }
+        }
+
         // Check for dynamic floor/room achievements
         $dynamic_achievement = $this->get_dynamic_achievement($key);
         if ($dynamic_achievement) {
             return $dynamic_achievement;
         }
 
-        error_log("Spiral Tower: Achievement '{$key}' not found in static or dynamic achievements");
+        error_log("Spiral Tower: Achievement '{$key}' not found in static, exploration, or dynamic achievements");
         return null;
     }
 
@@ -362,10 +573,10 @@ class Spiral_Tower_Achievement_Manager
         if (!is_singular('floor') || !is_user_logged_in()) {
             return;
         }
-        
+
         $user_id = get_current_user_id();
         $floor_id = get_the_ID();
-        
+
         // Check for custom floor achievement
         $achievement_title = get_post_meta($floor_id, '_floor_achievement_title', true);
         if (!empty($achievement_title)) {
@@ -374,12 +585,19 @@ class Spiral_Tower_Achievement_Manager
                 $this->award_achievement($user_id, $achievement_key, 'Visited floor: ' . get_the_title($floor_id));
             }
         }
-        
+
         // Check creation achievements
         $this->check_creation_achievements($user_id);
-        
+
+        // Check like achievements (both giving and receiving)
+        $this->check_like_giving_achievements($user_id);
+        $this->check_like_receiving_achievements($user_id);
+
+        // Check exploration achievements
+        $this->check_exploration_achievements($user_id);
+
         // Check visit achievements after page load (when visit is logged)
-        add_action('shutdown', function() use ($user_id) {
+        add_action('shutdown', function () use ($user_id) {
             $this->check_visit_achievements($user_id);
         }, 1000);
     }
@@ -392,10 +610,10 @@ class Spiral_Tower_Achievement_Manager
         if (!is_singular('room') || !is_user_logged_in()) {
             return;
         }
-        
+
         $user_id = get_current_user_id();
         $room_id = get_the_ID();
-        
+
         // Check for custom room achievement
         $achievement_title = get_post_meta($room_id, '_room_achievement_title', true);
         if (!empty($achievement_title)) {
@@ -404,12 +622,19 @@ class Spiral_Tower_Achievement_Manager
                 $this->award_achievement($user_id, $achievement_key, 'Visited room: ' . get_the_title($room_id));
             }
         }
-        
+
         // Check creation achievements
         $this->check_creation_achievements($user_id);
-        
+
+        // Check like achievements (both giving and receiving)
+        $this->check_like_giving_achievements($user_id);
+        $this->check_like_receiving_achievements($user_id);
+
+        // Check exploration achievements
+        $this->check_exploration_achievements($user_id);
+
         // Check visit achievements after page load (when visit is logged)
-        add_action('shutdown', function() use ($user_id) {
+        add_action('shutdown', function () use ($user_id) {
             $this->check_visit_achievements($user_id);
         }, 1000);
     }
@@ -451,16 +676,16 @@ class Spiral_Tower_Achievement_Manager
     public function create_user_achievements_table()
     {
         global $wpdb;
-    
+
         $table_name = $wpdb->prefix . 'spiral_tower_user_achievements';
-        
+
         // Check if table exists
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
-        
+
         if (!$table_exists) {
             // Create new table
             $charset_collate = $wpdb->get_charset_collate();
-    
+
             $sql = "CREATE TABLE $table_name (
                 id bigint(20) NOT NULL AUTO_INCREMENT,
                 user_id bigint(20) NOT NULL,
@@ -473,10 +698,10 @@ class Spiral_Tower_Achievement_Manager
                 KEY awarded_date (awarded_date),
                 UNIQUE KEY user_achievement (user_id, achievement_key)
             ) $charset_collate;";
-    
+
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             dbDelta($sql);
-            
+
             error_log("Spiral Tower: Created new achievement table");
         } else {
             error_log("Spiral Tower: Achievement table already exists, skipping creation");
@@ -801,11 +1026,14 @@ class Spiral_Tower_Achievement_Manager
 
                         // Sort achievements by type and title
                         $static_achievements = array();
+                        $exploration_achievements = array();
                         $floor_achievements = array();
                         $room_achievements = array();
 
                         foreach ($all_achievements as $key => $achievement) {
-                            if (strpos($key, 'floor_') === 0) {
+                            if (strpos($key, 'exploration_') === 0) {
+                                $exploration_achievements[$key] = $achievement;
+                            } elseif (strpos($key, 'floor_') === 0) {
                                 $floor_achievements[$key] = $achievement;
                             } elseif (strpos($key, 'room_') === 0) {
                                 $room_achievements[$key] = $achievement;
@@ -818,6 +1046,17 @@ class Spiral_Tower_Achievement_Manager
                         if (!empty($static_achievements)) {
                             echo '<optgroup label="Static Achievements">';
                             foreach ($static_achievements as $key => $achievement) {
+                                echo '<option value="' . esc_attr($key) . '" ' . selected($achievement_filter, $key, false) . '>';
+                                echo esc_html($achievement['title']);
+                                echo '</option>';
+                            }
+                            echo '</optgroup>';
+                        }
+
+                        // Display exploration achievements
+                        if (!empty($exploration_achievements)) {
+                            echo '<optgroup label="Exploration Achievements">';
+                            foreach ($exploration_achievements as $key => $achievement) {
                                 echo '<option value="' . esc_attr($key) . '" ' . selected($achievement_filter, $key, false) . '>';
                                 echo esc_html($achievement['title']);
                                 echo '</option>';
@@ -1035,12 +1274,28 @@ class Spiral_Tower_Achievement_Manager
     }
 
     /**
-     * Update get_all_achievements to include dynamic achievements
+     * Update get_all_achievements to include dynamic achievements and exploration achievements
      * This is used by the admin log page dropdown
      */
     public function get_all_achievements_for_admin()
     {
         $achievements = $this->achievements;
+
+        // Add exploration achievements
+        global $spiral_tower_plugin;
+        if (isset($spiral_tower_plugin->exploration_achievements_manager)) {
+            $exploration_achievements = $spiral_tower_plugin->exploration_achievements_manager->get_all_exploration_achievements();
+            foreach ($exploration_achievements as $exploration_achievement) {
+                $key = 'exploration_' . $exploration_achievement->id;
+                $achievements[$key] = array(
+                    'title' => $exploration_achievement->title . ' (Exploration)',
+                    'description' => $exploration_achievement->description ?: "Visit {$exploration_achievement->visit_threshold} locations tagged '{$exploration_achievement->tag_slug}'",
+                    'points' => $exploration_achievement->points,
+                    'icon' => 'dashicons-location-alt',
+                    'achievement_type' => 'exploration'
+                );
+            }
+        }
 
         // Add floor achievements
         $floors_with_achievements = get_posts(array(
