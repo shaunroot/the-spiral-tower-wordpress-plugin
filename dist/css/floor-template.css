@@ -456,6 +456,52 @@
   background-color: #d32f2f;
 }
 
+/* Add this to your SCSS file */
+/* Inventory iframe container */
+.inventory-iframe-container {
+  width: 100%;
+  height: 600px;
+  border: 1px solid rgba(182, 157, 255, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+.inventory-iframe-container iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* Tab link styling (for the Return to Tower tab) */
+.tab-link {
+  text-decoration: none !important;
+  /* Never show active state on tab-links */
+}
+.tab-link:hover {
+  background: rgba(60, 60, 90, 0.9) !important;
+  color: #b69dff !important;
+  border-color: rgba(182, 157, 255, 0.6) !important;
+}
+.tab-link.active {
+  background: rgba(40, 40, 60, 0.9) !important;
+  color: rgba(160, 160, 180, 0.8) !important;
+  border-color: rgba(100, 100, 120, 0.5) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+/* Responsive iframe */
+@media (max-width: 768px) {
+  .inventory-iframe-container {
+    height: 500px;
+  }
+}
+@media (max-width: 480px) {
+  .inventory-iframe-container {
+    height: 400px;
+  }
+}
 /* * Elevator CSS Styles
  * For the Spiral Tower Elevator
  * Last Updated: 2025-04-04 
@@ -701,268 +747,226 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
 /* User Profile Styles for Spiral Tower */
 .spiral-tower-profile-page {
   font-family: "Winky Sans", sans-serif;
-  background-color: #0a0a0a;
+  background: linear-gradient(to right, #0f1337 0%, #030c13 20%, #030c13 80%, #0f1337 100%) !important;
   color: #e0e0e0;
   margin: 0;
   padding: 0;
-  min-height: 100%;
-  display: block;
+  min-height: 100vh;
+  /* Tab Navigation - Force override theme styles */
+  /* Tab Navigation - Match Your Image Design */
+  /* Tab Content */
+  /* Floors Grid */
+  /* Inventory Content */
+  /* No Content Message */
+  /* Responsive Design */
+  /* Floor cards with thumbnail backgrounds */
 }
-
-.spiral-profile-container {
+.spiral-tower-profile-page .spiral-profile-container {
   width: 90%;
-  max-width: 800px;
+  max-width: 1024px;
   margin: 2rem auto;
-  background-color: rgba(20, 20, 20, 0.8);
+  background-image: url(/wp-content/plugins/the-spiral-tower/assets/images/profile-bg.jpg);
+  background-size: 1024px auto !important;
+  background-position: center top !important;
+  /* Center horizontally, top vertically */
+  background-repeat: no-repeat !important;
   border-radius: 8px;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-  overflow: visible;
+  overflow: hidden;
   position: relative;
-  z-index: 1;
 }
-
-.profile-header {
-  background: linear-gradient(135deg, #2a1a4a 0%, #432675 100%);
+.spiral-tower-profile-page .profile-header {
   color: white;
   padding: 2rem;
   text-align: center;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-
-.profile-avatar {
-  margin: 0 auto 1.5rem;
-  width: 150px;
-  height: 150px;
+.spiral-tower-profile-page .profile-avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.spiral-tower-profile-page .profile-avatar-container .profile-avatar {
+  width: 304px;
+  height: auto;
+  margin-top: 72px;
   border-radius: 50%;
   overflow: hidden;
   border: 4px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-bottom: 1rem;
   position: relative;
 }
-
-.profile-avatar img {
+.spiral-tower-profile-page .profile-avatar-container .profile-avatar img {
   width: 100%;
   height: 100%;
   -o-object-fit: cover;
      object-fit: cover;
 }
-
-.profile-username {
+.spiral-tower-profile-page .profile-avatar-container .profile-avatar:hover .edit-avatar-link {
+  opacity: 1;
+}
+.spiral-tower-profile-page .profile-username {
   font-family: "Metamorphous", serif;
   font-size: 2.5rem;
   margin: 0.5rem 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  /* Match active tab styling */
+  background: rgba(10, 10, 10, 0.6) !important;
+  color: #b69dff !important;
+  border: 1px solid #b69dff !important;
+  border-radius: 8px;
+  padding: 1rem 2rem;
+  font-weight: 600 !important;
+  box-shadow: inset 0 0 10px rgba(182, 157, 255, 0.3) !important;
+  display: inline-block;
 }
-
-.profile-website a {
+.spiral-tower-profile-page .profile-username a {
+  font-size: 1.5rem;
   color: #b69dff;
   text-decoration: none;
   transition: color 0.3s ease;
 }
-
-.profile-website a:hover {
+.spiral-tower-profile-page .profile-username a:hover {
   color: #d9c9ff;
-  text-decoration: underline;
 }
-
-.profile-metadata {
+.spiral-tower-profile-page .profile-website a {
+  color: #b69dff;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+.spiral-tower-profile-page .profile-website a:hover {
+  color: #d9c9ff;
+}
+.spiral-tower-profile-page .profile-metadata {
   margin-top: 1rem;
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.7);
 }
-
-.profile-content {
+.spiral-tower-profile-page .profile-bio-section {
+  margin: auto;
   padding: 2rem;
+  background-color: rgba(10, 10, 10, 0.6);
+  border-bottom: 1px solid rgba(182, 157, 255, 0.2);
+  width: 80%;
 }
-
-.profile-bio h2 {
+.spiral-tower-profile-page .profile-bio-section .profile-bio h2 {
   font-family: "Metamorphous", serif;
   color: #b69dff;
   margin-top: 0;
   border-bottom: 1px solid rgba(182, 157, 255, 0.2);
   padding-bottom: 0.5rem;
 }
-
-.bio-content {
+.spiral-tower-profile-page .profile-bio-section .bio-content {
   line-height: 1.6;
 }
-
-.profile-footer {
-  padding: 1.5rem;
-  text-align: center;
-  background-color: rgba(10, 10, 10, 0.6);
+.spiral-tower-profile-page .profile-tabs {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  width: 80% !important;
+  height: auto !important;
+  display: block !important;
 }
-
-.back-to-tower {
-  display: inline-block;
-  padding: 0.6rem 1.2rem;
-  background-color: #432675;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
+.spiral-tower-profile-page .tab-nav {
+  display: flex !important;
+  justify-content: center !important;
+  max-width: 1024px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  gap: 0 !important;
+}
+.spiral-tower-profile-page .tab-button {
+  /* Reset all WordPress button styles */
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background: rgba(40, 40, 60, 0.9) !important;
+  border: 1px solid rgba(100, 100, 120, 0.5) !important;
+  border-radius: 0 !important;
+  color: rgba(160, 160, 180, 0.8) !important;
+  cursor: pointer !important;
+  display: inline-block !important;
+  font-family: "Metamorphous", serif !important;
+  font-size: 1.5rem !important;
+  font-weight: bold !important;
+  letter-spacing: 0.5px !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+  opacity: 1 !important;
+  padding: 1rem 1.5rem !important;
+  text-align: center !important;
+  text-decoration: none !important;
+  text-transform: uppercase !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  outline: none !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: auto !important;
+  box-sizing: border-box !important;
+  visibility: visible !important;
+  flex: 1 !important;
+  border-right: none !important;
+}
+.spiral-tower-profile-page .tab-button:last-child {
+  border-right: 1px solid rgba(100, 100, 120, 0.5) !important;
+}
+.spiral-tower-profile-page .tab-button:hover {
+  background: rgba(60, 60, 90, 0.9) !important;
+  color: #b69dff !important;
+  border-color: rgba(182, 157, 255, 0.6) !important;
+}
+.spiral-tower-profile-page .tab-button.active {
+  background: rgba(182, 157, 255, 0.2) !important;
+  color: #b69dff !important;
+  border-color: #b69dff !important;
+  font-weight: 600 !important;
+  box-shadow: inset 0 0 10px rgba(182, 157, 255, 0.3) !important;
+}
+.spiral-tower-profile-page .tab-button:focus {
+  outline: none !important;
+}
+.spiral-tower-profile-page .profile-content {
+  padding: 2rem !important;
+  background: rgb(15, 15, 15);
+  width: 80% !important;
+  height: auto !important;
+  margin: auto auto 400px auto;
+}
+.spiral-tower-profile-page .tab-content {
+  display: none !important;
+  width: 100% !important;
+  height: auto !important;
+}
+.spiral-tower-profile-page .tab-content.active {
+  display: block !important;
+}
+.spiral-tower-profile-page .content-section h2 {
   font-family: "Metamorphous", serif;
-  font-size: 0.9rem;
-  letter-spacing: 0.5px;
-}
-
-.back-to-tower:hover {
-  background-color: #583a96;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .spiral-profile-container {
-    width: 95%;
-    margin: 1rem auto;
-  }
-  .profile-header {
-    padding: 1.5rem;
-  }
-  .profile-avatar {
-    width: 120px;
-    height: 120px;
-    margin-bottom: 1rem;
-  }
-  .profile-username {
-    font-size: 2rem;
-  }
-  .profile-content {
-    padding: 1.5rem;
-  }
-}
-@media (max-width: 480px) {
-  .profile-avatar {
-    width: 100px;
-    height: 100px;
-  }
-  .profile-username {
-    font-size: 1.8rem;
-  }
-  .profile-content {
-    padding: 1rem;
-  }
-  .profile-footer {
-    padding: 1rem;
-  }
-}
-.edit-profile-link,
-.edit-section-link,
-.edit-floor-link,
-.manage-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 8px;
-  font-size: 0.7em;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-.edit-profile-link:hover,
-.edit-section-link:hover,
-.edit-floor-link:hover,
-.manage-icon:hover {
-  opacity: 1;
-  text-decoration: none;
-}
-.edit-profile-link .edit-icon,
-.edit-section-link .edit-icon,
-.edit-floor-link .edit-icon,
-.manage-icon .edit-icon {
-  font-size: 1.2em;
-}
-
-.edit-avatar-link {
-  position: absolute;
-  top: 100%; /* Position it at the bottom of the avatar */
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 10px; /* Add some spacing between avatar and button */
-  background: rgba(0, 0, 0, 0.6);
-  padding: 4px 12px;
-  border-radius: 16px;
-  white-space: nowrap;
-  z-index: 2;
-  display: none; /* Hidden by default */
-}
-.edit-avatar-link a {
-  color: #fff;
-  text-decoration: none;
-  font-size: 0.8em;
-  display: flex;
-  align-items: center;
-}
-.edit-avatar-link a .edit-icon {
-  margin-right: 4px;
-}
-
-.profile-avatar {
-  position: relative;
-  margin-bottom: 2.5rem; /* Increased bottom margin */
-}
-.profile-avatar:hover .edit-avatar-link {
-  display: block; /* Show on hover */
-}
-
-.profile-avatar {
-  position: relative;
-  margin-bottom: 2.5rem; /* Increased from 1.5rem to make room for the edit button */
-}
-.profile-avatar:hover .edit-avatar-link {
-  opacity: 1;
-}
-
-.edit-profile-section {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px; /* space between buttons */
-  margin-top: 20px;
-}
-.edit-profile-section .profile-button {
-  display: inline-block;
-  padding: 6px 14px;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  border-radius: 4px;
-  font-size: 0.9em;
-  text-decoration: none;
-  transition: background 0.2s;
-  display: inline-block;
-  min-width: 72px;
-  margin: 0 8px;
-  text-align: center;
-  font-family: "Metamorphous", serif;
-}
-.edit-profile-section .profile-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.spiral-tower-profile-page .profile-achievements {
-  margin: 40px 0;
-  font-family: "Metamorphous", serif;
-}
-.spiral-tower-profile-page .profile-achievements h2 {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 25px;
   color: #b69dff;
-  font-size: 24px;
-  font-family: "Metamorphous", serif;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(182, 157, 255, 0.2);
+  padding-bottom: 0.5rem;
 }
-.spiral-tower-profile-page .profile-achievements h2 .achievement-points {
-  font-size: 14px;
-  font-weight: normal;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-weight: 500;
+.spiral-tower-profile-page .floors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
 }
 .spiral-tower-profile-page .achievements-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 @media (max-width: 768px) {
@@ -1000,15 +1004,15 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
 .spiral-tower-profile-page .achievement-image {
   margin-bottom: 12px;
   overflow: visible;
-  border-radius: 0;
-  background: transparent;
-  width: auto;
-  height: auto;
+  border-radius: 0 !important;
+  background: transparent !important;
+  width: 100% !important;
+  height: auto !important;
   display: block;
 }
 .spiral-tower-profile-page .achievement-image img {
-  width: 100%;
-  height: auto;
+  width: 100% !important;
+  height: auto !important;
   border-radius: 0;
   clip-path: none;
   -webkit-mask: none;
@@ -1053,10 +1057,243 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
     font-size: 12px;
   }
 }
+.spiral-tower-profile-page .inventory-content {
+  text-align: center;
+  padding: 3rem;
+  color: #a0a0a0;
+}
+.spiral-tower-profile-page .inventory-content a {
+  color: #b69dff;
+  text-decoration: none;
+}
+.spiral-tower-profile-page .inventory-content a:hover {
+  text-decoration: underline;
+}
+.spiral-tower-profile-page .no-content-message {
+  text-align: center;
+  padding: 3rem;
+  color: #a0a0a0;
+}
+.spiral-tower-profile-page .no-content-message a {
+  color: #b69dff;
+  text-decoration: none;
+}
+.spiral-tower-profile-page .no-content-message a:hover {
+  text-decoration: underline;
+}
+.spiral-tower-profile-page .profile-footer {
+  padding: 1.5rem;
+  text-align: center;
+  background-color: rgba(10, 10, 10, 0.8);
+}
+.spiral-tower-profile-page .back-to-tower {
+  display: inline-block;
+  padding: 0.8rem 1.5rem;
+  background-color: #432675;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+  font-family: "Metamorphous", serif;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+}
+.spiral-tower-profile-page .back-to-tower:hover {
+  background-color: #583a96;
+}
+.spiral-tower-profile-page .edit-profile-link,
+.spiral-tower-profile-page .edit-section-link,
+.spiral-tower-profile-page .edit-floor-link,
+.spiral-tower-profile-page .manage-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  font-size: 0.7em;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.spiral-tower-profile-page .edit-profile-link:hover,
+.spiral-tower-profile-page .edit-section-link:hover,
+.spiral-tower-profile-page .edit-floor-link:hover,
+.spiral-tower-profile-page .manage-icon:hover {
+  opacity: 1;
+  text-decoration: none;
+}
+.spiral-tower-profile-page .edit-profile-link .edit-icon,
+.spiral-tower-profile-page .edit-section-link .edit-icon,
+.spiral-tower-profile-page .edit-floor-link .edit-icon,
+.spiral-tower-profile-page .manage-icon .edit-icon {
+  font-size: 1.2em;
+}
+.spiral-tower-profile-page .edit-avatar-link {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 12px;
+  border-radius: 16px;
+  white-space: nowrap;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.spiral-tower-profile-page .edit-avatar-link a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.8em;
+  display: flex;
+  align-items: center;
+}
+.spiral-tower-profile-page .edit-avatar-link a .edit-icon {
+  margin-right: 4px;
+}
+.spiral-tower-profile-page .edit-profile-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+.spiral-tower-profile-page .edit-profile-section .profile-button {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.9em;
+  text-decoration: none;
+  transition: background 0.2s;
+  min-width: 72px;
+  margin: 0 8px;
+  text-align: center;
+  font-family: "Metamorphous", serif;
+}
+.spiral-tower-profile-page .edit-profile-section .profile-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+@media (max-width: 768px) {
+  .spiral-tower-profile-page .profile-avatar {
+    margin-top: 80px;
+  }
+  .spiral-tower-profile-page .profile-header {
+    padding: 1.5rem;
+  }
+  .spiral-tower-profile-page .tab-nav {
+    flex-wrap: wrap;
+  }
+  .spiral-tower-profile-page .tab-button {
+    padding: 0.8rem 1.5rem !important;
+    font-size: 1rem !important;
+  }
+  .spiral-tower-profile-page .profile-content {
+    padding: 2rem !important;
+    background: rgba(15, 15, 15, 0.9);
+    width: 80% !important;
+    height: auto !important;
+    margin: auto auto 300px auto !important;
+  }
+  .spiral-tower-profile-page .profile-bio-section {
+    margin: auto;
+    width: 80%;
+    padding: 1.5rem;
+  }
+  .spiral-tower-profile-page .floors-grid {
+    grid-template-columns: 1fr;
+  }
+  .spiral-tower-profile-page .achievements-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+}
+@media (max-width: 480px) {
+  .spiral-tower-profile-page .profile-username {
+    font-size: 1.8rem;
+  }
+  .spiral-tower-profile-page .tab-button {
+    padding: 0.6rem 1rem !important;
+    font-size: 1.2rem !important;
+    font-weight: bold;
+  }
+  .spiral-tower-profile-page .profile-content {
+    padding: 1rem !important;
+  }
+  .spiral-tower-profile-page .profile-bio-section {
+    margin: auto;
+    padding: 1rem;
+  }
+  .spiral-tower-profile-page .achievements-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .spiral-tower-profile-page .achievement-image img {
     transition: transform 0.3s ease !important;
   }
+}
+.spiral-tower-profile-page .floor-card {
+  border: 1px solid rgba(182, 157, 255, 0.2) !important;
+  border-radius: 8px !important;
+  padding: 1.5rem !important;
+  transition: box-shadow 0.3s ease !important;
+  position: relative !important;
+  min-height: 160px !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  cursor: pointer !important;
+  /* Add overlay to ensure text readability */
+}
+.spiral-tower-profile-page .floor-card::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-radius: 8px !important;
+  z-index: 1 !important;
+}
+.spiral-tower-profile-page .floor-card:hover {
+  box-shadow: 0 0 6px rgba(162, 157, 255, 0.3) !important;
+}
+.spiral-tower-profile-page .floor-card:hover::before {
+  opacity: 0 !important;
+}
+.spiral-tower-profile-page .floor-card .floor-link {
+  position: absolute !important;
+  z-index: 2 !important;
+  color: #e0e0e0 !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  padding: 1.5rem !important;
+  display: flex !important;
+  align-items: flex-end !important;
+}
+.spiral-tower-profile-page .floor-card .floor-link:hover {
+  color: #b69dff !important;
+}
+.spiral-tower-profile-page .floor-card .edit-floor-link {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  z-index: 3 !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  padding: 5px !important;
+  border-radius: 3px !important;
+  opacity: 0 !important;
+  transition: opacity 0.3s ease !important;
+}
+.spiral-tower-profile-page .floor-card:hover .edit-floor-link {
+  opacity: 1 !important;
 }
 
 /* Hide content toggle button when text-only mode is active */
@@ -1507,6 +1744,14 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
 
 .dom-tooltip {
   min-width: 100px;
+}
+
+.discovery-info {
+  position: absolute;
+  top: -60px;
+  white-space: nowrap;
+  text-shadow: 2px 2px black;
+  display: block;
 }
 
 .achievement-notification-container {

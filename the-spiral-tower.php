@@ -1376,6 +1376,49 @@ function spiral_tower_toggle_like($post_id)
     return false;
 }
 
+
+/**
+ * Get the first discoverer of a post
+ * 
+ * @param int $post_id The post ID
+ * @return WP_User|null The first discoverer or null
+ */
+function spiral_tower_get_first_discoverer($post_id) {
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->log_manager)) {
+        return $spiral_tower_plugin->log_manager->get_first_discoverer($post_id);
+    }
+    return null;
+}
+
+/**
+ * Get the discovery date of a post
+ * 
+ * @param int $post_id The post ID
+ * @return string|null The discovery date or null
+ */
+function spiral_tower_get_discovery_date($post_id) {
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->log_manager)) {
+        return $spiral_tower_plugin->log_manager->get_discovery_date($post_id);
+    }
+    return null;
+}
+
+/**
+ * Check if a post has been discovered
+ * 
+ * @param int $post_id The post ID
+ * @return bool True if discovered
+ */
+function spiral_tower_is_post_discovered($post_id) {
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->log_manager)) {
+        return $spiral_tower_plugin->log_manager->is_post_discovered($post_id);
+    }
+    return false;
+}
+
 function spiral_tower_get_user_profile_url($user_id)
 {
     global $spiral_tower_plugin;

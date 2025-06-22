@@ -555,3 +555,60 @@
         }
     }
 }
+
+
+
+
+
+
+/* Add this to your SCSS file */
+
+/* Inventory iframe container */
+.inventory-iframe-container {
+  width: 100%;
+  height: 600px;
+  border: 1px solid rgba(182, 157, 255, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+}
+
+/* Tab link styling (for the Return to Tower tab) */
+.tab-link {
+  text-decoration: none !important;
+  
+  &:hover {
+    background: rgba(60, 60, 90, 0.9) !important;
+    color: #b69dff !important;
+    border-color: rgba(182, 157, 255, 0.6) !important;
+  }
+  
+  /* Never show active state on tab-links */
+  &.active {
+    background: rgba(40, 40, 60, 0.9) !important;
+    color: rgba(160, 160, 180, 0.8) !important;
+    border-color: rgba(100, 100, 120, 0.5) !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Responsive iframe */
+@media (max-width: 768px) {
+  .inventory-iframe-container {
+    height: 500px;
+  }
+}
+
+@media (max-width: 480px) {
+  .inventory-iframe-container {
+    height: 400px;
+  }
+}

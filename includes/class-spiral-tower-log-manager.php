@@ -462,4 +462,97 @@ public function get_unique_visitors_count() {
         }
         return array();
     }    
+    
+/**
+ * Get the first discoverer of a post (excluding administrators)
+ * 
+ * @param int $post_id The post ID
+ * @return WP_User|null The first user to visit this post (non-admin) or null if none
+ */
+public function get_first_discoverer($post_id) {
+    global $wpdb;
+    
+    if (empty($post_id)) {
+        return null;
+    }
+    
+    // Get the post author ID
+    $post_author_id = get_post_field('post_author', $post_id);
+    
+    // NOTE THIS BLOCKS THE USER WITH ID 10
+    // You may want to block other users on your site
+    // TODO a discovery/achievement blocklist by user ID
+    $sql = $wpdb->prepare(
+        "SELECT l.user_id, l.date_created
+         FROM {$this->table_name} l
+         JOIN {$wpdb->users} u ON l.user_id = u.ID
+         JOIN {$wpdb->usermeta} um ON u.ID = um.user_id
+         WHERE l.post_id = %d 
+         AND l.user_id IS NOT NULL 
+         AND l.user_id > 1
+         AND l.user_id != %d
+         AND l.user_id != 10
+         AND um.meta_key = %s
+         AND um.meta_value NOT LIKE %s
+         ORDER BY l.date_created ASC
+         LIMIT 1",
+        $post_id,
+        $post_author_id,
+        $wpdb->prefix . 'capabilities',
+        '%administrator%'
+    );
+
+    $result = $wpdb->get_row($sql);
+    
+    if ($result && $result->user_id) {
+        return get_userdata($result->user_id);
+    }
+    
+    return null;
+}
+
+/**
+ * Get discovery date for a post
+ * 
+ * @param int $post_id The post ID
+ * @return string|null The discovery date or null if not discovered
+ */
+public function get_discovery_date($post_id) {
+    global $wpdb;
+    
+    if (empty($post_id)) {
+        return null;
+    }
+    
+    $sql = $wpdb->prepare(
+        "SELECT l.date_created
+         FROM {$this->table_name} l
+         JOIN {$wpdb->users} u ON l.user_id = u.ID
+         JOIN {$wpdb->usermeta} um ON u.ID = um.user_id
+         WHERE l.post_id = %d 
+         AND l.user_id IS NOT NULL 
+         AND l.user_id > 1
+         AND um.meta_key = %s
+         AND um.meta_value NOT LIKE %s
+         ORDER BY l.date_created ASC
+         LIMIT 1",
+        $post_id,
+        $wpdb->prefix . 'capabilities',
+        '%administrator%'
+    );
+    
+    $result = $wpdb->get_var($sql);
+    
+    return $result;
+}
+
+/**
+ * Check if a post has been discovered by any non-admin user
+ * 
+ * @param int $post_id The post ID
+ * @return bool True if discovered, false otherwise
+ */
+public function is_post_discovered($post_id) {
+    return $this->get_first_discoverer($post_id) !== null;
+}    
 }

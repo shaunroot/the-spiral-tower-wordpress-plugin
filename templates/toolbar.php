@@ -106,14 +106,14 @@ if ($has_liked) {
 
     <?php // ----- START: User Profile Button ----- ?>
     <div id="button-your-profile" class="tooltip-trigger" data-tooltip="Your Profile">
-        <a href="/u/<?php echo esc_html( $current_user->display_name ); ?>">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <circle cx="12" cy="10" r="3" />
-            <path d="M6 18c1.5-2 4-3 6-3s4.5 1 6 3" />
-        </svg>
-    </a>
+        <a href="/u/<?php echo esc_html($current_user->display_name); ?>">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="10" r="3" />
+                <path d="M6 18c1.5-2 4-3 6-3s4.5 1 6 3" />
+            </svg>
+        </a>
     </div>
     <?php // ----- END: User Profile Button ----- ?>
 
@@ -278,7 +278,9 @@ if ($has_liked) {
 
 
 
-    <div id="user-profile-popup" style="display: none; width: 280px; height: 70px;">
+
+
+    <div id="user-profile-popup" style="display: none; width: 280px; height: auto;">
         <?php
         $post_id = get_the_ID();
         $author_id = get_post_field('post_author', $post_id);
@@ -288,12 +290,19 @@ if ($has_liked) {
         $upload_dir = wp_upload_dir();
         $avatar_url_full = !empty($author_avatar) ? $upload_dir['baseurl'] . '/' . $author_avatar : SPIRAL_TOWER_PLUGIN_URL . 'assets/images/default-avatar.jpg';
         $profile_url = spiral_tower_get_user_profile_url($author_id);
+
+        // Get discovery information
+        $first_discoverer = spiral_tower_get_first_discoverer($post_id);
+        $current_post_type = get_post_type($post_id);
         ?>
         <a href="<?php echo esc_url($profile_url); ?>" class="profile-popup-link">
             <div class="profile-popup-content">
                 <div class="author-info">
-                    <p>Created by <span class="author-name"><?php echo esc_html($author->display_name); ?></span>
-                    </p>
+                    <p>Created by <span class="author-name"><?php echo esc_html($author->display_name); ?></span></p>
+                    <?php if ($first_discoverer && in_array($current_post_type, ['floor', 'room'])): ?>
+                        <p class="discovery-info">This <?php echo esc_html($current_post_type); ?> discovered by <span
+                                class="discoverer-name"><?php echo esc_html($first_discoverer->display_name); ?></span></p>
+                    <?php endif; ?>
                 </div>
                 <div class="author-avatar-container">
                     <img src="<?php echo esc_url($avatar_url_full); ?>"
@@ -302,7 +311,6 @@ if ($has_liked) {
             </div>
         </a>
     </div>
-    <?php // ----- END: User Profile Button ----- ?>
 
 
 
