@@ -36,7 +36,7 @@ $can_edit_floor = current_user_can('edit_post', get_the_ID());
         // Determine destination URL based on portal settings
         $destination_type = get_post_meta($portal_id, '_destination_type', true);
         $destination_url = '#'; // Default fallback
-        
+    
         if ($destination_type === 'floor') {
             $destination_floor_id = get_post_meta($portal_id, '_destination_floor_id', true);
             if ($destination_floor_id) {
@@ -54,8 +54,14 @@ $can_edit_floor = current_user_can('edit_post', get_the_ID());
             }
         }
 
+        // Get tooltip setting
+        $disable_tooltip = get_post_meta($portal_id, '_disable_tooltip', true) === '1';
+
         // Create CSS classes for the portal
-        $portal_classes = array('floor-gizmo', 'tooltip-trigger');
+        $portal_classes = array('floor-gizmo');
+        if (!$disable_tooltip) {
+            $portal_classes[] = 'tooltip-trigger';
+        }
         if ($disable_pointer) {
             $portal_classes[] = 'no-pointer';
         }
@@ -83,7 +89,7 @@ $can_edit_floor = current_user_can('edit_post', get_the_ID());
         //         $default_height = '5%';
         //         break;
         // }
-
+    
         // Create the portal style attribute
         $style_attr = sprintf(
             'left: %s%%; top: %s%%; %s',
@@ -142,9 +148,12 @@ $can_edit_floor = current_user_can('edit_post', get_the_ID());
 
             case 'text':
                 $portal_content = sprintf('<span class="portal-text">%s</span>', esc_html($portal_title));
-                // Remove tooltip-trigger class for text portals
-                $portal_classes = array_diff($portal_classes, ['tooltip-trigger']);
+                // Remove tooltip-trigger class for text portals (if tooltips are disabled)
+                if ($disable_tooltip) {
+                    $portal_classes = array_diff($portal_classes, ['tooltip-trigger']);
+                }
                 break;
+
             default:
                 // Text uses the portal title
                 $portal_content = sprintf('<span class="portal-text">%s</span>', esc_html($portal_title));
@@ -152,8 +161,9 @@ $can_edit_floor = current_user_can('edit_post', get_the_ID());
         }
         ?>
         <div id="portal-<?php echo esc_attr($portal_id); ?>" class="<?php echo esc_attr(implode(' ', $portal_classes)); ?>"
-            data-portal-id="<?php echo esc_attr($portal_id); ?>" data-post-date="<?php echo esc_attr($portal_post_date); ?>" data-portal-type="<?php echo esc_attr($portal_type); ?>"
-            data-tooltip="<?php echo esc_attr($portal_title); ?>" style="<?php echo $style_attr; ?>">
+            data-portal-id="<?php echo esc_attr($portal_id); ?>" data-post-date="<?php echo esc_attr($portal_post_date); ?>"
+            data-portal-type="<?php echo esc_attr($portal_type); ?>" data-tooltip="<?php echo esc_attr($portal_title); ?>"
+            style="<?php echo $style_attr; ?>">
 
             <a href="<?php echo esc_url($destination_url); ?>" class="spiral-tower-portal-link">
                 <?php echo $portal_content; ?>

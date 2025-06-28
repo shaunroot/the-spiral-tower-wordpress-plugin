@@ -98,28 +98,23 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
 
                 <h1 class="profile-username">
                     <?php echo esc_html($user->display_name); ?>
-                    <?php if ($is_own_profile): ?>
-                        <a href="<?php echo esc_url(get_edit_profile_url()); ?>" class="edit-profile-link">
-                            <span class="edit-icon">✏️</span>
-                        </a>
-                    <?php endif; ?>
                 </h1>
             </div>
 
-            <?php if (!empty($user->user_url)): ?>
+            <!-- <?php if (!empty($user->user_url)): ?>
                 <div class="profile-website">
                     <a href="<?php echo esc_url($user->user_url); ?>" rel="nofollow">
                         <?php echo esc_html(preg_replace('#^https?://#', '', $user->user_url)); ?>
                     </a>
                 </div>
-            <?php endif; ?>
+            <?php endif; ?> -->
 
             <div class="edit-profile-section">
                 <?php if ($is_own_profile): ?>
-                    <a href="<?php echo esc_url(get_edit_profile_url()); ?>" class="profile-button">
+                    <a class="profile-user-button" href="<?php echo esc_url(get_edit_profile_url()); ?>" class="profile-button">
                         Edit Profile
                     </a>
-                    <a href="<?php echo wp_logout_url(); ?>" class="profile-button">Log Out</a>
+                    <a class="profile-user-button" href="<?php echo wp_logout_url(); ?>" class="profile-button">Log Out</a>
                 <?php endif; ?>
             </div>
         </header>
@@ -153,12 +148,14 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
         <div class="profile-tabs">
             <div class="tab-nav">
                 <button class="tab-button active" data-tab="floors">
-                    Floors Created (<?php echo $user_floors->found_posts; ?>)
+                    Floors Created<br />
+                    <div class="smaller">(<?php echo $user_floors->found_posts; ?>)</div>
                 </button>
                 
                 <?php if (!empty($all_achievements)): ?>
                     <button class="tab-button" data-tab="achievements">
-                        Achievements (<?php echo $earned_count; ?> of <?php echo $total_count; ?>)
+                        Achievements<br />
+                        <div class="smaller">(<?php echo $earned_count; ?> of <?php echo $total_count; ?>)</div>
                     </button>
                 <?php endif; ?>
                 

@@ -45,6 +45,11 @@ class Spiral_Tower_User_Profile_Manager
         add_action('show_user_profile', array($this, 'display_user_achievements_section'), 5);
         add_action('edit_user_profile', array($this, 'display_user_achievements_section'), 5);
 
+        add_action('show_user_profile', array($this, 'render_reddit_username_field'));
+        add_action('edit_user_profile', array($this, 'render_reddit_username_field'));
+        add_action('personal_options_update', array($this, 'save_reddit_username_meta'));
+        add_action('edit_user_profile_update', array($this, 'save_reddit_username_meta'));
+
     }
 
     /**
@@ -441,6 +446,239 @@ class Spiral_Tower_User_Profile_Manager
     }
 
     /**
+     * Render Reddit username field on user profile
+     */
+    public function render_reddit_username_field($user)
+    {
+        $reddit_username = get_user_meta($user->ID, 'spiral_tower_reddit_username', true);
+        ?>
+        <h3><?php esc_html_e('Social Media Profiles', 'spiral-tower'); ?></h3>
+        <table class="form-table">
+            <tr>
+                <th>
+                    <label for="spiral_tower_reddit_username">
+                        <?php esc_html_e('Reddit Username', 'spiral-tower'); ?>
+                    </label>
+                </th>
+                <td>
+                    <div class="reddit-username-input-wrapper">
+                        <span class="reddit-prefix">u/</span>
+                        <input type="text" name="spiral_tower_reddit_username" id="spiral_tower_reddit_username"
+                            value="<?php echo esc_attr($reddit_username); ?>" class="regular-text reddit-username-input"
+                            placeholder="<?php esc_attr_e('Enter your Reddit username (without u/)', 'spiral-tower'); ?>"
+                            pattern="[A-Za-z0-9_-]+"
+                            title="<?php esc_attr_e('Reddit usernames can only contain letters, numbers, underscores, and hyphens', 'spiral-tower'); ?>" />
+                    </div>
+                    <p class="description">
+                        <?php esc_html_e('Enter your Reddit username without the "u/" prefix. Only letters, numbers, underscores, and hyphens are allowed.', 'spiral-tower'); ?>
+                        <?php if (!empty($reddit_username)): ?>
+                            <br>
+                            <a href="<?php echo esc_url($this->get_reddit_profile_url($reddit_username)); ?>" target="_blank"
+                                rel="noopener noreferrer">
+                                <?php esc_html_e('View Reddit Profile', 'spiral-tower'); ?> ↗
+                            </a>
+                        <?php endif; ?>
+                    </p>
+                    <div id="reddit-username-validation" class="reddit-validation-message" style="display: none;">
+                        <span class="validation-text"></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <style>
+            .reddit-username-input-wrapper {
+                display: flex;
+                align-items: center;
+                max-width: 400px;
+            }
+
+            .reddit-prefix {
+                background: #f1f1f1;
+                border: 1px solid #ddd;
+                border-right: none;
+                padding: 8px 12px;
+                font-family: monospace;
+                font-weight: bold;
+                color: #ff4500;
+                border-radius: 4px 0 0 4px;
+            }
+
+            .reddit-username-input {
+                border-radius: 0 4px 4px 0 !important;
+                margin: 0 !important;
+            }
+
+            .reddit-validation-message {
+                margin-top: 8px;
+                padding: 6px 10px;
+                border-radius: 4px;
+                font-size: 13px;
+            }
+
+            .reddit-validation-message.valid {
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                color: #155724;
+            }
+
+            .reddit-validation-message.invalid {
+                background-color: #f8d7da;
+                border: 1px solid #f5c6cb;
+                color: #721c24;
+            }
+        </style>
+
+        <script type="text/javascript">
+            jQuery(document).ready(function ($) {
+                $('#spiral_tower_reddit_username').on('input', function () {
+                    var username = $(this).val().trim();
+                    var validationDiv = $('#reddit-username-validation');
+                    var validationText = validationDiv.find('.validation-text');
+
+                    if (username === '') {
+                        validationDiv.hide();
+                        return;
+                    }
+
+                    // Reddit username validation
+                    var redditUsernameRegex = /^[A-Za-z0-9_-]+$/;
+                    var isValid = redditUsernameRegex.test(username) && username.length >= 3 && username.length <= 20;
+
+                    if (isValid) {
+                        validationDiv.removeClass('invalid').addClass('valid').show();
+                        validationText.text('✓ Valid Reddit username');
+                    } else {
+                        validationDiv.removeClass('valid').addClass('invalid').show();
+                        if (username.length < 3) {
+                            validationText.text('✗ Username must be at least 3 characters long');
+                        } else if (username.length > 20) {
+                            validationText.text('✗ Username must be 20 characters or less');
+                        } else {
+                            validationText.text('✗ Username can only contain letters, numbers, underscores, and hyphens');
+                        }
+                    }
+                });
+
+                // Remove u/ if user accidentally includes it
+                $('#spiral_tower_reddit_username').on('paste input', function () {
+                    var value = $(this).val();
+                    if (value.startsWith('u/')) {
+                        $(this).val(value.substring(2));
+                    }
+                    if (value.startsWith('/u/')) {
+                        $(this).val(value.substring(3));
+                    }
+                });
+            });
+        </script>
+        <?php
+    }
+
+    /**
+     * Save Reddit username meta data
+     */
+    public function save_reddit_username_meta($user_id)
+    {
+        // Check permissions
+        if (!current_user_can('edit_user', $user_id) && get_current_user_id() !== $user_id) {
+            return false;
+        }
+
+        // Verify nonce if this is coming from a form submission
+        if (isset($_POST['_wpnonce']) && !wp_verify_nonce($_POST['_wpnonce'], 'update-user_' . $user_id)) {
+            return false;
+        }
+
+        if (isset($_POST['spiral_tower_reddit_username'])) {
+            $reddit_username = sanitize_text_field($_POST['spiral_tower_reddit_username']);
+
+            // Remove u/ prefix if accidentally included
+            if (strpos($reddit_username, 'u/') === 0) {
+                $reddit_username = substr($reddit_username, 2);
+            }
+            if (strpos($reddit_username, '/u/') === 0) {
+                $reddit_username = substr($reddit_username, 3);
+            }
+
+            // Validate Reddit username format
+            if (!empty($reddit_username)) {
+                if (
+                    !preg_match('/^[A-Za-z0-9_-]+$/', $reddit_username) ||
+                    strlen($reddit_username) < 3 ||
+                    strlen($reddit_username) > 20
+                ) {
+
+                    // Add an admin notice for invalid username
+                    add_action('admin_notices', function () {
+                        echo '<div class="notice notice-error"><p>' .
+                            esc_html__('Invalid Reddit username format. Please use only letters, numbers, underscores, and hyphens (3-20 characters).', 'spiral-tower') .
+                            '</p></div>';
+                    });
+                    return false;
+                }
+            }
+
+            if (!empty($reddit_username)) {
+                update_user_meta($user_id, 'spiral_tower_reddit_username', $reddit_username);
+            } else {
+                delete_user_meta($user_id, 'spiral_tower_reddit_username');
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Get user's Reddit username
+     */
+    public function get_user_reddit_username($user_id)
+    {
+        return get_user_meta($user_id, 'spiral_tower_reddit_username', true);
+    }
+
+    /**
+     * Get Reddit profile URL for a username
+     */
+    public function get_reddit_profile_url($username)
+    {
+        if (empty($username)) {
+            return '';
+        }
+        return 'https://www.reddit.com/user/' . urlencode($username);
+    }
+
+    /**
+     * Check if user has a Reddit username set
+     */
+    public function user_has_reddit_username($user_id)
+    {
+        $username = $this->get_user_reddit_username($user_id);
+        return !empty($username);
+    }
+
+    /**
+     * Get formatted Reddit username with u/ prefix
+     */
+    public function get_formatted_reddit_username($user_id, $include_link = false)
+    {
+        $username = $this->get_user_reddit_username($user_id);
+
+        if (empty($username)) {
+            return '';
+        }
+
+        $formatted = 'u/' . $username;
+
+        if ($include_link) {
+            $url = $this->get_reddit_profile_url($username);
+            return '<a href="' . esc_url($url) . '" target="_blank" rel="noopener noreferrer">' . esc_html($formatted) . '</a>';
+        }
+
+        return $formatted;
+    }
+
+    /**
      * Handle the profile template (Existing Method)
      */
     public function handle_profile_template($template)
@@ -811,7 +1049,8 @@ class Spiral_Tower_User_Profile_Manager
                 <div class="achievements-summary">
                     <h3>Achievements</h3>
                     <p><strong><?php echo $data['earned_count']; ?></strong> achievements earned •
-                        <strong><?php echo $data['total_points']; ?></strong> total points</p>
+                        <strong><?php echo $data['total_points']; ?></strong> total points
+                    </p>
                 </div>
             <?php endif; ?>
 
@@ -991,4 +1230,57 @@ class Spiral_Tower_User_Profile_Manager
         <?php
     }
 }
+
+
+/**
+ * Get user's Reddit username
+ */
+function spiral_tower_get_user_reddit_username($user_id)
+{
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->user_profile_manager)) {
+        return $spiral_tower_plugin->user_profile_manager->get_user_reddit_username($user_id);
+    }
+    return '';
+}
+
+/**
+ * Get Reddit profile URL for a user
+ */
+function spiral_tower_get_user_reddit_url($user_id)
+{
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->user_profile_manager)) {
+        $username = $spiral_tower_plugin->user_profile_manager->get_user_reddit_username($user_id);
+        if (!empty($username)) {
+            return $spiral_tower_plugin->user_profile_manager->get_reddit_profile_url($username);
+        }
+    }
+    return '';
+}
+
+/**
+ * Check if user has Reddit username
+ */
+function spiral_tower_user_has_reddit($user_id)
+{
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->user_profile_manager)) {
+        return $spiral_tower_plugin->user_profile_manager->user_has_reddit_username($user_id);
+    }
+    return false;
+}
+
+/**
+ * Get formatted Reddit username (u/username)
+ */
+function spiral_tower_get_formatted_reddit_username($user_id, $include_link = false)
+{
+    global $spiral_tower_plugin;
+    if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->user_profile_manager)) {
+        return $spiral_tower_plugin->user_profile_manager->get_formatted_reddit_username($user_id, $include_link);
+    }
+    return '';
+}
+
 ?>

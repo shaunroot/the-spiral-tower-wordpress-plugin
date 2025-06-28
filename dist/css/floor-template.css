@@ -502,6 +502,40 @@
     height: 400px;
   }
 }
+/* Portal edit icon */
+.portal-edit-icon {
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.2s ease;
+  /* Show when portal is hovered in edit mode */
+  /* Always show when portal has focus/is being manipulated */
+  /* Ensure it doesn't interfere with resize handles */
+  pointer-events: auto;
+}
+.portal-edit-mode .floor-gizmo:hover .portal-edit-icon {
+  opacity: 1;
+}
+.portal-edit-mode .floor-gizmo.selected-portal .portal-edit-icon {
+  opacity: 1;
+}
+.portal-edit-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+.portal-edit-icon:hover {
+  background-color: rgba(33, 150, 243, 0.9) !important;
+  transform: scale(1.1) !important;
+}
+
+/* Make sure the edit icon is always visible in edit mode for better UX */
+.portal-edit-mode .floor-gizmo .portal-edit-icon {
+  opacity: 0.7;
+}
+
+.portal-edit-mode .floor-gizmo:hover .portal-edit-icon {
+  opacity: 1;
+}
+
 /* * Elevator CSS Styles
  * For the Spiral Tower Elevator
  * Last Updated: 2025-04-04 
@@ -826,15 +860,6 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
   box-shadow: inset 0 0 10px rgba(182, 157, 255, 0.3) !important;
   display: inline-block;
 }
-.spiral-tower-profile-page .profile-username a {
-  font-size: 1.5rem;
-  color: #b69dff;
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-.spiral-tower-profile-page .profile-username a:hover {
-  color: #d9c9ff;
-}
 .spiral-tower-profile-page .profile-website a {
   color: #b69dff;
   text-decoration: none;
@@ -916,7 +941,10 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
   box-sizing: border-box !important;
   visibility: visible !important;
   flex: 1 !important;
-  border-right: none !important;
+}
+.spiral-tower-profile-page .tab-button .smaller {
+  font-size: 1rem;
+  margin-top: 0.5rem;
 }
 .spiral-tower-profile-page .tab-button:last-child {
   border-right: 1px solid rgba(100, 100, 120, 0.5) !important;
@@ -927,11 +955,13 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
   border-color: rgba(182, 157, 255, 0.6) !important;
 }
 .spiral-tower-profile-page .tab-button.active {
-  background: rgba(182, 157, 255, 0.2) !important;
+  background: rgba(20, 20, 40, 0.9) !important;
   color: #b69dff !important;
   border-color: #b69dff !important;
   font-weight: 600 !important;
   box-shadow: inset 0 0 10px rgba(182, 157, 255, 0.3) !important;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
 }
 .spiral-tower-profile-page .tab-button:focus {
   outline: none !important;
@@ -1155,7 +1185,8 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
   justify-content: center;
   align-items: center;
   gap: 16px;
-  margin-top: 20px;
+  margin-top: -10px;
+  margin-bottom: 20px;
 }
 .spiral-tower-profile-page .edit-profile-section .profile-button {
   display: inline-block;
@@ -1173,6 +1204,23 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
 }
 .spiral-tower-profile-page .edit-profile-section .profile-button:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+.spiral-tower-profile-page .edit-profile-section .profile-user-button {
+  font-family: "Metamorphous", serif;
+  font-size: 1rem;
+  margin: 0.5rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  text-decoration: none;
+  /* Match active tab styling */
+  background: rgba(10, 10, 10, 0.6) !important;
+  color: #b69dff !important;
+  border: 1px solid #b69dff !important;
+  border-radius: 8px;
+  padding: 1rem 2rem;
+  font-weight: 600 !important;
+  box-shadow: inset 0 0 10px rgba(182, 157, 255, 0.3) !important;
+  display: inline-block;
 }
 @media (max-width: 768px) {
   .spiral-tower-profile-page .profile-avatar {
@@ -1294,6 +1342,22 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
 }
 .spiral-tower-profile-page .floor-card:hover .edit-floor-link {
   opacity: 1 !important;
+}
+
+.inventory-iframe-container {
+  width: 100%;
+  height: 600px;
+  border: 1px solid rgba(182, 157, 255, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff !important; /* Force white background */
+}
+.inventory-iframe-container iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  display: block !important;
+  background: #fff !important; /* Force white background on iframe too */
 }
 
 /* Hide content toggle button when text-only mode is active */

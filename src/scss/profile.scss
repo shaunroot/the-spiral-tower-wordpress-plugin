@@ -78,19 +78,8 @@
     border-radius: 8px;
     padding: 1rem 2rem;
     font-weight: 600 !important;
-    box-shadow: inset 0 0 10px rgba(182, 157, 255, 0.3) !important;
+    box-shadow: inset 0 0 10px rgba(182, 157, 255, 0.3) !important;     
     display: inline-block;
-
-    a {
-      font-size: 1.5rem;
-      color: #b69dff;
-      text-decoration: none;
-      transition: color 0.3s ease;
-
-      &:hover {
-        color: #d9c9ff;
-      }
-    }
   }
 
   .profile-website a {
@@ -186,7 +175,11 @@
     box-sizing: border-box !important;
     visibility: visible !important;
     flex: 1 !important;
-    border-right: none !important;
+
+    .smaller {
+      font-size: 1rem;
+      margin-top: .5rem;
+    }
 
     &:last-child {
       border-right: 1px solid rgba(100, 100, 120, 0.5) !important;
@@ -199,11 +192,14 @@
     }
 
     &.active {
-      background: rgba(182, 157, 255, 0.2) !important;
+      // background: rgba(182, 157, 255, 0.4) !important;
+      background: rgba(20, 20, 40, 0.9) !important;
       color: #b69dff !important;
       border-color: #b69dff !important;
       font-weight: 600 !important;
       box-shadow: inset 0 0 10px rgba(182, 157, 255, 0.3) !important;
+      text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important; 
     }
 
     &:focus {
@@ -455,7 +451,8 @@
     justify-content: center;
     align-items: center;
     gap: 16px;
-    margin-top: 20px;
+    margin-top: -10px;
+    margin-bottom: 20px;
 
     .profile-button {
       display: inline-block;
@@ -474,6 +471,25 @@
       &:hover {
         background: rgba(255, 255, 255, 0.3);
       }
+    }
+
+    .profile-user-button {
+      font-family: 'Metamorphous', serif;
+      font-size: 1rem;
+      margin: 0.5rem 0;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      text-decoration: none;
+
+      /* Match active tab styling */
+      background: rgba(10, 10, 10, 0.6) !important;
+      color: #b69dff !important;
+      border: 1px solid #b69dff !important;
+      border-radius: 8px;
+      padding: 1rem 2rem;
+      font-weight: 600 !important;
+      box-shadow: inset 0 0 10px rgba(182, 157, 255, 0.3) !important;
+      display: inline-block;
     }
   }
 
@@ -625,5 +641,22 @@
     &:hover .edit-floor-link {
       opacity: 1 !important;
     }
+  }
+}
+
+.inventory-iframe-container {
+  width: 100%;
+  height: 600px;
+  border: 1px solid rgba(182, 157, 255, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff !important; /* Force white background */
+
+  iframe {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    display: block !important;
+    background: #fff !important; /* Force white background on iframe too */
   }
 }

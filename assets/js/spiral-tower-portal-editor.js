@@ -153,6 +153,98 @@
         handles.forEach(handle => handle.remove());
     }
 
+    // Helper function to get portal ID
+    function getPortalId(portal) {
+        // Try to get from data attribute
+        let id = portal.getAttribute('data-portal-id');
+        if (id) return id;
+
+        // Try to extract from ID attribute
+        if (portal.id) {
+            // If ID is in format "portal-123", extract just the numeric part
+            const matches = portal.id.match(/portal-(\d+)/);
+            if (matches && matches[1]) {
+                return matches[1];
+            }
+            return portal.id;
+        }
+
+        return null;
+    }
+
+    // Add edit icon to portal
+    function addEditIcon(portal) {
+        const editIcon = document.createElement('div');
+        editIcon.className = 'portal-edit-icon';
+
+        // Create SVG edit icon
+        editIcon.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+    `;
+
+        // Style the edit icon
+        editIcon.style.cssText = `
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 24px;
+        height: 24px;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 1001;
+        pointer-events: auto;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    `;
+
+        // Add hover effect
+        editIcon.addEventListener('mouseenter', function () {
+            this.style.backgroundColor = 'rgba(33, 150, 243, 0.9)';
+            this.style.transform = 'scale(1.1)';
+        });
+
+        editIcon.addEventListener('mouseleave', function () {
+            this.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            this.style.transform = 'scale(1)';
+        });
+
+        // Add click handler to go to WordPress edit page
+        editIcon.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const portalId = getPortalId(portal);
+            if (portalId) {
+                // Construct WordPress admin edit URL
+                const adminUrl = '/wp-admin/post.php?post=' + portalId + '&action=edit';
+                window.open(adminUrl, '_blank');
+            } else {
+                showNotification('Could not determine portal ID for editing', 'error');
+            }
+        });
+
+        // Append to portal
+        portal.appendChild(editIcon);
+    }
+
+    // Remove edit icon from portal
+    function removeEditIcon(portal) {
+        const editIcon = portal.querySelector('.portal-edit-icon');
+        if (editIcon) {
+            editIcon.remove();
+        }
+    }
+
+
     // Enable/disable edit mode
     let editModeActive = false;
     function toggleEditMode() {
@@ -191,6 +283,9 @@
 
                 // Add resize handles
                 addResizeHandles(portal);
+
+                // ADD THIS: Add edit icon
+                addEditIcon(portal);
             });
 
             showNotification('Portal edit mode enabled. Drag portals or resize with corner handles.', 'info');
@@ -228,28 +323,12 @@
 
                 // Remove resize handles
                 removeResizeHandles(portal);
+
+                // ADD THIS: Remove edit icon
+                removeEditIcon(portal);
             });
         }
-    }
-
-    // Helper function to get portal ID
-    function getPortalId(portal) {
-        // Try to get from data attribute
-        let id = portal.getAttribute('data-portal-id');
-        if (id) return id;
-
-        // Try to extract from ID attribute
-        if (portal.id) {
-            // If ID is in format "portal-123", extract just the numeric part
-            const matches = portal.id.match(/portal-(\d+)/);
-            if (matches && matches[1]) {
-                return matches[1];
-            }
-            return portal.id;
-        }
-
-        return null;
-    }
+    }    
 
     // Drag functionality
     let draggedPortal = null;
@@ -273,23 +352,23 @@
         // Get wrapper for calculations
         const wrapper = document.querySelector('.spiral-tower-floor-wrapper');
         if (!wrapper) return;
-        
+
         const wrapperRect = wrapper.getBoundingClientRect();
         const portalRect = draggedPortal.getBoundingClientRect();
         const wrapperScale = getScale(wrapper);
-        
+
         // Get current position from inline style
         startLeft = parseFloat(draggedPortal.style.left) || 50;
         startTop = parseFloat(draggedPortal.style.top) || 50;
-        
+
         // Calculate the initial click offset from the portal's center in the wrapper's coordinate system
         // This is critical for stable dragging
         const portalCenterX = portalRect.left + portalRect.width / 2;
         const portalCenterY = portalRect.top + portalRect.height / 2;
-        
+
         initialClickOffsetX = e.clientX - portalCenterX;
         initialClickOffsetY = e.clientY - portalCenterY;
-        
+
         // Store the starting mouse coordinates
         startX = e.clientX;
         startY = e.clientY;
@@ -297,7 +376,7 @@
         // Add move and end listeners
         document.addEventListener('mousemove', doDrag);
         document.addEventListener('mouseup', stopDrag);
-        
+
         // Log initial state for debugging
         // console.log('Start drag:', {
         //     startLeft,
@@ -329,12 +408,12 @@
         if (!wrapper) return;
 
         const wrapperRect = wrapper.getBoundingClientRect();
-        
+
         // Calculate where the portal center should be based on mouse position
         // Subtract the initial offset to maintain the grab point
         const portalCenterX = e.clientX - initialClickOffsetX;
         const portalCenterY = e.clientY - initialClickOffsetY;
-        
+
         // Convert to percentage relative to wrapper
         const newLeft = ((portalCenterX - wrapperRect.left) / wrapperRect.width) * 100;
         const newTop = ((portalCenterY - wrapperRect.top) / wrapperRect.height) * 100;
@@ -370,7 +449,7 @@
 
     function startResize(e, portal, position) {
         if (!editModeActive) return;
-       
+
         e.preventDefault();
         e.stopPropagation();
 
@@ -391,11 +470,11 @@
         // Store the initial portal rectangle and transform
         initialPortalRect = activePortal.getBoundingClientRect();
         initialTransform = activePortal.style.transform;
-        
+
         // Temporarily remove the transform to get true dimensions
         activePortal.style.transform = 'none';
         const unwarpedRect = activePortal.getBoundingClientRect();
-        
+
         // Restore the transform
         activePortal.style.transform = initialTransform;
 
@@ -423,11 +502,11 @@
 
         const wrapperRect = wrapper.getBoundingClientRect();
         const wrapperScale = getScale(wrapper);
-        
+
         // Calculate mouse movement delta in pixels
         const deltaX = e.clientX - startResizeX;
         const deltaY = e.clientY - startResizeY;
-        
+
         // Convert to wrapper-relative percentages
         const deltaXPercent = (deltaX / wrapperRect.width) * 100;
         const deltaYPercent = (deltaY / wrapperRect.height) * 100;
@@ -437,12 +516,12 @@
         let currentHeight = parseFloat(activePortal.style.height) || (startHeight / wrapperRect.height * 100);
         let currentLeft = parseFloat(activePortal.style.left) || 50;
         let currentTop = parseFloat(activePortal.style.top) || 50;
-        
+
         // Preserve the original transform for center alignment
         const originalTransform = 'translate(-50%, -50%)';
-        const scaleTransform = activePortal.style.transform.includes('scale') ? 
+        const scaleTransform = activePortal.style.transform.includes('scale') ?
             activePortal.style.transform.replace(/translate\([^)]+\)/, '').trim() : '';
-        
+
         // Apply resizing based on which corner is being dragged
         switch (resizePosition) {
             case 'bottom-right':
@@ -450,33 +529,33 @@
                 activePortal.style.width = `${currentWidth + deltaXPercent}%`;
                 activePortal.style.height = `${currentHeight + deltaYPercent}%`;
                 break;
-                
+
             case 'top-left':
                 // Only decrease width/height, don't change position
                 activePortal.style.width = `${currentWidth - deltaXPercent}%`;
                 activePortal.style.height = `${currentHeight - deltaYPercent}%`;
                 break;
-                
+
             case 'top-right':
                 // Change width and height only
                 activePortal.style.width = `${currentWidth + deltaXPercent}%`;
                 activePortal.style.height = `${currentHeight - deltaYPercent}%`;
                 break;
-                
+
             case 'bottom-left':
                 // Change width and height only
                 activePortal.style.width = `${currentWidth - deltaXPercent}%`;
                 activePortal.style.height = `${currentHeight + deltaYPercent}%`;
                 break;
         }
-        
+
         // Ensure transform is preserved
         if (scaleTransform) {
             activePortal.style.transform = `${originalTransform} ${scaleTransform}`;
         } else {
             activePortal.style.transform = originalTransform;
         }
-        
+
         // Update starting position for the next move
         startResizeX = e.clientX;
         startResizeY = e.clientY;

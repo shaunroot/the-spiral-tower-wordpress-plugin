@@ -1057,19 +1057,56 @@ add_filter('body_class', 'spiral_tower_add_floor_id_to_body');
 
 function spiral_tower_settings_page()
 {
+    // Handle form submission
+    if (isset($_POST['submit']) && wp_verify_nonce($_POST['spiral_tower_settings_nonce'], 'spiral_tower_settings')) {
+        // DALL-E Settings
+        update_option('spiral_tower_dalle_api_key', sanitize_text_field($_POST['spiral_tower_dalle_api_key']));
+        update_option('spiral_tower_dalle_api_endpoint', sanitize_text_field($_POST['spiral_tower_dalle_api_endpoint']));
+        
+        // Reddit Bot Settings
+        update_option('spiral_tower_reddit_username', sanitize_text_field($_POST['spiral_tower_reddit_username']));
+        update_option('spiral_tower_reddit_password', sanitize_text_field($_POST['spiral_tower_reddit_password']));
+        update_option('spiral_tower_reddit_client_id', sanitize_text_field($_POST['spiral_tower_reddit_client_id']));
+        update_option('spiral_tower_reddit_client_secret', sanitize_text_field($_POST['spiral_tower_reddit_client_secret']));
+        update_option('spiral_tower_reddit_subreddit', sanitize_text_field($_POST['spiral_tower_reddit_subreddit']));
+        update_option('spiral_tower_reddit_user_agent', sanitize_text_field($_POST['spiral_tower_reddit_user_agent']));
+        
+        // Comment Notification Settings
+        update_option('spiral_tower_enable_comment_notifications', isset($_POST['spiral_tower_enable_comment_notifications']) ? '1' : '0');
+        update_option('spiral_tower_notification_delay', absint($_POST['spiral_tower_notification_delay']));
+        update_option('spiral_tower_exclude_bot_comments', isset($_POST['spiral_tower_exclude_bot_comments']) ? '1' : '0');
+        
+        echo '<div class="notice notice-success"><p>Settings saved successfully!</p></div>';
+    }
+    
+    // Get current values
+    $dalle_api_key = get_option('spiral_tower_dalle_api_key', '');
+    $dalle_api_endpoint = get_option('spiral_tower_dalle_api_endpoint', 'https://shauntest.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01');
+    
+    $reddit_username = get_option('spiral_tower_reddit_username', '');
+    $reddit_password = get_option('spiral_tower_reddit_password', '');
+    $reddit_client_id = get_option('spiral_tower_reddit_client_id', '');
+    $reddit_client_secret = get_option('spiral_tower_reddit_client_secret', '');
+    $reddit_subreddit = get_option('spiral_tower_reddit_subreddit', 'SpiralTower');
+    $reddit_user_agent = get_option('spiral_tower_reddit_user_agent', 'SpiralTowerBot/1.0');
+    
+    $enable_notifications = get_option('spiral_tower_enable_comment_notifications', '1');
+    $notification_delay = get_option('spiral_tower_notification_delay', 5);
+    $exclude_bot_comments = get_option('spiral_tower_exclude_bot_comments', '1');
     ?>
     <div class="wrap">
         <h1>Spiral Tower Settings</h1>
-        <form method="post" action="options.php">
-            <?php settings_fields('spiral_tower_settings'); ?>
-            <?php do_settings_sections('spiral_tower_settings'); ?>
-
+        <form method="post" action="">
+            <?php wp_nonce_field('spiral_tower_settings', 'spiral_tower_settings_nonce'); ?>
+            
+            <!-- DALL-E Settings -->
+            <h2>DALL-E Image Generation</h2>
             <table class="form-table">
                 <tr valign="top">
                     <th scope="row">DALL-E API Key</th>
                     <td>
                         <input type="password" name="spiral_tower_dalle_api_key"
-                            value="<?php echo esc_attr(get_option('spiral_tower_dalle_api_key')); ?>"
+                            value="<?php echo esc_attr($dalle_api_key); ?>"
                             class="regular-text" />
                     </td>
                 </tr>
@@ -1077,15 +1114,141 @@ function spiral_tower_settings_page()
                     <th scope="row">DALL-E API Endpoint</th>
                     <td>
                         <input type="text" name="spiral_tower_dalle_api_endpoint"
-                            value="<?php echo esc_attr(get_option('spiral_tower_dalle_api_endpoint', 'https://shauntest.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01')); ?>"
+                            value="<?php echo esc_attr($dalle_api_endpoint); ?>"
                             class="regular-text" />
                         <p class="description">Azure OpenAI Service endpoint</p>
                     </td>
                 </tr>
             </table>
 
+            <!-- Reddit Bot Settings -->
+            <h2>Reddit Bot Configuration</h2>
+            <table class="form-table">
+                <tr valign="top">
+                    <th scope="row">Reddit Username</th>
+                    <td>
+                        <input type="text" name="spiral_tower_reddit_username"
+                            value="<?php echo esc_attr($reddit_username); ?>"
+                            class="regular-text" />
+                        <p class="description">Reddit bot account username</p>
+                    </td>
+                </tr>
+                <tr valign="top">
+                    <th scope="row">Reddit Password</th>
+                    <td>
+                        <input type="password" name="spiral_tower_reddit_password"
+                            value="<?php echo esc_attr($reddit_password); ?>"
+                            class="regular-text" />
+                        <p class="description">Reddit bot account password</p>
+                    </td>
+                </tr>
+                <tr valign="top">
+                    <th scope="row">Reddit Client ID</th>
+                    <td>
+                        <input type="text" name="spiral_tower_reddit_client_id"
+                            value="<?php echo esc_attr($reddit_client_id); ?>"
+                            class="regular-text" />
+                        <p class="description">Reddit app client ID</p>
+                    </td>
+                </tr>
+                <tr valign="top">
+                    <th scope="row">Reddit Client Secret</th>
+                    <td>
+                        <input type="password" name="spiral_tower_reddit_client_secret"
+                            value="<?php echo esc_attr($reddit_client_secret); ?>"
+                            class="regular-text" />
+                        <p class="description">Reddit app client secret</p>
+                    </td>
+                </tr>
+                <tr valign="top">
+                    <th scope="row">Subreddit</th>
+                    <td>
+                        <input type="text" name="spiral_tower_reddit_subreddit"
+                            value="<?php echo esc_attr($reddit_subreddit); ?>"
+                            class="regular-text" />
+                        <p class="description">Subreddit name (without r/)</p>
+                    </td>
+                </tr>
+                <tr valign="top">
+                    <th scope="row">User Agent</th>
+                    <td>
+                        <input type="text" name="spiral_tower_reddit_user_agent"
+                            value="<?php echo esc_attr($reddit_user_agent); ?>"
+                            class="regular-text" />
+                        <p class="description">User agent string for Reddit API</p>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Comment Notification Settings -->
+            <h2>Comment Notification Settings</h2>
+            <table class="form-table">
+                <tr valign="top">
+                    <th scope="row">Enable Comment Notifications</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="spiral_tower_enable_comment_notifications" 
+                                value="1" <?php checked($enable_notifications, '1'); ?> />
+                            Send Reddit PM when someone comments on a floor/room
+                        </label>
+                    </td>
+                </tr>
+                <tr valign="top">
+                    <th scope="row">Notification Delay</th>
+                    <td>
+                        <input type="number" name="spiral_tower_notification_delay"
+                            value="<?php echo esc_attr($notification_delay); ?>"
+                            min="0" max="60" class="small-text" /> minutes
+                        <p class="description">Delay before sending notification (to avoid spam)</p>
+                    </td>
+                </tr>
+                <tr valign="top">
+                    <th scope="row">Exclude Bot Comments</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="spiral_tower_exclude_bot_comments" 
+                                value="1" <?php checked($exclude_bot_comments, '1'); ?> />
+                            Don't notify when the bot itself comments
+                        </label>
+                    </td>
+                </tr>
+            </table>
+
             <?php submit_button(); ?>
         </form>
+        
+        <!-- Test Connection Section -->
+        <h2>Test Reddit Connection</h2>
+        <p>Test your Reddit bot configuration:</p>
+        <button type="button" id="test-reddit-connection" class="button">Test Connection</button>
+        <div id="reddit-test-result"></div>
+        
+        <script>
+        jQuery(document).ready(function($) {
+            $('#test-reddit-connection').click(function() {
+                var button = $(this);
+                var result = $('#reddit-test-result');
+                
+                button.prop('disabled', true).text('Testing...');
+                result.html('<p>Testing Reddit connection...</p>');
+                
+                $.post(ajaxurl, {
+                    action: 'test_reddit_connection',
+                    nonce: '<?php echo wp_create_nonce('test_reddit_connection'); ?>'
+                }, function(response) {
+                    if (response.success) {
+                        result.html('<div class="notice notice-success"><p>✅ ' + response.data.message + '</p></div>');
+                    } else {
+                        result.html('<div class="notice notice-error"><p>❌ ' + response.data.message + '</p></div>');
+                    }
+                }).fail(function() {
+                    result.html('<div class="notice notice-error"><p>❌ Connection test failed</p></div>');
+                }).always(function() {
+                    button.prop('disabled', false).text('Test Connection');
+                });
+            });
+        });
+        </script>
     </div>
     <?php
 }
@@ -1101,6 +1264,7 @@ function spiral_tower_enqueue_admin_scripts($hook)
     $load_loader_script_on_hooks = array(
         'post.php',
         'post-new.php',
+        'spiral-tower_page_spiral-tower-settings', 
         'profile.php',      // User's own profile
         'user-edit.php'     // Editing another user's profile
     );
@@ -1466,9 +1630,22 @@ function spiral_tower_add_admin_menu()
         'spiral_tower_logs_page'         // Callback function
     );
 
-    // Register settings (moved from the old function)
+    // Register ALL settings including the new Reddit ones
     register_setting('spiral_tower_settings', 'spiral_tower_dalle_api_key');
     register_setting('spiral_tower_settings', 'spiral_tower_dalle_api_endpoint');
+    
+    // Reddit Bot Settings
+    register_setting('spiral_tower_settings', 'spiral_tower_reddit_username');
+    register_setting('spiral_tower_settings', 'spiral_tower_reddit_password');
+    register_setting('spiral_tower_settings', 'spiral_tower_reddit_client_id');
+    register_setting('spiral_tower_settings', 'spiral_tower_reddit_client_secret');
+    register_setting('spiral_tower_settings', 'spiral_tower_reddit_subreddit');
+    register_setting('spiral_tower_settings', 'spiral_tower_reddit_user_agent');
+    
+    // Comment Notification Settings
+    register_setting('spiral_tower_settings', 'spiral_tower_enable_comment_notifications');
+    register_setting('spiral_tower_settings', 'spiral_tower_notification_delay');
+    register_setting('spiral_tower_settings', 'spiral_tower_exclude_bot_comments');
 }
 
 function spiral_tower_main_page()
@@ -1903,4 +2080,322 @@ add_action('wp_ajax_spiral_tower_generate_image', array($spiral_tower_plugin->im
 add_action('wp_ajax_spiral_tower_set_featured_image', array($spiral_tower_plugin->image_generator, 'set_featured_image_ajax'));
 add_action('admin_enqueue_scripts', 'spiral_tower_enqueue_admin_scripts');
 
+
+/**
+ * Reddit API Helper Class
+ */
+class Spiral_Tower_Reddit_API
+{
+    private $access_token;
+    private $client_id;
+    private $client_secret;
+    private $username;
+    private $password;
+    private $user_agent;
+    
+    public function __construct()
+    {
+        $this->client_id = get_option('spiral_tower_reddit_client_id');
+        $this->client_secret = get_option('spiral_tower_reddit_client_secret');
+        $this->username = get_option('spiral_tower_reddit_username');
+        $this->password = get_option('spiral_tower_reddit_password');
+        $this->user_agent = get_option('spiral_tower_reddit_user_agent', 'SpiralTowerBot/1.0');
+    }
+    
+    /**
+     * Authenticate with Reddit API
+     */
+    public function authenticate()
+    {
+        $response = wp_remote_post('https://www.reddit.com/api/v1/access_token', [
+            'headers' => [
+                'Authorization' => 'Basic ' . base64_encode($this->client_id . ':' . $this->client_secret),
+                'User-Agent' => $this->user_agent
+            ],
+            'body' => [
+                'grant_type' => 'password',
+                'username' => $this->username,
+                'password' => $this->password,
+                'scope' => 'privatemessages submit identity'
+            ],
+            'timeout' => 30
+        ]);
+        
+        if (is_wp_error($response)) {
+            return false;
+        }
+        
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        
+        if (isset($body['access_token'])) {
+            $this->access_token = $body['access_token'];
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Send a private message to a Reddit user
+     */
+    public function send_private_message($recipient, $subject, $message)
+    {
+        if (!$this->access_token && !$this->authenticate()) {
+            error_log('Spiral Tower: Failed to authenticate with Reddit API');
+            return false;
+        }
+        
+        $response = wp_remote_post('https://oauth.reddit.com/api/compose', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $this->access_token,
+                'User-Agent' => $this->user_agent
+            ],
+            'body' => [
+                'api_type' => 'json',
+                'to' => $recipient,
+                'subject' => $subject,
+                'text' => $message
+            ],
+            'timeout' => 30
+        ]);
+        
+        if (is_wp_error($response)) {
+            error_log('Spiral Tower: Reddit PM request failed: ' . $response->get_error_message());
+            return false;
+        }
+        
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        
+        if ($status_code === 200) {
+            $json_response = json_decode($body, true);
+            
+            // Check for API errors
+            if (isset($json_response['json']['errors']) && !empty($json_response['json']['errors'])) {
+                error_log('Spiral Tower: Reddit API errors: ' . print_r($json_response['json']['errors'], true));
+                return false;
+            }
+            
+            return true;
+        }
+        
+        error_log('Spiral Tower: Reddit PM failed with status ' . $status_code . ': ' . $body);
+        return false;
+    }
+    
+    /**
+     * Test the Reddit connection
+     */
+    public function test_connection()
+    {
+        if ($this->authenticate()) {
+            return [
+                'success' => true,
+                'message' => 'Successfully connected to Reddit API'
+            ];
+        } else {
+            return [
+                'success' => false,
+                'message' => 'Failed to authenticate with Reddit API. Please check your credentials.'
+            ];
+        }
+    }
+}
+
+/**
+ * Comment notification system
+ */
+class Spiral_Tower_Comment_Notifications
+{
+    private $reddit_api;
+    
+    public function __construct()
+    {
+        $this->reddit_api = new Spiral_Tower_Reddit_API();
+        
+        // Hook into comment posting
+        add_action('comment_post', array($this, 'schedule_comment_notification'), 10, 3);
+        add_action('wp_set_comment_status', array($this, 'handle_comment_status_change'), 10, 2);
+        
+        // Register the scheduled event
+        add_action('spiral_tower_send_comment_notification', array($this, 'send_comment_notification'));
+    }
+    
+    /**
+     * Schedule a comment notification when a comment is posted
+     */
+    public function schedule_comment_notification($comment_id, $comment_approved, $commentdata)
+    {
+        // Only proceed if notifications are enabled
+        if (get_option('spiral_tower_enable_comment_notifications') !== '1') {
+            return;
+        }
+        
+        // Only notify for approved comments
+        if ($comment_approved !== 1) {
+            return;
+        }
+        
+        $comment = get_comment($comment_id);
+        if (!$comment) {
+            return;
+        }
+        
+        // Check if this is on a floor or room post
+        $post = get_post($comment->comment_post_ID);
+        if (!$post || !in_array($post->post_type, ['floor', 'room'])) {
+            return;
+        }
+        
+        // Don't notify if commenter is the post author
+        if ($comment->user_id == $post->post_author) {
+            return;
+        }
+        
+        // Don't notify for bot comments if setting is enabled
+        if (get_option('spiral_tower_exclude_bot_comments') === '1') {
+            $bot_username = get_option('spiral_tower_reddit_username');
+            if (!empty($bot_username) && 
+                (stripos($comment->comment_author, $bot_username) !== false ||
+                 stripos($comment->comment_content, '/create room') !== false)) {
+                return;
+            }
+        }
+        
+        // Schedule the notification
+        $delay = get_option('spiral_tower_notification_delay', 5) * 60; // Convert minutes to seconds
+        wp_schedule_single_event(time() + $delay, 'spiral_tower_send_comment_notification', array($comment_id));
+        
+        error_log("Spiral Tower: Scheduled comment notification for comment $comment_id with {$delay}s delay");
+    }
+    
+    /**
+     * Handle comment status changes (when comments are approved)
+     */
+    public function handle_comment_status_change($comment_id, $status)
+    {
+        if ($status === 'approve') {
+            $comment = get_comment($comment_id);
+            if ($comment) {
+                // Treat this like a new comment
+                $this->schedule_comment_notification($comment_id, 1, array());
+            }
+        }
+    }
+    
+    /**
+     * Send the actual comment notification
+     */
+    public function send_comment_notification($comment_id)
+    {
+        $comment = get_comment($comment_id);
+        if (!$comment) {
+            error_log("Spiral Tower: Comment $comment_id not found for notification");
+            return;
+        }
+        
+        $post = get_post($comment->comment_post_ID);
+        if (!$post) {
+            error_log("Spiral Tower: Post {$comment->comment_post_ID} not found for comment notification");
+            return;
+        }
+        
+        // Get the post author's Reddit username
+        $post_author_reddit = get_user_meta($post->post_author, 'spiral_tower_reddit_username', true);
+        if (empty($post_author_reddit)) {
+            error_log("Spiral Tower: No Reddit username found for post author {$post->post_author}");
+            return;
+        }
+        
+        // Prepare the notification message
+        $post_type_name = ($post->post_type === 'floor') ? 'floor' : 'room';
+        $post_url = get_permalink($post->ID);
+        $commenter_name = !empty($comment->comment_author) ? $comment->comment_author : 'Someone';
+        
+        $subject = "New comment on your {$post_type_name}: {$post->post_title}";
+        
+        $message = "Hello!\n\n";
+        $message .= "{$commenter_name} just signed your guestbook on your {$post_type_name} \"{$post->post_title}\":\n\n";
+        $message .= "\"" . wp_trim_words(strip_tags($comment->comment_content), 50) . "\"\n\n";
+        $message .= "View the full guestbook and reply here:\n";
+        $message .= $post_url . "\n\n";
+        $message .= "---\n";
+        $message .= "This is an automated notification from The Spiral Tower.\n";
+        $message .= "You can disable these notifications in your account settings.";
+        
+        // Send the notification
+        $success = $this->reddit_api->send_private_message($post_author_reddit, $subject, $message);
+        
+        if ($success) {
+            error_log("Spiral Tower: Successfully sent comment notification to u/{$post_author_reddit}");
+            
+            // Log the notification in post meta
+            add_post_meta($comment->comment_post_ID, '_spiral_tower_notification_sent', array(
+                'comment_id' => $comment_id,
+                'recipient' => $post_author_reddit,
+                'timestamp' => time()
+            ));
+        } else {
+            error_log("Spiral Tower: Failed to send comment notification to u/{$post_author_reddit}");
+        }
+    }
+}
+
+/**
+ * AJAX handler for testing Reddit connection
+ */
+function spiral_tower_test_reddit_connection()
+{
+    check_ajax_referer('test_reddit_connection', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Permission denied'));
+        return;
+    }
+    
+    $reddit_api = new Spiral_Tower_Reddit_API();
+    $result = $reddit_api->test_connection();
+    
+    if ($result['success']) {
+        wp_send_json_success($result);
+    } else {
+        wp_send_json_error($result);
+    }
+}
+add_action('wp_ajax_test_reddit_connection', 'spiral_tower_test_reddit_connection');
+
+/**
+ * Initialize the comment notification system
+ */
+function spiral_tower_init_comment_notifications()
+{
+    new Spiral_Tower_Comment_Notifications();
+}
+add_action('init', 'spiral_tower_init_comment_notifications');
+
+/**
+ * Admin notice if Reddit settings are not configured
+ */
+function spiral_tower_reddit_config_notice()
+{
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+    
+    $reddit_username = get_option('spiral_tower_reddit_username');
+    $reddit_client_id = get_option('spiral_tower_reddit_client_id');
+    $notifications_enabled = get_option('spiral_tower_enable_comment_notifications');
+    
+    if ($notifications_enabled === '1' && (empty($reddit_username) || empty($reddit_client_id))) {
+        ?>
+        <div class="notice notice-warning">
+            <p>
+                <strong>Spiral Tower:</strong> Comment notifications are enabled but Reddit bot settings are not configured. 
+                <a href="<?php echo admin_url('admin.php?page=spiral-tower-settings'); ?>">Configure Reddit settings</a>
+            </p>
+        </div>
+        <?php
+    }
+}
+add_action('admin_notices', 'spiral_tower_reddit_config_notice');
 

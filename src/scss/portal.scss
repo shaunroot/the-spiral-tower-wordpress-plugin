@@ -612,3 +612,42 @@
     height: 400px;
   }
 }
+
+/* Portal edit icon */
+.portal-edit-icon {
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.2s ease;
+    
+    /* Show when portal is hovered in edit mode */
+    .portal-edit-mode .floor-gizmo:hover & {
+        opacity: 1;
+    }
+    
+    /* Always show when portal has focus/is being manipulated */
+    .portal-edit-mode .floor-gizmo.selected-portal & {
+        opacity: 1;
+    }
+    
+    /* Ensure it doesn't interfere with resize handles */
+    pointer-events: auto;
+    
+    svg {
+        display: block;
+        width: 16px;
+        height: 16px;
+    }
+    
+    &:hover {
+        background-color: rgba(33, 150, 243, 0.9) !important;
+        transform: scale(1.1) !important;
+    }
+}
+
+/* Make sure the edit icon is always visible in edit mode for better UX */
+.portal-edit-mode .floor-gizmo .portal-edit-icon {
+    opacity: 0.7;
+}
+
+.portal-edit-mode .floor-gizmo:hover .portal-edit-icon {
+    opacity: 1;
+}

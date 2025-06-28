@@ -857,6 +857,59 @@ class Spiral_Tower_Floor_Manager
     }
 
     /**
+     * Exclude hidden floors from REST API queries.
+     * This prevents hidden floors from being discoverable via API calls.
+     * 
+     * @param array $query_args WP_Query arguments for the REST request
+     * @param WP_REST_Request $request The REST API request object
+     * @return array Modified query arguments
+     */
+    public function exclude_hidden_floors_from_rest($query_args, $request)
+    {
+        // Don't apply filtering when getting a specific floor by ID
+        // This allows direct access if someone knows the exact ID
+        if (isset($request['id']) && !empty($request['id'])) {
+            return $query_args;
+        }
+
+        // Don't apply filtering for admin users who should see everything
+        if (current_user_can('administrator')) {
+            return $query_args;
+        }
+
+        // Initialize meta_query if it doesn't exist
+        if (!isset($query_args['meta_query'])) {
+            $query_args['meta_query'] = array();
+        }
+
+        // Ensure we have an array
+        if (!is_array($query_args['meta_query'])) {
+            $query_args['meta_query'] = array();
+        }
+
+        // Add condition to exclude hidden floors
+        $query_args['meta_query'][] = array(
+            'relation' => 'OR',
+            array(
+                'key' => '_floor_hidden',
+                'value' => '1',
+                'compare' => '!='
+            ),
+            array(
+                'key' => '_floor_hidden',
+                'compare' => 'NOT EXISTS'
+            )
+        );
+
+        // If we have multiple meta_query conditions, ensure proper relation
+        if (count($query_args['meta_query']) > 1 && !isset($query_args['meta_query']['relation'])) {
+            $query_args['meta_query']['relation'] = 'AND';
+        }
+
+        return $query_args;
+    }
+
+    /**
      * Register REST API endpoint for checking floor numbers
      */
     public function register_floor_check_endpoint()
