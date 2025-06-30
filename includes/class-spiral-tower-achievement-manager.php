@@ -596,12 +596,11 @@ class Spiral_Tower_Achievement_Manager
         // Check exploration achievements
         $this->check_exploration_achievements($user_id);
 
-        // Check visit achievements after page load (when visit is logged)
-        add_action('shutdown', function () use ($user_id) {
-            $this->check_visit_achievements($user_id);
-        }, 1000);
+        // Check visit achievements NOW instead of during shutdown
+        // Remove the shutdown hook and do it immediately:
+        $this->check_visit_achievements($user_id);
     }
-
+    
     /**
      * Check for room achievement when user visits a room
      */
