@@ -3191,9 +3191,9 @@ function tryDisplayDebugLog() {
     }
 }
 
-// Start trying immediately
-console.log('Starting debug log check...');
-tryDisplayDebugLog();
+// // Start trying immediately
+// console.log('Starting debug log check...');
+// tryDisplayDebugLog();
 
 // Also try on DOMContentLoaded as backup
 document.addEventListener('DOMContentLoaded', () => {

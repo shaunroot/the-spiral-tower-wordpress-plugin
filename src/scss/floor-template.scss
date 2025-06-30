@@ -11,6 +11,19 @@
 @use 'achievements';
 @use 'about';
 
+// KILL the reduced motion override completely
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: unset !important;
+        transition-duration: unset !important;
+    }
+}
+
+// Also kill it without the media query in case it's applied globally
+* {
+    animation-duration: unset !important;
+    transition-duration: unset !important;
+}
 
 :root {
   /* Default colors (fallbacks) - Keep these */

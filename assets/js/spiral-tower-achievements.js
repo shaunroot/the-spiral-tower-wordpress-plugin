@@ -1,10 +1,8 @@
 /**
- * Spiral Tower - Achievement Notification Module
- * Handles displaying achievement notifications when users earn achievements
+ * Spiral Tower - Achievement Test (BASIC CENTER TEST)
  * spiral-tower-achievements.js
  */
 
-// Ensure the global namespace and logger exist
 window.SpiralTower = window.SpiralTower || {};
 window.SpiralTower.logger = window.SpiralTower.logger || {
     log: function(module, ...args) { console.log(`[SpiralTower/${module}]`, ...args); },
@@ -16,219 +14,170 @@ SpiralTower.achievements = (function () {
     const MODULE_NAME = 'achievements';
     const logger = SpiralTower.logger;
 
-    // --- Private Variables ---
     let achievementQueue = [];
     let isShowingAchievement = false;
-    let notificationContainer = null;
-    let notification = null;
-    let titleEl = null;
-    let descriptionEl = null;
-    let pointsEl = null;
-    let imgEl = null;
+    let miniAchievements = []; // Track the mini achievements on the left
 
-    // --- Private Functions ---
-
-    /**
-     * Create the achievement notification HTML structure
-     */
-    function createNotificationHTML() {
-        const html = `
-            <div id="achievement-notification-container" class="achievement-notification-container">
-                <div id="achievement-notification" class="achievement-notification">
-                    <div class="achievement-content">
-                        <div class="achievement-image">
-                            <img id="achievement-img" src="" alt="" />
-                        </div>
-                        <div class="achievement-text">
-                            <div class="achievement-title" id="achievement-title"></div>
-                            <div class="achievement-description" id="achievement-description"></div>
-                            <div class="achievement-points" id="achievement-points"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Insert the HTML into the page
-        document.body.insertAdjacentHTML('beforeend', html);
-        
-        // Cache DOM elements
-        notificationContainer = document.getElementById('achievement-notification-container');
-        notification = document.getElementById('achievement-notification');
-        titleEl = document.getElementById('achievement-title');
-        descriptionEl = document.getElementById('achievement-description');
-        pointsEl = document.getElementById('achievement-points');
-        imgEl = document.getElementById('achievement-img');
-        
-        logger.log(MODULE_NAME, "Achievement notification HTML structure created");
-    }
-
-    /**
-     * Load achievement data from PHP and populate the queue
-     */
     function loadAchievementData() {
-        // Get achievement data passed from PHP
         const achievementData = window.spiralTowerAchievements || null;
-
         if (achievementData && achievementData.achievements && achievementData.achievements.length > 0) {
-            logger.log(MODULE_NAME, "Found achievements from PHP:", achievementData.achievements);
-            // Add achievements to queue 
             achievementQueue = [...achievementData.achievements];
             return true;
-        } else {
-            logger.log(MODULE_NAME, "No achievement data found from PHP");
-            return false;
         }
+        return false;
     }
 
-    /**
-     * Show the next achievement in the queue
-     */
-    function showNextAchievement() {
-        if (isShowingAchievement || achievementQueue.length === 0) {
-            logger.log(MODULE_NAME, "Skipping showNextAchievement - isShowing:", isShowingAchievement, "queueLength:", achievementQueue.length);
-            return;
-        }
+    function testCenterAlignment(achievement) {
+        // Create notification - starts at bottom
+        const notification = document.createElement('img');
+        notification.src = '/wp-content/plugins/the-spiral-tower/assets/images/achievements/notification.png';
+        notification.style.cssText = `
+            position: fixed;
+            left: 50%;
+            top: 150vh;
+            transform: translateX(-50%) translateY(-50%) scale(0.4);
+            z-index: 10001;
+            transition: top 0.6s linear, opacity 2s ease-out;
+            filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.9));
+        `;
 
-        isShowingAchievement = true;
-        const achievement = achievementQueue.shift();
-        logger.log(MODULE_NAME, "Showing achievement:", achievement);
+        // Create icon - starts at top
+        const icon = document.createElement('img');
+        icon.src = achievement.image;
+        icon.style.cssText = `
+            position: fixed;
+            left: 50%;
+            top: -50vh;
+            transform: translateX(-50%) translateY(-50%) scale(0.27);
+            z-index: 10002;
+            transition: top 0.6s linear;
+            filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.9));
+        `;
 
-        // Validate DOM elements exist
-        if (!notification || !titleEl || !descriptionEl || !pointsEl || !imgEl) {
-            logger.error(MODULE_NAME, "Achievement notification elements not found");
-            isShowingAchievement = false;
-            return;
-        }
+        document.body.appendChild(notification);
+        document.body.appendChild(icon);
 
-        // Set achievement data
-        titleEl.textContent = achievement.title;
-        descriptionEl.textContent = achievement.description;
-        pointsEl.textContent = achievement.points;
-        imgEl.src = achievement.image;
-        imgEl.alt = achievement.title;
-
-        logger.log(MODULE_NAME, "Set notification content:", {
-            title: achievement.title,
-            description: achievement.description,
-            points: achievement.points,
-            image: achievement.image
-        });
-
-        // Handle image load error
-        imgEl.onerror = function() {
-            this.style.display = 'none';
-            logger.warn(MODULE_NAME, "Achievement image not found:", achievement.image);
-        };
-
-        // Show notification
-        notification.classList.add('show');
-        logger.log(MODULE_NAME, "Added show class to notification");
-
-        // Add pulse effect after slide-in
+        // Move them past each other first
         setTimeout(() => {
-            notification.classList.add('pulse');
-        }, 600);
-
-        // Remove pulse effect
-        setTimeout(() => {
-            notification.classList.remove('pulse');
-        }, 1200);
-
-        // Hide notification after 4 seconds
-        setTimeout(() => {
-            notification.classList.remove('show');
+            notification.style.top = '40vh';  // notification goes past center
+            icon.style.top = '70vh';          // icon goes past center
             
-            // Reset for next achievement after slide-out completes
+            console.log("Images moving past each other");
+            
+            // Then bounce back to final center positions  
+            setTimeout(() => {
+                notification.style.transition = 'top 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+                icon.style.transition = 'top 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+                
+                notification.style.top = '53vh';
+                icon.style.top = '55vh';
+                
+                console.log("Images bouncing back to center");
+            }, 600);
+            
+        }, 100);
+        
+        // Stay in center for 4 seconds, then fade/move
+        setTimeout(() => {
+            console.log("Starting fade and move...");
+            
+            // Add transform transition to notification for smooth scaling
+            notification.style.transition = 'all 2s ease-out';
+            notification.style.zIndex = '998'; // Put notification below the icon
+            
+            // Fade out, scale down, and drop the notification
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(-50%) translateY(-50%) scale(0.1)';
+            notification.style.top = '120vh'; // Fall down past bottom of screen
+            
+            // Remove the old icon and create a new div that starts at center
+            const iconRect = icon.getBoundingClientRect();
+            icon.remove();
+            
+            const newIcon = document.createElement('div');
+            newIcon.style.cssText = `
+                position: fixed !important;
+                left: ${iconRect.left}px !important;
+                top: ${iconRect.top}px !important;
+                width: ${iconRect.width}px !important;
+                height: ${iconRect.height}px !important;
+                background-image: url(${achievement.image}) !important;
+                background-size: contain !important;
+                background-repeat: no-repeat !important;
+                background-position: center !important;
+                z-index: 10003 !important;
+                filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.9)) !important;
+                transition: all 1s ease-out !important;
+                cursor: pointer !important;
+            `;
+            
+            // Add hover tooltip for achievement description
+            newIcon.title = achievement.description || achievement.name || 'Achievement Unlocked';
+            
+            // Add hover effect
+            newIcon.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.1)';
+                this.style.filter = 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.9)) brightness(1.2)';
+            });
+            
+            newIcon.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+                this.style.filter = 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.9))';
+            });
+            
+            document.body.appendChild(newIcon);
+            
+            // Calculate position in the column
+            const columnPosition = 110 + (miniAchievements.length * 130); // Increased spacing from 90 to 130
+            
+            // Then animate it to final position in the column (2x faster - 1s instead of 2s)
+            setTimeout(() => {
+                newIcon.style.left = '10px';
+                newIcon.style.top = `${columnPosition}px`;
+                newIcon.style.width = '120px';  // 50% larger than 80px
+                newIcon.style.height = '120px'; // 50% larger than 80px
+            }, 50);
+            
+            // Add to miniAchievements array
+            miniAchievements.push(newIcon);
+            
+            console.log("Icon moved to column position", columnPosition);
+            
+            // Ready for next achievement
             setTimeout(() => {
                 isShowingAchievement = false;
-                showNextAchievement(); // Show next achievement if any
-            }, 500);
-        }, 4000);
+                showNextAchievement();
+            }, 1000);
+            
+        }, 6100); // 100ms + 600ms + 400ms + 5000ms (5 second center display)
     }
 
-    /**
-     * Start the achievement notification process
-     */
-    function startNotifications() {
-        // Start showing achievements after a brief delay
-        setTimeout(() => {
-            showNextAchievement();
-        }, 1000);
+    function showNextAchievement() {
+        if (isShowingAchievement || achievementQueue.length === 0) {
+            return;
+        }
+        isShowingAchievement = true;
+        const achievement = achievementQueue.shift();
+        testCenterAlignment(achievement);
     }
 
-    // --- Public API ---
-
-    /**
-     * Initialize the achievement notification system
-     */
     async function init() {
-        logger.log(MODULE_NAME, "Initializing achievement notification system...");
-        logger.log(MODULE_NAME, "Current page URL:", window.location.href);
-        logger.log(MODULE_NAME, "Floor container exists:", !!document.querySelector('.spiral-tower-floor-container'));
-        logger.log(MODULE_NAME, "spiralTowerAchievements data:", window.spiralTowerAchievements);
-
-        // Only initialize on floor/room pages where achievements can be awarded
         if (!document.querySelector('.spiral-tower-floor-container')) {
-            logger.log(MODULE_NAME, "Not on a floor/room page, skipping achievement notifications");
             return;
         }
 
-        // Create the notification HTML structure
-        createNotificationHTML();
-
-        // Load achievement data from PHP
         const hasAchievements = loadAchievementData();
-
         if (hasAchievements) {
-            logger.log(MODULE_NAME, `Found ${achievementQueue.length} achievements to display`);
-            startNotifications();
-        } else {
-            logger.log(MODULE_NAME, "No achievements to display");
-        }
-
-        logger.log(MODULE_NAME, "Achievement notification system initialized");
-    }
-
-    /**
-     * Manually add an achievement to the queue (for testing or dynamic awards)
-     */
-    function addAchievement(achievement) {
-        if (!achievement || !achievement.title || !achievement.description) {
-            logger.error(MODULE_NAME, "Invalid achievement data provided to addAchievement");
-            return;
-        }
-
-        logger.log(MODULE_NAME, "Adding achievement to queue:", achievement);
-        achievementQueue.push(achievement);
-
-        // If not currently showing an achievement, start the process
-        if (!isShowingAchievement) {
-            showNextAchievement();
+            setTimeout(showNextAchievement, 1000);
         }
     }
 
-    /**
-     * Get the current queue length (for debugging)
-     */
-    function getQueueLength() {
-        return achievementQueue.length;
-    }
-
-    /**
-     * Clear the achievement queue (for testing)
-     */
-    function clearQueue() {
-        logger.log(MODULE_NAME, "Clearing achievement queue");
-        achievementQueue = [];
-    }
-
-    // Return the public API
     return {
         init: init,
-        addAchievement: addAchievement,
-        getQueueLength: getQueueLength,
-        clearQueue: clearQueue
+        addAchievement: function() {},
+        getQueueLength: () => achievementQueue.length,
+        clearQueue: () => { achievementQueue = []; },
+        clearMiniAchievements: function() {}
     };
 
-})(); // End of Achievement Module IIFE
+})();
