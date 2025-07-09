@@ -1077,9 +1077,11 @@ body.stairs-fullscreen .stairs-nav-arrow svg {
   }
 }
 .spiral-tower-profile-page .achievement-description {
-  color: #a0a0a0;
   line-height: 1.3;
   font-size: 11px;
+  font-family: "Metamorphous", serif;
+  color: #b69dff;
+  margin: -8px 0 8px 0;
 }
 @media (min-width: 768px) {
   .spiral-tower-profile-page .achievement-description {
@@ -1980,8 +1982,8 @@ img {
 }
 @media (prefers-reduced-motion: reduce) {
   * {
-    animation-duration: unset !important;
-    transition-duration: unset !important;
+    animation-duration: initial !important;
+    transition-duration: initial !important;
   }
 }
 * {
@@ -1989,6 +1991,23 @@ img {
   transition-duration: unset !important;
 }
 
+/* Force override WordPress theme's reduced motion setting */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: unset !important;
+    transition-duration: unset !important;
+    animation-play-state: running !important;
+  }
+}
+/* Completely disable reduced motion media query */
+@media (prefers-reduced-motion: no-preference), (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: unset !important;
+    transition-duration: unset !important;
+  }
+}
 :root {
   /* Default colors (fallbacks) - Keep these */
   --background-color: #000;
@@ -2355,14 +2374,16 @@ body .container {
 .spiral-tower-floor-container.content-visible {
   opacity: 1;
   visibility: visible !important;
-  pointer-events: auto !important; /* Higher specificity */
+  pointer-events: auto !important;
+  /* Higher specificity */
 }
 
 /* IMPORTANT: When content is hidden, block all pointer events */
 .spiral-tower-floor-container.content-hidden {
   opacity: 0 !important;
   visibility: hidden !important;
-  pointer-events: none !important; /* Higher specificity to override inline styles */
+  pointer-events: none !important;
+  /* Higher specificity to override inline styles */
 }
 
 /* Also block pointer events on the content itself when hidden */
@@ -2388,7 +2409,8 @@ body .container {
   cursor: pointer !important;
   will-change: transform, opacity;
   transform: translateX(0);
-  pointer-events: auto; /* Title should always be clickable when visible */
+  pointer-events: auto;
+  /* Title should always be clickable when visible */
 }
 .spiral-tower-floor-title h1 {
   margin: 0 !important;
@@ -2443,19 +2465,29 @@ body.text-only-mode .spiral-tower-floor-container {
   position: relative !important;
   /* CRITICAL: Set explicit height constraint for scrolling */
   height: 100%;
-  max-height: calc(80vh - 160px); /* Account for padding and title */
+  max-height: calc(80vh - 160px);
+  /* Account for padding and title */
   /* Scrolling - start with auto (normal behavior) */
   overflow-y: auto;
   /* Content styling */
   /* Scrollbar styling */
 }
-.spiral-tower-floor-content p, .spiral-tower-floor-content ul, .spiral-tower-floor-content ol, .spiral-tower-floor-content li, .spiral-tower-floor-content blockquote {
+.spiral-tower-floor-content p,
+.spiral-tower-floor-content ul,
+.spiral-tower-floor-content ol,
+.spiral-tower-floor-content li,
+.spiral-tower-floor-content blockquote {
   color: var(--content-text-color, #e6e6e6) !important;
   font-size: 1.8rem;
   line-height: 1.6;
   margin-bottom: 1em;
 }
-.spiral-tower-floor-content h1, .spiral-tower-floor-content h2, .spiral-tower-floor-content h3, .spiral-tower-floor-content h4, .spiral-tower-floor-content h5, .spiral-tower-floor-content h6 {
+.spiral-tower-floor-content h1,
+.spiral-tower-floor-content h2,
+.spiral-tower-floor-content h3,
+.spiral-tower-floor-content h4,
+.spiral-tower-floor-content h5,
+.spiral-tower-floor-content h6 {
   color: var(--title-text-color, #fff) !important;
   font-family: var(--title-font) !important;
   margin: 1.5em 0 0.5em;

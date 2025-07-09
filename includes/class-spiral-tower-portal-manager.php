@@ -974,21 +974,21 @@ class Spiral_Tower_Portal_Manager
 
                 <div class="portal-settings-field">
                     <label for="position_x">Position X (%):</label>
-                    <input type="number" step="0.0001" id="position_x" name="position_x" value="<?php echo esc_attr($position_x); ?>" min="0"
+                    <input type="number" step="0.00001" id="position_x" name="position_x" value="<?php echo esc_attr($position_x); ?>" min="0"
                         max="100">
                     <span class="description">Horizontal position (0 = left, 100 = right)</span>
                 </div>
 
                 <div class="portal-settings-field">
                     <label for="position_y">Position Y (%):</label>
-                    <input type="number" step="0.0001" id="position_y" name="position_y" value="<?php echo esc_attr($position_y); ?>" min="0"
+                    <input type="number" step="0.00001" id="position_y" name="position_y" value="<?php echo esc_attr($position_y); ?>" min="0"
                         max="100">
                     <span class="description">Vertical position (0 = top, 100 = bottom)</span>
                 </div>
 
                 <div class="portal-settings-field">
                     <label for="scale">Scale (%):</label>
-                    <input type="number" step="0.0001" id="scale" name="scale" value="<?php echo esc_attr($scale); ?>" min="10" max="500">
+                    <input type="number" step="0.00001" id="scale" name="scale" value="<?php echo esc_attr($scale); ?>" min="10" max="500">
                     <span class="description">Size of the portal (100 = normal size)</span>
                 </div>
 
@@ -1003,12 +1003,12 @@ class Spiral_Tower_Portal_Manager
                 <div id="custom_size_fields" style="<?php echo $use_custom_size ? 'display:block;' : 'display:none;'; ?>">
                     <div class="portal-settings-field">
                         <label for="portal_width">Width (%):</label><br>
-                        <input type="number"  step="0.0001" id="portal_width" name="portal_width" value="<?php echo esc_attr($width); ?>"
+                        <input type="number"  step="0.00001" id="portal_width" name="portal_width" value="<?php echo esc_attr($width); ?>"
                             min="1" max="100" />
                     </div>
                     <div class="portal-settings-field">
                         <label for="portal_height">Height (%):</label><br>
-                        <input type="number"  step="0.0001" id="portal_height" name="portal_height" value="<?php echo esc_attr($height); ?>"
+                        <input type="number"  step="0.00001" id="portal_height" name="portal_height" value="<?php echo esc_attr($height); ?>"
                             min="1" max="100" />
                     </div>
                 </div>

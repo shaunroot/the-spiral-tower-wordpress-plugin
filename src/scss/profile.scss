@@ -332,9 +332,11 @@
   }
 
   .achievement-description {
-    color: #a0a0a0;
     line-height: 1.3;
     font-size: 11px;
+    font-family: 'Metamorphous', serif;
+    color: #b69dff;
+    margin: -8px 0 8px 0;
 
     @media (min-width: 768px) {
       font-size: 12px;

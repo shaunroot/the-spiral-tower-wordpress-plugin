@@ -840,10 +840,55 @@ class Spiral_Tower_User_Profile_Manager
             if (!is_object($post_item) || !isset($post_item->ID) || !isset($post_item->post_title)) {
                 continue;
             }
+
             $post_permalink = get_permalink($post_item->ID);
             $post_edit_link = get_edit_post_link($post_item->ID);
 
+            // Get floor/parent floor information for display
+            $location_prefix = '';
+            if ($post_type === 'floor') {
+                $floor_number = get_post_meta($post_item->ID, '_floor_number', true);
+                $floor_number_alt_text = get_post_meta($post_item->ID, '_floor_number_alt_text', true);
+
+                if (!empty($floor_number_alt_text)) {
+                    // Use alternate text if available
+                    $location_prefix = '[' . esc_html($floor_number_alt_text) . '] ';
+                } elseif (!empty($floor_number) && is_numeric($floor_number)) {
+                    // Use floor number if available
+                    $location_prefix = '[Floor ' . esc_html($floor_number) . '] ';
+                } else {
+                    // No floor number available
+                    $location_prefix = '[No Floor #] ';
+                }
+            } elseif ($post_type === 'room') {
+                // For rooms, show the parent floor information
+                $room_floor_id = get_post_meta($post_item->ID, '_room_floor_id', true);
+                if ($room_floor_id) {
+                    $parent_floor = get_post($room_floor_id);
+                    if ($parent_floor) {
+                        $floor_number = get_post_meta($room_floor_id, '_floor_number', true);
+                        $floor_number_alt_text = get_post_meta($room_floor_id, '_floor_number_alt_text', true);
+
+                        if (!empty($floor_number_alt_text)) {
+                            $location_prefix = '[' . esc_html($floor_number_alt_text) . ' Room] ';
+                        } elseif (!empty($floor_number) && is_numeric($floor_number)) {
+                            $location_prefix = '[Floor ' . esc_html($floor_number) . ' Room] ';
+                        } else {
+                            $location_prefix = '[' . esc_html($parent_floor->post_title) . ' Room] ';
+                        }
+                    } else {
+                        $location_prefix = '[Orphaned Room] ';
+                    }
+                } else {
+                    $location_prefix = '[No Parent Floor] ';
+                }
+            }
+
             $html_list .= '<li>';
+
+            // Add location prefix before the title
+            $html_list .= $location_prefix;
+
             if ($post_permalink) {
                 $html_list .= '<a href="' . esc_url($post_permalink) . '" target="_blank">' . esc_html($post_item->post_title) . '</a>';
             } else {

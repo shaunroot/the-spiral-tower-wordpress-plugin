@@ -235,6 +235,9 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
                                             <img src="<?php echo esc_url($achievement['image']); ?>"
                                                 data-description="<?php echo esc_html($achievement['description']); ?>" />
                                         </div>
+                                        <?php if ($is_own_profile): ?>
+                                            <div class="achievement-description"><?php echo esc_html($achievement['description']) ?></div>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endif;
                             endforeach; ?>

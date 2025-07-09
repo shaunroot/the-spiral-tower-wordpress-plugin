@@ -105,7 +105,7 @@ GameManager.prototype.actuate = function () {
   });
 
   // Handle redirect on win condition, but only for a fresh win
-  if (this.won && this.freshWin && !this.keepPlaying) {
+  if (this.won && this.freshWin) {
     // Redirect to champion page when won in the current session
     setTimeout(function() {
       window.location.href = "/floor/111025/auto-generated-image-111025/room/2048-champion/";
