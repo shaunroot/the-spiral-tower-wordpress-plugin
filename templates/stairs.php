@@ -128,83 +128,96 @@ wp_reset_postdata();
     </button>
 
     <script>
-        // Function to center floor 0 on page load
-        function centerFloor0() {
-            console.log('centering floor...');
+        // Function to get query string parameter
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
 
-            const floor0Element = document.getElementById('floor-0');
-            if (floor0Element) {
-                const elementRect = floor0Element.getBoundingClientRect();
-                const elementTop = elementRect.top + window.pageYOffset;
-                const elementHeight = elementRect.height;
-                const viewportHeight = window.innerHeight;
+        // Function to center specified floor
+        function centerFloor(floorNumber) {
+            const floorElement = document.getElementById('floor-' + floorNumber);
+            if (floorElement) {
+                floorElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                return true;
+            } else if (floorNumber !== '0') {
+                // Fallback to floor 0 if requested floor doesn't exist
+                return centerFloor('0');
+            }
+            return false;
+        }
 
-                // Calculate position to center the element
-                const centerPosition = elementTop - (viewportHeight / 2) + (elementHeight / 2);
-                console.log('calculated centerPosition:', centerPosition);
+        // Function to highlight the floor that's currently in the center of the viewport
+        function highlightCenteredFloor() {
+            const viewportCenter = window.innerHeight / 2 + window.pageYOffset;
+            let closestFloor = null;
+            let closestDistance = Infinity;
 
-                // Try multiple scroll methods
-                try {
-                    // Method 1: Modern scrollTo with options
-                    window.scrollTo({
-                        top: centerPosition,
-                        left: 0,
-                        behavior: 'smooth'
-                    });
-                    console.log('Tried modern scrollTo');
-                } catch (e) {
-                    console.log('Modern scrollTo failed:', e);
+            // Find all floor elements
+            const floorElements = document.querySelectorAll('[id^="floor-"]');
+
+            floorElements.forEach(floorElement => {
+                const rect = floorElement.getBoundingClientRect();
+                const elementCenter = rect.top + window.pageYOffset + (rect.height / 2);
+                const distance = Math.abs(elementCenter - viewportCenter);
+
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestFloor = floorElement;
                 }
+            });
 
-                // Method 2: Direct property assignment (immediate fallback)
-                setTimeout(() => {
-                    document.documentElement.scrollTop = centerPosition;
-                    document.body.scrollTop = centerPosition; // For Safari
-                    console.log('Applied direct scroll, new position:', window.pageYOffset);
-                }, 50);
+            // Remove highlight from all floors
+            floorElements.forEach(floorElement => {
+                const floorButton = floorElement.querySelector('.floor-button');
+                if (floorButton) {
+                    floorButton.style.backgroundColor = '';
+                }
+            });
 
-                // Method 3: Use scrollIntoView on the element itself
-                setTimeout(() => {
-                    floor0Element.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center',
-                        inline: 'nearest'
-                    });
-                    console.log('Tried scrollIntoView');
-                }, 100);
-
-                // Method 4: Force immediate scroll as final fallback
-                setTimeout(() => {
-                    window.scrollTo(0, centerPosition);
-                    console.log('Final fallback scroll, position:', window.pageYOffset);
-                }, 200);
-            } else {
-                console.log('floor-0 element not found');
+            // Highlight the closest floor
+            if (closestFloor) {
+                const floorButton = closestFloor.querySelector('.floor-button');
+                if (floorButton) {
+                    floorButton.style.backgroundColor = 'rgba(20, 60, 60, 0.8)';
+                }
             }
         }
 
-        // Try multiple timing approaches
-        setTimeout(() => {
-            centerFloor0();
-        }, 100);
+        // Initialize floor centering and highlighting
+        function initializeFloorCentering() {
+            // Get floor number from query string, default to 0
+            const targetFloor = getQueryParam('floorNumber') || '0';
 
-        setTimeout(() => {
-            centerFloor0();
-        }, 500);
+            // Center the target floor
+            centerFloor(targetFloor);
 
-        window.addEventListener('load', centerFloor0);
+            // Highlight after scroll completes
+            setTimeout(highlightCenteredFloor, 800);
+        }
 
-        // Existing navigation button functionality
-        document.getElementById('goToBottomBtn').addEventListener('click', function () {
-            document.body.scrollTop = document.body.scrollHeight; // For Safari
-            document.documentElement.scrollTop = document.documentElement.scrollHeight; // For Chrome, Firefox, IE and Opera
-        });
+        // Run when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeFloorCentering);
+        } else {
+            initializeFloorCentering();
+        }
 
-        document.getElementById('goToTopBtn').addEventListener('click', function () {
-            document.body.scrollTop = 0; // For Safari
-            document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+        // Navigation button functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('goToBottomBtn')?.addEventListener('click', function () {
+                document.documentElement.scrollTop = document.documentElement.scrollHeight;
+            });
+
+            document.getElementById('goToTopBtn')?.addEventListener('click', function () {
+                document.documentElement.scrollTop = 0;
+            });
         });
     </script>
+
 
     <?php wp_footer(); ?>
 </body>

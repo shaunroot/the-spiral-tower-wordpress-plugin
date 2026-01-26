@@ -59,19 +59,19 @@ if (!defined('ABSPATH')) {
             
             break;
         case 'gateway':
-            $portal_icon = '<div class="portal-icon portal-text"> Gateway to' . esc_html($destination_title) . '</div>';
+            $portal_icon = '<div class="portal-icon portal-text"> Gateway to' . esc_html($portal->post_title) . '</div>';
             break;
         case 'vortex':
-            $portal_icon = '<div class="portal-icon portal-text"> Vortex to' . esc_html($destination_title) . '</div>';
+            $portal_icon = '<div class="portal-icon portal-text"> Vortex to' . esc_html($portal->post_title) . '</div>';
             break;
         case 'door':
-            $portal_icon = '<div class="portal-icon portal-text">Door to' . esc_html($destination_title) . '</div>';
+            $portal_icon = '<div class="portal-icon portal-text">Door to' . esc_html($portal->post_title) . '</div>';
             break;
         case 'invisible':
-            $portal_icon = '<div class="portal-icon portal-text">' . esc_html($destination_title) . '</div>';
+            $portal_icon = '<div class="portal-icon portal-text">' . esc_html($portal->post_title) . '</div>';
             break;
         case 'custom':
-            $portal_icon = '<div class="portal-icon portal-text">' . esc_html($destination_title) . '</div>';
+            $portal_icon = '<div class="portal-icon portal-text">' . esc_html($portal->post_title) . '</div>';
             break;
     }
     ?>

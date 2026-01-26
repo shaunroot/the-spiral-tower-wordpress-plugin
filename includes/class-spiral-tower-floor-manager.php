@@ -525,6 +525,16 @@ class Spiral_Tower_Floor_Manager
         echo '<br><small>' . __('If checked, visitors will be redirected to a 404 page when attempting to view this floor.', 'spiral-tower') . '</small>';
         echo '</p>';
 
+        $allow_user_rooms = get_post_meta($post->ID, '_floor_allow_user_rooms', true) === '1';
+
+        // --- Allow other users to create rooms on this floor ---
+        echo '<p>';
+        echo '<label>';
+        echo '<input type="checkbox" name="floor_allow_user_rooms" value="1" ' . checked($allow_user_rooms, true, false) . ' /> ';
+        echo __('Allow other users to create rooms on this floor', 'spiral-tower');
+        echo '</label>';
+        echo '</p>';
+
         echo '<hr>';
 
         echo '<p>';
@@ -807,6 +817,9 @@ class Spiral_Tower_Floor_Manager
         $send_to_void_value = isset($_POST['floor_send_to_void']) ? '1' : '0';
         update_post_meta($post_id, '_floor_send_to_void', $send_to_void_value);
 
+        $allow_user_rooms_value = isset($_POST['floor_allow_user_rooms']) ? '1' : '0';
+        update_post_meta($post_id, '_floor_allow_user_rooms', $allow_user_rooms_value);
+
 
         // --- SAVE CUSTOM SCRIPT FIELDS (Keep existing logic) ---
         $inside_script_field_name = 'floor_custom_script_inside_field';
@@ -853,7 +866,22 @@ class Spiral_Tower_Floor_Manager
                 'context' => array('view', 'edit')
             ]
         ]);
-        // Add other fields to REST API here if needed...
+
+        register_rest_field('floor', 'allow_user_rooms', [
+            'get_callback' => function ($post) {
+                $value = get_post_meta($post['id'], '_floor_allow_user_rooms', true);
+                return $value === '1';
+            },
+            'update_callback' => function ($value, $post) {
+                $meta_value = $value ? '1' : '0';
+                update_post_meta($post->ID, '_floor_allow_user_rooms', $meta_value);
+            },
+            'schema' => [
+                'description' => 'Whether this floor allows other users to create rooms',
+                'type' => 'boolean',
+                'context' => array('view', 'edit')
+            ]
+        ]);
     }
 
     /**
@@ -1400,30 +1428,30 @@ class Spiral_Tower_Floor_Manager
         add_filter('posts_search', array($this, 'modify_floor_search_sql'), 10, 2);
     }
 
-    /**
-     * Modify the SQL search to combine title/content search with meta search using OR
-     */
-    public function modify_floor_search_sql($search, $query)
-    {
-        global $wpdb;
+/**
+ * Modify the SQL search to combine title/content search with meta search using OR
+ */
+public function modify_floor_search_sql($search, $query)
+{
+    global $wpdb;
 
-        // Only apply to our floor searches
-        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== 'floor' || !$query->is_search()) {
-            return $search;
-        }
+    // Only apply to our floor searches
+    if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== 'floor' || !$query->is_search()) {
+        return $search;
+    }
 
-        $search_term = $query->get('s');
-        if (empty($search_term)) {
-            return $search;
-        }
+    $search_term = $query->get('s');
+    if (empty($search_term)) {
+        return $search;
+    }
 
-        // Remove this filter to prevent infinite loops
-        remove_filter('posts_search', array($this, 'modify_floor_search_sql'), 10);
+    // Remove this filter to prevent infinite loops
+    remove_filter('posts_search', array($this, 'modify_floor_search_sql'), 10);
 
-        // Build the search SQL that includes both post fields AND meta fields
-        $search_term_like = '%' . $wpdb->esc_like($search_term) . '%';
+    // Build the search SQL that includes post fields, meta fields, AND author name/username
+    $search_term_like = '%' . $wpdb->esc_like($search_term) . '%';
 
-        $search = " AND (
+    $search = " AND (
         ({$wpdb->posts}.post_title LIKE %s) 
         OR ({$wpdb->posts}.post_content LIKE %s)
         OR EXISTS (
@@ -1438,13 +1466,18 @@ class Spiral_Tower_Floor_Manager
             AND {$wpdb->postmeta}.meta_key = '_floor_number_alt_text' 
             AND {$wpdb->postmeta}.meta_value LIKE %s
         )
+        OR EXISTS (
+            SELECT 1 FROM {$wpdb->users} 
+            WHERE {$wpdb->users}.ID = {$wpdb->posts}.post_author 
+            AND ({$wpdb->users}.display_name LIKE %s OR {$wpdb->users}.user_login LIKE %s)
+        )
     )";
 
-        // Prepare the query with the search term for all placeholders
-        $search = $wpdb->prepare($search, $search_term_like, $search_term_like, $search_term_like, $search_term_like);
+    // Prepare the query with the search term for all placeholders (6 total now)
+    $search = $wpdb->prepare($search, $search_term_like, $search_term_like, $search_term_like, $search_term_like, $search_term_like, $search_term_like);
 
-        return $search;
-    }
+    return $search;
+}
 
 
 

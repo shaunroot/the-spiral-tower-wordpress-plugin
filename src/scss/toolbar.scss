@@ -63,9 +63,11 @@ $margin-large: 80px;
     pointer-events: none;
   }
 
-  #button-your-profile {
-    margin-right: 8px;
+  .new-section-after {
+    margin-right: 12px; 
   }
+
+
 
   /* Add this to your CSS */
   #toolbar-edit-portals.active-edit-mode {
@@ -81,6 +83,13 @@ $margin-large: 80px;
   #toolbar-edit-portals:hover {
     transform: scale(1.1);
     transition: transform 0.2s ease;
+  }
+
+  #button-user-profile a {
+    font-family: var(--title-font, "Metamorphous", serif) !important;
+    color: #fff;
+    font-weight: bold;
+    text-decoration: none;
   }
 
   #button-sound-toggle {

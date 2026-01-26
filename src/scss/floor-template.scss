@@ -1,15 +1,16 @@
 /**
- * Styles for the Floor Template - v5 (Back to Basics - Scaled Wrapper)
- * Merged from original and updated for the scaling wrapper approach.
- * Positioning for .floor-gizmo relies on inline styles (left%, top%) in HTML.
+ * Styles for the Floor Template - v6
  */
 
 @use 'portal';
 @use 'stairs';
+@use 'authors';
 @use 'profile';
 @use 'toolbar';
 @use 'achievements';
 @use 'about';
+@use 'how-it-works';
+@use 'menu';
 
 // KILL the reduced motion override completely
 @media (prefers-reduced-motion: reduce) {

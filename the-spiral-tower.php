@@ -91,11 +91,19 @@ class Spiral_Tower_Plugin
         $this->user_profile_manager = new Spiral_Tower_User_Profile_Manager();
         $this->achievement_manager = new Spiral_Tower_Achievement_Manager();
         $this->exploration_achievements_manager = new Spiral_Tower_Exploration_Achievements_Manager();
+        $this->setup_authors_page();
+        $this->setup_how_it_works_page();
 
         // Inject Log_Manager into User_Profile_Manager
         if (method_exists($this->user_profile_manager, 'set_log_manager')) {
             $this->user_profile_manager->set_log_manager($this->log_manager);
         }
+
+        add_filter('query_vars', function ($vars) {
+            $vars[] = 'floorNumber';
+            return $vars;
+        });
+        add_action('init', array($this, 'add_stairs_rewrite_rule'));
 
         // Register activation and deactivation hooks
         register_activation_hook(__FILE__, array($this, 'activate'));
@@ -107,6 +115,8 @@ class Spiral_Tower_Plugin
         add_filter('big_image_size_threshold', function () {
             return 10000;
         });
+
+        add_action('template_redirect', array($this, 'handle_stairs_query_params'), 1);
 
         // Enqueue custom styles and scripts for the floor template
         add_action('wp_enqueue_scripts', array($this, 'enqueue_floor_assets')); // Renamed method for clarity
@@ -123,6 +133,16 @@ class Spiral_Tower_Plugin
         add_filter('template_include', array($this, 'handle_404_template'), 99);
 
         add_action('init', array($this, 'setup_tower_stats_page'));
+        add_filter('template_include', array($this, 'authors_template'));
+    }
+
+    public function add_stairs_rewrite_rule()
+    {
+        add_rewrite_rule(
+            '^stairs/?(\?.*)?$',
+            'index.php?pagename=stairs',
+            'top'
+        );
     }
 
     /**
@@ -174,6 +194,20 @@ class Spiral_Tower_Plugin
         }
     }
 
+    public function handle_stairs_query_params()
+    {
+        if (!is_page('stairs')) {
+            return;
+        }
+
+        if (isset($_GET['floorNumber'])) {
+            global $wp_query;
+            $wp_query->is_404 = false;
+            status_header(200);
+            set_query_var('floorNumber', $_GET['floorNumber']);
+        }
+    }
+
     /**
      * Setup the void page
      */
@@ -216,9 +250,14 @@ class Spiral_Tower_Plugin
     {
         // Only run this on the front-end when a 404 error occurs
         if (!is_admin() && is_404()) {
-            // Don't redirect if we're already on the-void page to prevent loops
             $current_url = $_SERVER['REQUEST_URI'];
             $void_url = '/the-void/';
+
+            // DON'T redirect stairs URLs - let them be handled normally
+            if (strpos($current_url, '/stairs') !== false) {
+                error_log('Skipping void redirect for stairs URL: ' . $current_url);
+                return;
+            }
 
             // Check if we're already on the void page
             if (rtrim($current_url, '/') !== rtrim($void_url, '/')) {
@@ -407,6 +446,13 @@ class Spiral_Tower_Plugin
             }
         }
 
+        if (is_page('how-it-works')) {
+            $how_it_works_template = SPIRAL_TOWER_PLUGIN_DIR . 'templates/how-it-works.php';
+            if (file_exists($how_it_works_template)) {
+                return $how_it_works_template;
+            }
+        }
+
         $use_plugin_template = false;
         $post_id = get_the_ID(); // Get current post/page ID
 
@@ -423,13 +469,25 @@ class Spiral_Tower_Plugin
             }
         }
 
-        // Check if we're on the STAIRS page
-        $current_url = $_SERVER['REQUEST_URI'];
-        if (rtrim($current_url, '/') === '/stairs' || $current_url === '/stairs/') {
-            // For the stairs page, use single.php from the theme
-            $single_template = get_template_directory() . '/single.php';
-            if (file_exists($single_template)) {
-                return $single_template;
+        // Check if we're on the STAIRS page - FIXED: Handle query parameters
+        if (strpos($current_url, '/stairs') !== false) {
+            // Force this to not be a 404
+            global $wp_query;
+            if (isset($wp_query) && $wp_query->is_404) {
+                $wp_query->is_404 = false;
+                status_header(200);
+            }
+
+            // Use your stairs template or fall back to single-floor template
+            $stairs_template = SPIRAL_TOWER_PLUGIN_DIR . 'templates/stairs.php';
+            if (file_exists($stairs_template)) {
+                return $stairs_template;
+            }
+
+            // Fallback to single-floor template
+            $plugin_template_path = SPIRAL_TOWER_PLUGIN_DIR . 'templates/single-floor.php';
+            if (file_exists($plugin_template_path)) {
+                return $plugin_template_path;
             }
         }
 
@@ -476,9 +534,12 @@ class Spiral_Tower_Plugin
         $is_stairs_page = (rtrim($current_url, '/') === '/stairs' || $current_url === '/stairs/');
         $is_void_page = (rtrim($current_url, '/') === '/the-void' || $current_url === '/the-void/' || is_404());
         $is_about_page = (rtrim($current_url, '/') === '/about' || $current_url === '/about/'); // ADD THIS LINE
+        $is_authors_page = (rtrim($current_url, '/') === '/authors' || $current_url === '/authors/');
+        $is_how_it_works_page = (rtrim($current_url, '/') === '/how-it-works' || $current_url === '/how-it-works/');
+
 
         // Check if it's a floor, room, or a page using the floor template
-        if (is_singular('floor') || is_singular('room') || $is_stairs_page || $is_void_page || $is_about_page) { // ADD $is_about_page HERE
+        if (is_singular('floor') || is_singular('room') || $is_stairs_page || $is_void_page || $is_about_page || $is_authors_page || $is_how_it_works_page) {
             $load_assets = true;
         } elseif (is_page($post_id)) {
             $use_floor_meta = get_post_meta($post_id, '_use_floor_template', true);
@@ -500,6 +561,27 @@ class Spiral_Tower_Plugin
             wp_style_add_data('spiral-tower-google-fonts-preconnect-crossorigin', 'crossorigin', 'anonymous'); // Add crossorigin attribute
             wp_enqueue_style('spiral-tower-google-fonts', 'https://fonts.googleapis.com/css2?family=Bilbo&family=Metamorphous&family=Winky+Sans:ital,wght@0,300..900;1,300..900&display=swap', array(), null);
             wp_enqueue_style('spiral-tower-floor-style', SPIRAL_TOWER_PLUGIN_URL . 'dist/css/floor-template.css', array('spiral-tower-google-fonts'), '1.0.1'); // Assumes CSS is in dist/css
+
+            // Mad Libs script - loads in head to hide content before it's visible
+            wp_enqueue_script(
+                'spiral-tower-madlibs',
+                SPIRAL_TOWER_PLUGIN_URL . 'assets/js/spiral-tower-madlibs.js',
+                array(),
+                '1.0.0',
+                false // Load in head, not footer
+            );
+
+            // Pass data to Mad Libs script
+            wp_localize_script(
+                'spiral-tower-madlibs',
+                'spiralTowerMadLibs',
+                array(
+                    'ajaxUrl' => admin_url('admin-ajax.php'),
+                    'nonce' => wp_create_nonce('spiral_tower_madlibs_nonce'),
+                    'floorId' => get_the_ID(),
+                    'isLoggedIn' => is_user_logged_in()
+                )
+            );
 
             // --- SCRIPTS ---
             // Only load other scripts if not on void page
@@ -706,6 +788,8 @@ class Spiral_Tower_Plugin
         $this->register_void_template();
         $this->setup_void_page();
         $this->setup_tower_stats_page();
+        $this->setup_authors_page();
+        $this->setup_how_it_works_page();
 
         // Flush rewrite rules ONCE on activation
         flush_rewrite_rules();
@@ -1036,7 +1120,174 @@ class Spiral_Tower_Plugin
             'most_generous_users' => $most_generous_users
         );
     }
-}
+
+    /**
+     * ADD THESE METHODS TO YOUR Spiral_Tower_Plugin CLASS
+     */
+
+    /**
+     * Setup the authors page
+     */
+    public function setup_authors_page()
+    {
+        // Check if the authors page already exists
+        $authors_page = get_page_by_path('authors');
+
+        // If the page doesn't exist, create it
+        if (!$authors_page) {
+            $authors_page_args = array(
+                'post_title' => 'Tower Authors',
+                'post_name' => 'authors',
+                'post_status' => 'publish',
+                'post_type' => 'page',
+                'post_content' => 'Loading authors...',
+                'post_author' => 1,
+                'comment_status' => 'closed'
+            );
+            wp_insert_post($authors_page_args);
+        }
+    }
+
+    /**
+     * Get all authors with their content counts
+     */
+    public function get_authors_with_content_counts($limit = -1, $min_content = 1)
+    {
+        global $wpdb;
+
+        $query = "
+        SELECT 
+            u.ID,
+            u.user_login,
+            u.display_name,
+            u.user_email,
+            COALESCE(content_counts.floor_count, 0) as floor_count,
+            COALESCE(content_counts.room_count, 0) as room_count,
+            COALESCE(content_counts.total_content, 0) as total_content
+        FROM {$wpdb->users} u
+        LEFT JOIN (
+            SELECT 
+                p.post_author,
+                SUM(CASE WHEN p.post_type = 'floor' THEN 1 ELSE 0 END) as floor_count,
+                SUM(CASE WHEN p.post_type = 'room' THEN 1 ELSE 0 END) as room_count,
+                COUNT(*) as total_content
+            FROM {$wpdb->posts} p
+            WHERE p.post_type IN ('floor', 'room') 
+            AND p.post_status = 'publish'
+            GROUP BY p.post_author
+        ) as content_counts ON u.ID = content_counts.post_author
+        WHERE content_counts.total_content >= %d
+        ORDER BY content_counts.total_content DESC, u.display_name ASC
+    ";
+
+        if ($limit > 0) {
+            $query .= " LIMIT %d";
+            $results = $wpdb->get_results($wpdb->prepare($query, $min_content, $limit), ARRAY_A);
+        } else {
+            $results = $wpdb->get_results($wpdb->prepare($query, $min_content), ARRAY_A);
+        }
+
+        // Get latest content for each author
+        foreach ($results as &$author) {
+            $latest_content = get_posts(array(
+                'author' => $author['ID'],
+                'post_type' => array('floor', 'room'),
+                'posts_per_page' => 1,
+                'orderby' => 'date',
+                'order' => 'DESC',
+                'post_status' => 'publish'
+            ));
+
+            if (!empty($latest_content)) {
+                $author['latest_content'] = $latest_content[0];
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get authors with their achievement counts
+     */
+    public function get_authors_with_achievement_counts($limit = -1, $min_achievements = 1)
+    {
+        global $wpdb;
+
+        $achievements_table = $wpdb->prefix . 'spiral_tower_user_achievements';
+
+        // Check if achievements table exists
+        if ($wpdb->get_var("SHOW TABLES LIKE '$achievements_table'") != $achievements_table) {
+            return array();
+        }
+
+        $query = "
+        SELECT
+            u.ID,
+            u.user_login,
+            u.display_name,
+            u.user_email,
+            COALESCE(achievement_counts.achievement_count, 0) as achievement_count
+        FROM {$wpdb->users} u
+        LEFT JOIN (
+            SELECT
+                user_id,
+                COUNT(*) as achievement_count
+            FROM {$achievements_table}
+            GROUP BY user_id
+        ) as achievement_counts ON u.ID = achievement_counts.user_id
+        WHERE achievement_counts.achievement_count >= %d
+        ORDER BY achievement_counts.achievement_count DESC, u.display_name ASC
+    ";
+
+        if ($limit > 0) {
+            $query .= " LIMIT %d";
+            $results = $wpdb->get_results($wpdb->prepare($query, $min_achievements, $limit), ARRAY_A);
+        } else {
+            $results = $wpdb->get_results($wpdb->prepare($query, $min_achievements), ARRAY_A);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Use custom template for authors page
+     */
+    public function authors_template($template)
+    {
+        if (is_page('authors')) {
+            $authors_template = SPIRAL_TOWER_PLUGIN_DIR . 'templates/authors.php';
+            if (file_exists($authors_template)) {
+                return $authors_template;
+            }
+        }
+        return $template;
+    }
+
+    /**
+     * Setup the how-it-works page
+     */
+    public function setup_how_it_works_page()
+    {
+        // Check if the how-it-works page already exists
+        $how_it_works_page = get_page_by_path('how-it-works');
+
+        // If the page doesn't exist, create it
+        if (!$how_it_works_page) {
+            $how_it_works_page_args = array(
+                'post_title' => 'How It Works',
+                'post_name' => 'how-it-works',
+                'post_status' => 'publish',
+                'post_type' => 'page',
+                'post_content' => 'Learn how to navigate and contribute to The Spiral Tower.',
+                'post_author' => 1,
+                'comment_status' => 'closed'
+            );
+            wp_insert_post($how_it_works_page_args);
+        }
+    }
+
+
+} /// End plugin class ///
 
 /**
  * Add data attribute to body for floor ID
@@ -1062,7 +1313,7 @@ function spiral_tower_settings_page()
         // DALL-E Settings
         update_option('spiral_tower_dalle_api_key', sanitize_text_field($_POST['spiral_tower_dalle_api_key']));
         update_option('spiral_tower_dalle_api_endpoint', sanitize_text_field($_POST['spiral_tower_dalle_api_endpoint']));
-        
+
         // Reddit Bot Settings
         update_option('spiral_tower_reddit_username', sanitize_text_field($_POST['spiral_tower_reddit_username']));
         update_option('spiral_tower_reddit_password', sanitize_text_field($_POST['spiral_tower_reddit_password']));
@@ -1070,26 +1321,26 @@ function spiral_tower_settings_page()
         update_option('spiral_tower_reddit_client_secret', sanitize_text_field($_POST['spiral_tower_reddit_client_secret']));
         update_option('spiral_tower_reddit_subreddit', sanitize_text_field($_POST['spiral_tower_reddit_subreddit']));
         update_option('spiral_tower_reddit_user_agent', sanitize_text_field($_POST['spiral_tower_reddit_user_agent']));
-        
+
         // Comment Notification Settings
         update_option('spiral_tower_enable_comment_notifications', isset($_POST['spiral_tower_enable_comment_notifications']) ? '1' : '0');
         update_option('spiral_tower_notification_delay', absint($_POST['spiral_tower_notification_delay']));
         update_option('spiral_tower_exclude_bot_comments', isset($_POST['spiral_tower_exclude_bot_comments']) ? '1' : '0');
-        
+
         echo '<div class="notice notice-success"><p>Settings saved successfully!</p></div>';
     }
-    
+
     // Get current values
     $dalle_api_key = get_option('spiral_tower_dalle_api_key', '');
     $dalle_api_endpoint = get_option('spiral_tower_dalle_api_endpoint', 'https://shauntest.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01');
-    
+
     $reddit_username = get_option('spiral_tower_reddit_username', '');
     $reddit_password = get_option('spiral_tower_reddit_password', '');
     $reddit_client_id = get_option('spiral_tower_reddit_client_id', '');
     $reddit_client_secret = get_option('spiral_tower_reddit_client_secret', '');
     $reddit_subreddit = get_option('spiral_tower_reddit_subreddit', 'SpiralTower');
     $reddit_user_agent = get_option('spiral_tower_reddit_user_agent', 'SpiralTowerBot/1.0');
-    
+
     $enable_notifications = get_option('spiral_tower_enable_comment_notifications', '1');
     $notification_delay = get_option('spiral_tower_notification_delay', 5);
     $exclude_bot_comments = get_option('spiral_tower_exclude_bot_comments', '1');
@@ -1098,7 +1349,7 @@ function spiral_tower_settings_page()
         <h1>Spiral Tower Settings</h1>
         <form method="post" action="">
             <?php wp_nonce_field('spiral_tower_settings', 'spiral_tower_settings_nonce'); ?>
-            
+
             <!-- DALL-E Settings -->
             <h2>DALL-E Image Generation</h2>
             <table class="form-table">
@@ -1106,16 +1357,14 @@ function spiral_tower_settings_page()
                     <th scope="row">DALL-E API Key</th>
                     <td>
                         <input type="password" name="spiral_tower_dalle_api_key"
-                            value="<?php echo esc_attr($dalle_api_key); ?>"
-                            class="regular-text" />
+                            value="<?php echo esc_attr($dalle_api_key); ?>" class="regular-text" />
                     </td>
                 </tr>
                 <tr valign="top">
                     <th scope="row">DALL-E API Endpoint</th>
                     <td>
                         <input type="text" name="spiral_tower_dalle_api_endpoint"
-                            value="<?php echo esc_attr($dalle_api_endpoint); ?>"
-                            class="regular-text" />
+                            value="<?php echo esc_attr($dalle_api_endpoint); ?>" class="regular-text" />
                         <p class="description">Azure OpenAI Service endpoint</p>
                     </td>
                 </tr>
@@ -1128,8 +1377,7 @@ function spiral_tower_settings_page()
                     <th scope="row">Reddit Username</th>
                     <td>
                         <input type="text" name="spiral_tower_reddit_username"
-                            value="<?php echo esc_attr($reddit_username); ?>"
-                            class="regular-text" />
+                            value="<?php echo esc_attr($reddit_username); ?>" class="regular-text" />
                         <p class="description">Reddit bot account username</p>
                     </td>
                 </tr>
@@ -1137,8 +1385,7 @@ function spiral_tower_settings_page()
                     <th scope="row">Reddit Password</th>
                     <td>
                         <input type="password" name="spiral_tower_reddit_password"
-                            value="<?php echo esc_attr($reddit_password); ?>"
-                            class="regular-text" />
+                            value="<?php echo esc_attr($reddit_password); ?>" class="regular-text" />
                         <p class="description">Reddit bot account password</p>
                     </td>
                 </tr>
@@ -1146,8 +1393,7 @@ function spiral_tower_settings_page()
                     <th scope="row">Reddit Client ID</th>
                     <td>
                         <input type="text" name="spiral_tower_reddit_client_id"
-                            value="<?php echo esc_attr($reddit_client_id); ?>"
-                            class="regular-text" />
+                            value="<?php echo esc_attr($reddit_client_id); ?>" class="regular-text" />
                         <p class="description">Reddit app client ID</p>
                     </td>
                 </tr>
@@ -1155,8 +1401,7 @@ function spiral_tower_settings_page()
                     <th scope="row">Reddit Client Secret</th>
                     <td>
                         <input type="password" name="spiral_tower_reddit_client_secret"
-                            value="<?php echo esc_attr($reddit_client_secret); ?>"
-                            class="regular-text" />
+                            value="<?php echo esc_attr($reddit_client_secret); ?>" class="regular-text" />
                         <p class="description">Reddit app client secret</p>
                     </td>
                 </tr>
@@ -1164,8 +1409,7 @@ function spiral_tower_settings_page()
                     <th scope="row">Subreddit</th>
                     <td>
                         <input type="text" name="spiral_tower_reddit_subreddit"
-                            value="<?php echo esc_attr($reddit_subreddit); ?>"
-                            class="regular-text" />
+                            value="<?php echo esc_attr($reddit_subreddit); ?>" class="regular-text" />
                         <p class="description">Subreddit name (without r/)</p>
                     </td>
                 </tr>
@@ -1173,8 +1417,7 @@ function spiral_tower_settings_page()
                     <th scope="row">User Agent</th>
                     <td>
                         <input type="text" name="spiral_tower_reddit_user_agent"
-                            value="<?php echo esc_attr($reddit_user_agent); ?>"
-                            class="regular-text" />
+                            value="<?php echo esc_attr($reddit_user_agent); ?>" class="regular-text" />
                         <p class="description">User agent string for Reddit API</p>
                     </td>
                 </tr>
@@ -1187,8 +1430,7 @@ function spiral_tower_settings_page()
                     <th scope="row">Enable Comment Notifications</th>
                     <td>
                         <label>
-                            <input type="checkbox" name="spiral_tower_enable_comment_notifications" 
-                                value="1" <?php checked($enable_notifications, '1'); ?> />
+                            <input type="checkbox" name="spiral_tower_enable_comment_notifications" value="1" <?php checked($enable_notifications, '1'); ?> />
                             Send Reddit PM when someone comments on a floor/room
                         </label>
                     </td>
@@ -1197,8 +1439,8 @@ function spiral_tower_settings_page()
                     <th scope="row">Notification Delay</th>
                     <td>
                         <input type="number" name="spiral_tower_notification_delay"
-                            value="<?php echo esc_attr($notification_delay); ?>"
-                            min="0" max="60" class="small-text" /> minutes
+                            value="<?php echo esc_attr($notification_delay); ?>" min="0" max="60" class="small-text" />
+                        minutes
                         <p class="description">Delay before sending notification (to avoid spam)</p>
                     </td>
                 </tr>
@@ -1206,8 +1448,7 @@ function spiral_tower_settings_page()
                     <th scope="row">Exclude Bot Comments</th>
                     <td>
                         <label>
-                            <input type="checkbox" name="spiral_tower_exclude_bot_comments" 
-                                value="1" <?php checked($exclude_bot_comments, '1'); ?> />
+                            <input type="checkbox" name="spiral_tower_exclude_bot_comments" value="1" <?php checked($exclude_bot_comments, '1'); ?> />
                             Don't notify when the bot itself comments
                         </label>
                     </td>
@@ -1216,38 +1457,38 @@ function spiral_tower_settings_page()
 
             <?php submit_button(); ?>
         </form>
-        
+
         <!-- Test Connection Section -->
         <h2>Test Reddit Connection</h2>
         <p>Test your Reddit bot configuration:</p>
         <button type="button" id="test-reddit-connection" class="button">Test Connection</button>
         <div id="reddit-test-result"></div>
-        
+
         <script>
-        jQuery(document).ready(function($) {
-            $('#test-reddit-connection').click(function() {
-                var button = $(this);
-                var result = $('#reddit-test-result');
-                
-                button.prop('disabled', true).text('Testing...');
-                result.html('<p>Testing Reddit connection...</p>');
-                
-                $.post(ajaxurl, {
-                    action: 'test_reddit_connection',
-                    nonce: '<?php echo wp_create_nonce('test_reddit_connection'); ?>'
-                }, function(response) {
-                    if (response.success) {
-                        result.html('<div class="notice notice-success"><p>✅ ' + response.data.message + '</p></div>');
-                    } else {
-                        result.html('<div class="notice notice-error"><p>❌ ' + response.data.message + '</p></div>');
-                    }
-                }).fail(function() {
-                    result.html('<div class="notice notice-error"><p>❌ Connection test failed</p></div>');
-                }).always(function() {
-                    button.prop('disabled', false).text('Test Connection');
+            jQuery(document).ready(function ($) {
+                $('#test-reddit-connection').click(function () {
+                    var button = $(this);
+                    var result = $('#reddit-test-result');
+
+                    button.prop('disabled', true).text('Testing...');
+                    result.html('<p>Testing Reddit connection...</p>');
+
+                    $.post(ajaxurl, {
+                        action: 'test_reddit_connection',
+                        nonce: '<?php echo wp_create_nonce('test_reddit_connection'); ?>'
+                    }, function (response) {
+                        if (response.success) {
+                            result.html('<div class="notice notice-success"><p>✅ ' + response.data.message + '</p></div>');
+                        } else {
+                            result.html('<div class="notice notice-error"><p>❌ ' + response.data.message + '</p></div>');
+                        }
+                    }).fail(function () {
+                        result.html('<div class="notice notice-error"><p>❌ Connection test failed</p></div>');
+                    }).always(function () {
+                        button.prop('disabled', false).text('Test Connection');
+                    });
                 });
             });
-        });
         </script>
     </div>
     <?php
@@ -1264,7 +1505,7 @@ function spiral_tower_enqueue_admin_scripts($hook)
     $load_loader_script_on_hooks = array(
         'post.php',
         'post-new.php',
-        'spiral-tower_page_spiral-tower-settings', 
+        'spiral-tower_page_spiral-tower-settings',
         'profile.php',      // User's own profile
         'user-edit.php'     // Editing another user's profile
     );
@@ -1351,6 +1592,7 @@ add_action('wp_ajax_spiral_tower_navigate_floor', 'spiral_tower_handle_floor_nav
 add_action('wp_ajax_nopriv_spiral_tower_navigate_floor', 'spiral_tower_handle_floor_navigation');
 add_action('wp_ajax_spiral_tower_award_achievement', array($spiral_tower_plugin->achievement_manager, 'ajax_award_achievement'));
 add_action('wp_ajax_spiral_tower_get_user_achievements', array($spiral_tower_plugin->achievement_manager, 'ajax_get_user_achievements'));
+add_action('wp_ajax_spiral_tower_create_madlibs_room', 'spiral_tower_handle_create_madlibs_room');
 
 
 /**
@@ -1503,6 +1745,152 @@ function spiral_tower_handle_floor_navigation()
     }
 }
 
+/**
+ * Handle Mad Libs room creation AJAX request
+ */
+function spiral_tower_handle_create_madlibs_room()
+{
+    global $spiral_tower_plugin;
+
+    // Verify nonce
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'spiral_tower_madlibs_nonce')) {
+        wp_send_json_error(array('message' => 'Security check failed'));
+        return;
+    }
+
+    // Check if user is logged in
+    if (!is_user_logged_in()) {
+        wp_send_json_error(array('message' => 'You must be logged in to create a Mad Libs room'));
+        return;
+    }
+
+    // Get parameters
+    $floor_id = isset($_POST['floor_id']) ? intval($_POST['floor_id']) : 0;
+    $content = isset($_POST['content']) ? wp_kses_post($_POST['content']) : '';
+
+    if (empty($floor_id) || empty($content)) {
+        wp_send_json_error(array('message' => 'Missing required parameters'));
+        return;
+    }
+
+    // Verify the floor exists
+    $floor = get_post($floor_id);
+    if (!$floor || $floor->post_type !== 'floor') {
+        wp_send_json_error(array('message' => 'Invalid floor'));
+        return;
+    }
+
+    // Count existing Mad Libs rooms on this floor to determine room number
+    $existing_rooms = get_posts(array(
+        'post_type' => 'room',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'meta_query' => array(
+            array(
+                'key' => '_room_floor_id',
+                'value' => $floor_id,
+                'compare' => '='
+            )
+        ),
+        's' => 'Mad Libs Room'
+    ));
+
+    $room_number = count($existing_rooms) + 1;
+    $room_title = 'Mad Libs Room #' . $room_number;
+
+    // Get current user's display name for signature
+    $current_user = wp_get_current_user();
+    $user_display_name = $current_user->display_name;
+
+    // Get floor author (room will be authored by floor creator)
+    $floor_author_id = $floor->post_author;
+    $floor_title = $floor->post_title;
+    $floor_url = get_permalink($floor_id);
+
+    // Add signature and return link to content
+    $content_with_signature = $content;
+    $content_with_signature .= '<p class="madlibs-signature" style="margin-top: 2rem; font-style: italic; text-align: right;"> - ' . esc_html($user_display_name) . '</p>';
+    $content_with_signature .= '<div class="madlibs-return-link" style="margin-top: 2rem; text-align: center;">';
+    $content_with_signature .= '<a href="' . esc_url($floor_url) . '" class="spiral-tower-portal-link" style="display: inline-block; min-width: 300px; padding: 1rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">Return to ' . esc_html($floor_title) . '</a>';
+    $content_with_signature .= '</div>';
+
+    // Create the room (authored by floor creator)
+    $room_id = wp_insert_post(array(
+        'post_type' => 'room',
+        'post_title' => $room_title,
+        'post_content' => $content_with_signature,
+        'post_status' => 'publish',
+        'post_author' => $floor_author_id,
+    ));
+
+    if (is_wp_error($room_id)) {
+        wp_send_json_error(array('message' => 'Failed to create room: ' . $room_id->get_error_message()));
+        return;
+    }
+
+    // Set room meta
+    update_post_meta($room_id, '_room_floor_id', $floor_id);
+    update_post_meta($room_id, '_room_type', 'normal');
+
+    // Generate featured image using DALL-E API
+    $image_prompt = 'A surreal, dreamlike illustration for a Mad Libs story room: ' . wp_trim_words(wp_strip_all_tags($content), 50, '');
+
+    $image_result = $spiral_tower_plugin->image_generator->generate_image_from_api($image_prompt);
+
+    if (!is_wp_error($image_result) && isset($image_result['url'])) {
+        // Download and attach the image
+        $attachment_id = $spiral_tower_plugin->image_generator->download_and_attach_image(
+            $image_result['url'],
+            $room_id,
+            $image_prompt
+        );
+
+        if (!is_wp_error($attachment_id)) {
+            set_post_thumbnail($room_id, $attachment_id);
+        }
+    }
+
+    // Create portal from floor to room (positioned top-left, stacked vertically)
+    // Calculate Y position based on room number (each room gets its own row)
+    $portal_y_position = 10 + (($room_number - 1) * 8); // Start at 10%, each row is 8% apart
+    if ($portal_y_position > 80) {
+        $portal_y_position = 80; // Cap at 80% to stay visible
+    }
+
+    $portal_to_room = wp_insert_post(array(
+        'post_type' => 'portal',
+        'post_title' => $room_title,
+        'post_status' => 'publish',
+        'post_author' => $floor_author_id,
+    ));
+
+    if (!is_wp_error($portal_to_room)) {
+        update_post_meta($portal_to_room, '_origin_type', 'floor');
+        update_post_meta($portal_to_room, '_origin_floor_id', $floor_id);
+        update_post_meta($portal_to_room, '_destination_type', 'room');
+        update_post_meta($portal_to_room, '_destination_room_id', $room_id);
+        update_post_meta($portal_to_room, '_portal_type', 'text');
+        // Position at top-left, stacked vertically
+        update_post_meta($portal_to_room, '_position_x', 5);
+        update_post_meta($portal_to_room, '_position_y', $portal_y_position);
+        update_post_meta($portal_to_room, '_scale', 100);
+        // Mark as Mad Libs portal for special styling
+        update_post_meta($portal_to_room, '_is_madlibs_portal', '1');
+    }
+
+    // Note: Return link to floor is embedded in the room content instead of a portal
+
+    // Get the room URL
+    $room_url = get_permalink($room_id);
+
+    wp_send_json_success(array(
+        'message' => 'Mad Libs room created successfully!',
+        'room_id' => $room_id,
+        'room_url' => $room_url,
+        'room_title' => $room_title
+    ));
+}
+
 // Global helper functions for like system
 function spiral_tower_get_like_count($post_id)
 {
@@ -1547,7 +1935,8 @@ function spiral_tower_toggle_like($post_id)
  * @param int $post_id The post ID
  * @return WP_User|null The first discoverer or null
  */
-function spiral_tower_get_first_discoverer($post_id) {
+function spiral_tower_get_first_discoverer($post_id)
+{
     global $spiral_tower_plugin;
     if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->log_manager)) {
         return $spiral_tower_plugin->log_manager->get_first_discoverer($post_id);
@@ -1561,7 +1950,8 @@ function spiral_tower_get_first_discoverer($post_id) {
  * @param int $post_id The post ID
  * @return string|null The discovery date or null
  */
-function spiral_tower_get_discovery_date($post_id) {
+function spiral_tower_get_discovery_date($post_id)
+{
     global $spiral_tower_plugin;
     if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->log_manager)) {
         return $spiral_tower_plugin->log_manager->get_discovery_date($post_id);
@@ -1575,7 +1965,8 @@ function spiral_tower_get_discovery_date($post_id) {
  * @param int $post_id The post ID
  * @return bool True if discovered
  */
-function spiral_tower_is_post_discovered($post_id) {
+function spiral_tower_is_post_discovered($post_id)
+{
     global $spiral_tower_plugin;
     if (isset($spiral_tower_plugin) && isset($spiral_tower_plugin->log_manager)) {
         return $spiral_tower_plugin->log_manager->is_post_discovered($post_id);
@@ -1630,10 +2021,30 @@ function spiral_tower_add_admin_menu()
         'spiral_tower_logs_page'         // Callback function
     );
 
+    // Add Undiscovered Locations submenu
+    add_submenu_page(
+        'spiral-tower',                  // Parent menu slug
+        'Undiscovered Locations',        // Page title
+        'Undiscovered Locations',        // Menu title
+        'manage_options',                // Capability required
+        'spiral-tower-undiscovered',     // Menu slug
+        'spiral_tower_undiscovered_page' // Callback function
+    );
+
+    // Add Unclaimed Locations submenu
+    add_submenu_page(
+        'spiral-tower',                  // Parent menu slug
+        'Unclaimed Locations',           // Page title
+        'Unclaimed Locations',           // Menu title
+        'manage_options',                // Capability required
+        'spiral-tower-unclaimed',        // Menu slug
+        'spiral_tower_unclaimed_page'    // Callback function
+    );
+
     // Register ALL settings including the new Reddit ones
     register_setting('spiral_tower_settings', 'spiral_tower_dalle_api_key');
     register_setting('spiral_tower_settings', 'spiral_tower_dalle_api_endpoint');
-    
+
     // Reddit Bot Settings
     register_setting('spiral_tower_settings', 'spiral_tower_reddit_username');
     register_setting('spiral_tower_settings', 'spiral_tower_reddit_password');
@@ -1641,7 +2052,7 @@ function spiral_tower_add_admin_menu()
     register_setting('spiral_tower_settings', 'spiral_tower_reddit_client_secret');
     register_setting('spiral_tower_settings', 'spiral_tower_reddit_subreddit');
     register_setting('spiral_tower_settings', 'spiral_tower_reddit_user_agent');
-    
+
     // Comment Notification Settings
     register_setting('spiral_tower_settings', 'spiral_tower_enable_comment_notifications');
     register_setting('spiral_tower_settings', 'spiral_tower_notification_delay');
@@ -1742,7 +2153,7 @@ function spiral_tower_main_page()
                 <h3>Unclaimed Locations</h3>
                 <p class="stat-number"><?php echo $stats['unclaimed_locations']; ?></p>
                 <p class="stat-weekly">Available for adoption</p>
-                <a href="<?php echo admin_url('users.php'); ?>" class="button">Manage Users</a>
+                <a href="<?php echo admin_url('admin.php?page=spiral-tower-unclaimed'); ?>" class="button">View List</a>
             </div>
 
             <div class="dashboard-stat-box">
@@ -1756,7 +2167,7 @@ function spiral_tower_main_page()
                 <h3>Undiscovered Locations</h3>
                 <p class="stat-number"><?php echo $stats['undiscovered_locations']; ?></p>
                 <p class="stat-weekly">Never been visited</p>
-                <a href="#" class="button" disabled>Awaiting Explorers</a>
+                <a href="<?php echo admin_url('admin.php?page=spiral-tower-undiscovered'); ?>" class="button">View List</a>
             </div>
         </div>
 
@@ -1988,6 +2399,201 @@ function spiral_tower_logs_page()
 }
 
 /**
+ * Display the undiscovered locations page
+ */
+function spiral_tower_undiscovered_page()
+{
+    global $wpdb;
+
+    if (!current_user_can('manage_options')) {
+        wp_die(__('You do not have sufficient permissions to access this page.'));
+    }
+
+    // Get undiscovered locations
+    $logs_table = $wpdb->prefix . 'spiral_tower_logs';
+    $undiscovered_locations = array();
+
+    if ($wpdb->get_var("SHOW TABLES LIKE '$logs_table'") == $logs_table) {
+        // Get all discovered location IDs (excluding user ID 1)
+        $discovered_location_ids = $wpdb->get_col(
+            "SELECT DISTINCT post_id FROM $logs_table WHERE user_id IS NOT NULL AND user_id > 1"
+        );
+
+        // Build the query for undiscovered locations
+        $query = "SELECT ID, post_title, post_type FROM {$wpdb->posts}
+                  WHERE post_type IN ('floor', 'room') AND post_status = 'publish'";
+
+        if (!empty($discovered_location_ids)) {
+            $discovered_ids_string = implode(',', array_map('intval', $discovered_location_ids));
+            $query .= " AND ID NOT IN ($discovered_ids_string)";
+        }
+
+        $query .= " ORDER BY post_type DESC, post_title ASC";
+
+        $undiscovered_locations = $wpdb->get_results($query);
+    }
+
+    ?>
+    <div class="wrap">
+        <h1>Undiscovered Locations</h1>
+        <p>These locations have never been visited by any user (excluding admin).</p>
+
+        <?php if (empty($undiscovered_locations)): ?>
+            <div class="notice notice-success">
+                <p><strong>Amazing!</strong> All locations have been discovered!</p>
+            </div>
+        <?php else: ?>
+            <p><strong>Total Undiscovered: <?php echo count($undiscovered_locations); ?></strong></p>
+
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">Type</th>
+                        <th>Title</th>
+                        <th style="width: 150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($undiscovered_locations as $location): ?>
+                        <tr>
+                            <td>
+                                <span class="location-type-badge <?php echo esc_attr($location->post_type); ?>">
+                                    <?php echo $location->post_type === 'floor' ? 'Floor' : 'Room'; ?>
+                                </span>
+                            </td>
+                            <td>
+                                <strong><?php echo esc_html($location->post_title); ?></strong>
+                            </td>
+                            <td>
+                                <a href="<?php echo get_permalink($location->ID); ?>" class="button button-small" target="_blank">View</a>
+                                <a href="<?php echo get_edit_post_link($location->ID); ?>" class="button button-small">Edit</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+
+        <style>
+            .location-type-badge {
+                display: inline-block;
+                padding: 3px 8px;
+                border-radius: 3px;
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+
+            .location-type-badge.floor {
+                background: #2271b1;
+                color: white;
+            }
+
+            .location-type-badge.room {
+                background: #50575e;
+                color: white;
+            }
+
+            .wp-list-table td {
+                vertical-align: middle;
+            }
+        </style>
+    </div>
+    <?php
+}
+
+/**
+ * Display the unclaimed locations page
+ */
+function spiral_tower_unclaimed_page()
+{
+    global $wpdb;
+
+    if (!current_user_can('manage_options')) {
+        wp_die(__('You do not have sufficient permissions to access this page.'));
+    }
+
+    // Get unclaimed locations (author = 1)
+    $unclaimed_locations = $wpdb->get_results(
+        "SELECT ID, post_title, post_type, post_date FROM {$wpdb->posts}
+         WHERE post_type IN ('floor', 'room') AND post_status = 'publish' AND post_author = 1
+         ORDER BY post_type DESC, post_title ASC"
+    );
+
+    ?>
+    <div class="wrap">
+        <h1>Unclaimed Locations</h1>
+        <p>These locations are currently owned by the admin (User ID 1) and are available for adoption by other users.</p>
+
+        <?php if (empty($unclaimed_locations)): ?>
+            <div class="notice notice-success">
+                <p><strong>Great!</strong> All locations have been claimed by users!</p>
+            </div>
+        <?php else: ?>
+            <p><strong>Total Unclaimed: <?php echo count($unclaimed_locations); ?></strong></p>
+
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">Type</th>
+                        <th>Title</th>
+                        <th style="width: 120px;">Created</th>
+                        <th style="width: 200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($unclaimed_locations as $location): ?>
+                        <tr>
+                            <td>
+                                <span class="location-type-badge <?php echo esc_attr($location->post_type); ?>">
+                                    <?php echo $location->post_type === 'floor' ? 'Floor' : 'Room'; ?>
+                                </span>
+                            </td>
+                            <td>
+                                <strong><?php echo esc_html($location->post_title); ?></strong>
+                            </td>
+                            <td>
+                                <?php echo date('M j, Y', strtotime($location->post_date)); ?>
+                            </td>
+                            <td>
+                                <a href="<?php echo get_permalink($location->ID); ?>" class="button button-small" target="_blank">View</a>
+                                <a href="<?php echo get_edit_post_link($location->ID); ?>" class="button button-small">Edit</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+
+        <style>
+            .location-type-badge {
+                display: inline-block;
+                padding: 3px 8px;
+                border-radius: 3px;
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+
+            .location-type-badge.floor {
+                background: #2271b1;
+                color: white;
+            }
+
+            .location-type-badge.room {
+                background: #50575e;
+                color: white;
+            }
+
+            .wp-list-table td {
+                vertical-align: middle;
+            }
+        </style>
+    </div>
+    <?php
+}
+
+/**
  * Award an achievement to a user
  * 
  * @param int $user_id The user ID
@@ -2092,7 +2698,7 @@ class Spiral_Tower_Reddit_API
     private $username;
     private $password;
     private $user_agent;
-    
+
     public function __construct()
     {
         $this->client_id = get_option('spiral_tower_reddit_client_id');
@@ -2101,7 +2707,7 @@ class Spiral_Tower_Reddit_API
         $this->password = get_option('spiral_tower_reddit_password');
         $this->user_agent = get_option('spiral_tower_reddit_user_agent', 'SpiralTowerBot/1.0');
     }
-    
+
     /**
      * Authenticate with Reddit API
      */
@@ -2120,21 +2726,21 @@ class Spiral_Tower_Reddit_API
             ],
             'timeout' => 30
         ]);
-        
+
         if (is_wp_error($response)) {
             return false;
         }
-        
+
         $body = json_decode(wp_remote_retrieve_body($response), true);
-        
+
         if (isset($body['access_token'])) {
             $this->access_token = $body['access_token'];
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Send a private message to a Reddit user
      */
@@ -2144,7 +2750,7 @@ class Spiral_Tower_Reddit_API
             error_log('Spiral Tower: Failed to authenticate with Reddit API');
             return false;
         }
-        
+
         $response = wp_remote_post('https://oauth.reddit.com/api/compose', [
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->access_token,
@@ -2158,31 +2764,31 @@ class Spiral_Tower_Reddit_API
             ],
             'timeout' => 30
         ]);
-        
+
         if (is_wp_error($response)) {
             error_log('Spiral Tower: Reddit PM request failed: ' . $response->get_error_message());
             return false;
         }
-        
+
         $status_code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
-        
+
         if ($status_code === 200) {
             $json_response = json_decode($body, true);
-            
+
             // Check for API errors
             if (isset($json_response['json']['errors']) && !empty($json_response['json']['errors'])) {
                 error_log('Spiral Tower: Reddit API errors: ' . print_r($json_response['json']['errors'], true));
                 return false;
             }
-            
+
             return true;
         }
-        
+
         error_log('Spiral Tower: Reddit PM failed with status ' . $status_code . ': ' . $body);
         return false;
     }
-    
+
     /**
      * Test the Reddit connection
      */
@@ -2200,6 +2806,7 @@ class Spiral_Tower_Reddit_API
             ];
         }
     }
+
 }
 
 /**
@@ -2208,19 +2815,19 @@ class Spiral_Tower_Reddit_API
 class Spiral_Tower_Comment_Notifications
 {
     private $reddit_api;
-    
+
     public function __construct()
     {
         $this->reddit_api = new Spiral_Tower_Reddit_API();
-        
+
         // Hook into comment posting
         add_action('comment_post', array($this, 'schedule_comment_notification'), 10, 3);
         add_action('wp_set_comment_status', array($this, 'handle_comment_status_change'), 10, 2);
-        
+
         // Register the scheduled event
         add_action('spiral_tower_send_comment_notification', array($this, 'send_comment_notification'));
     }
-    
+
     /**
      * Schedule a comment notification when a comment is posted
      */
@@ -2230,45 +2837,47 @@ class Spiral_Tower_Comment_Notifications
         if (get_option('spiral_tower_enable_comment_notifications') !== '1') {
             return;
         }
-        
+
         // Only notify for approved comments
         if ($comment_approved !== 1) {
             return;
         }
-        
+
         $comment = get_comment($comment_id);
         if (!$comment) {
             return;
         }
-        
+
         // Check if this is on a floor or room post
         $post = get_post($comment->comment_post_ID);
         if (!$post || !in_array($post->post_type, ['floor', 'room'])) {
             return;
         }
-        
+
         // Don't notify if commenter is the post author
         if ($comment->user_id == $post->post_author) {
             return;
         }
-        
+
         // Don't notify for bot comments if setting is enabled
         if (get_option('spiral_tower_exclude_bot_comments') === '1') {
             $bot_username = get_option('spiral_tower_reddit_username');
-            if (!empty($bot_username) && 
+            if (
+                !empty($bot_username) &&
                 (stripos($comment->comment_author, $bot_username) !== false ||
-                 stripos($comment->comment_content, '/create room') !== false)) {
+                    stripos($comment->comment_content, '/create room') !== false)
+            ) {
                 return;
             }
         }
-        
+
         // Schedule the notification
         $delay = get_option('spiral_tower_notification_delay', 5) * 60; // Convert minutes to seconds
         wp_schedule_single_event(time() + $delay, 'spiral_tower_send_comment_notification', array($comment_id));
-        
+
         error_log("Spiral Tower: Scheduled comment notification for comment $comment_id with {$delay}s delay");
     }
-    
+
     /**
      * Handle comment status changes (when comments are approved)
      */
@@ -2282,7 +2891,7 @@ class Spiral_Tower_Comment_Notifications
             }
         }
     }
-    
+
     /**
      * Send the actual comment notification
      */
@@ -2293,27 +2902,27 @@ class Spiral_Tower_Comment_Notifications
             error_log("Spiral Tower: Comment $comment_id not found for notification");
             return;
         }
-        
+
         $post = get_post($comment->comment_post_ID);
         if (!$post) {
             error_log("Spiral Tower: Post {$comment->comment_post_ID} not found for comment notification");
             return;
         }
-        
+
         // Get the post author's Reddit username
         $post_author_reddit = get_user_meta($post->post_author, 'spiral_tower_reddit_username', true);
         if (empty($post_author_reddit)) {
             error_log("Spiral Tower: No Reddit username found for post author {$post->post_author}");
             return;
         }
-        
+
         // Prepare the notification message
         $post_type_name = ($post->post_type === 'floor') ? 'floor' : 'room';
         $post_url = get_permalink($post->ID);
         $commenter_name = !empty($comment->comment_author) ? $comment->comment_author : 'Someone';
-        
+
         $subject = "New comment on your {$post_type_name}: {$post->post_title}";
-        
+
         $message = "Hello!\n\n";
         $message .= "{$commenter_name} just signed your guestbook on your {$post_type_name} \"{$post->post_title}\":\n\n";
         $message .= "\"" . wp_trim_words(strip_tags($comment->comment_content), 50) . "\"\n\n";
@@ -2322,13 +2931,13 @@ class Spiral_Tower_Comment_Notifications
         $message .= "---\n";
         $message .= "This is an automated notification from The Spiral Tower.\n";
         $message .= "You can disable these notifications in your account settings.";
-        
+
         // Send the notification
         $success = $this->reddit_api->send_private_message($post_author_reddit, $subject, $message);
-        
+
         if ($success) {
             error_log("Spiral Tower: Successfully sent comment notification to u/{$post_author_reddit}");
-            
+
             // Log the notification in post meta
             add_post_meta($comment->comment_post_ID, '_spiral_tower_notification_sent', array(
                 'comment_id' => $comment_id,
@@ -2339,6 +2948,7 @@ class Spiral_Tower_Comment_Notifications
             error_log("Spiral Tower: Failed to send comment notification to u/{$post_author_reddit}");
         }
     }
+
 }
 
 /**
@@ -2347,15 +2957,15 @@ class Spiral_Tower_Comment_Notifications
 function spiral_tower_test_reddit_connection()
 {
     check_ajax_referer('test_reddit_connection', 'nonce');
-    
+
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'Permission denied'));
         return;
     }
-    
+
     $reddit_api = new Spiral_Tower_Reddit_API();
     $result = $reddit_api->test_connection();
-    
+
     if ($result['success']) {
         wp_send_json_success($result);
     } else {
@@ -2381,16 +2991,16 @@ function spiral_tower_reddit_config_notice()
     if (!current_user_can('manage_options')) {
         return;
     }
-    
+
     $reddit_username = get_option('spiral_tower_reddit_username');
     $reddit_client_id = get_option('spiral_tower_reddit_client_id');
     $notifications_enabled = get_option('spiral_tower_enable_comment_notifications');
-    
+
     if ($notifications_enabled === '1' && (empty($reddit_username) || empty($reddit_client_id))) {
         ?>
         <div class="notice notice-warning">
             <p>
-                <strong>Spiral Tower:</strong> Comment notifications are enabled but Reddit bot settings are not configured. 
+                <strong>Spiral Tower:</strong> Comment notifications are enabled but Reddit bot settings are not configured.
                 <a href="<?php echo admin_url('admin.php?page=spiral-tower-settings'); ?>">Configure Reddit settings</a>
             </p>
         </div>
@@ -2399,3 +3009,28 @@ function spiral_tower_reddit_config_notice()
 }
 add_action('admin_notices', 'spiral_tower_reddit_config_notice');
 
+function debug_stairs_404()
+{
+    if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/stairs') !== false) {
+        error_log('=== Stairs page debug ===');
+        error_log('REQUEST_URI: ' . $_SERVER['REQUEST_URI']);
+        error_log('is_page("stairs"): ' . (is_page('stairs') ? 'true' : 'false'));
+        error_log('is_404(): ' . (is_404() ? 'true' : 'false'));
+
+        $floor_param = get_query_var('floor');
+        error_log('Query var floor: ' . ($floor_param ? $floor_param : 'empty'));
+
+        // Also check $_GET directly
+        $floor_get = isset($_GET['floor']) ? $_GET['floor'] : 'not set';
+        error_log('$_GET floor: ' . $floor_get);
+
+        global $wp_query;
+        if (isset($wp_query)) {
+            error_log('WP Query found_posts: ' . (isset($wp_query->found_posts) ? $wp_query->found_posts : 'not set'));
+            error_log('WP Query post_count: ' . (isset($wp_query->post_count) ? $wp_query->post_count : 'not set'));
+            error_log('WP Query is_404: ' . ($wp_query->is_404 ? 'true' : 'false'));
+        }
+        error_log('=== End stairs debug ===');
+    }
+}
+// add_action('wp', 'debug_stairs_404');

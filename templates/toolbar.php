@@ -118,6 +118,23 @@ if ($has_liked) {
     <?php // ----- END: User Profile Button ----- ?>
 
 
+    <?php // ----- START: Help Button ----- ?>
+    <div id="button-how-it-works" class="tooltip-trigger new-section-after" data-tooltip="How it works">
+        <a href="/how-it-works">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 275 317" width="26" height="26"
+                style="display:inline-block; vertical-align:middle; overflow:visible">
+                <g transform="translate(-16,-2) scale(1.05)">
+                    <path
+                        d="M187.6,56.4c39.7,31.7,36.5,97.1-7.9,122.8s-18.9,7.2-22.1,10.9c-6,7,1.1,18.6-5.9,25.6-7.2,7.2-23.2,4.7-25.5-5.4s-.5-28.1,5.4-36.2c14.3-20.1,49-17.8,53.4-50.6,7.7-58.4-71.7-72.7-87.2-22.2-3.6,11.6.3,29.8-18.2,28.9-19.1-1-14-27.6-9.8-39.9,16.8-48.8,77.5-66,117.9-33.8Z"
+                        fill="#fff" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M141.6,242.6c24.6.7,22.9,39.7-3,37.5-23.2-2-21.9-38.2,3-37.5Z" fill="#fff" stroke="#fff"
+                        stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+                </g>
+            </svg>
+        </a>
+    </div>
+    <?php // ----- END: Help Button ----- ?>
+
 
 
     <?php // ----- START: Edit Post Button (Conditional) ----- ?>
@@ -226,7 +243,7 @@ if ($has_liked) {
 
 
     <?php // ----- START: STAIRS ----- ?>
-    <a href="/stairs" id="button-stairs" class="tooltip-trigger"
+    <a href="/stairs?floorNumber=<?php echo esc_attr($current_floor_number); ?>" id="button-stairs" class="tooltip-trigger"
         data-tooltip="Take the Spiral Tower All Inclusive Rail System!">
         <img src="/wp-content/plugins/the-spiral-tower/dist/images/stairs.svg" alt="Stairs Icon" />
     </a>
@@ -275,11 +292,6 @@ if ($has_liked) {
             <circle cx="12" cy="7" r="4" />
         </svg>
     </div>
-
-
-
-
-
     <div id="user-profile-popup" style="display: none; width: 280px; height: auto;">
         <?php
         $post_id = get_the_ID();

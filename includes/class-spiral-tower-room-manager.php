@@ -50,6 +50,9 @@ class Spiral_Tower_Room_Manager
 
         // Block creation attempts via direct URL access ***
         add_action('admin_init', array($this, 'block_room_creation_for_authors'));
+
+        // Better admin search
+        add_action('pre_get_posts', array($this, 'enhance_room_admin_search'));
     }
 
     /**
@@ -1168,36 +1171,103 @@ class Spiral_Tower_Room_Manager
         }
 
         $search_term = isset($_GET['term']) ? sanitize_text_field($_GET['term']) : '';
-
-        // Restrict floor search based on user role ***
         $user = wp_get_current_user();
-        $args = array(
-            'post_type' => 'floor',
-            'posts_per_page' => -1,
-            'post_status' => 'publish',
-            'orderby' => array(
-                'meta_value_num' => 'DESC',
-                'title' => 'ASC'
-            ),
-            'meta_query' => array(
-                'relation' => 'OR',
-                array(
-                    'key' => '_floor_number',
-                    'compare' => 'EXISTS'
-                ),
-                array(
-                    'key' => '_floor_number',
-                    'compare' => 'NOT EXISTS'
-                )
-            )
-        );
+        $floors = array();
 
-        // If user is floor_author, only show their own floors ***
-        if (in_array('floor_author', (array) $user->roles) && !current_user_can('edit_others_floors')) {
-            $args['author'] = $user->ID;
+        // For regular users (admin/editor): show all floors as before
+        if (current_user_can('administrator') || current_user_can('editor')) {
+            $args = array(
+                'post_type' => 'floor',
+                'posts_per_page' => -1,
+                'post_status' => 'publish',
+                'orderby' => array(
+                    'meta_value_num' => 'DESC',
+                    'title' => 'ASC'
+                ),
+                'meta_query' => array(
+                    'relation' => 'OR',
+                    array(
+                        'key' => '_floor_number',
+                        'compare' => 'EXISTS'
+                    ),
+                    array(
+                        'key' => '_floor_number',
+                        'compare' => 'NOT EXISTS'
+                    )
+                )
+            );
+            $floors = get_posts($args);
+        }
+        // For floor_author users: show their own floors PLUS floors where _floor_allow_user_rooms = '1'
+        elseif (in_array('floor_author', (array) $user->roles)) {
+            // Get floors authored by this user
+            $authored_floors = get_posts(array(
+                'post_type' => 'floor',
+                'posts_per_page' => -1,
+                'post_status' => 'publish',
+                'author' => $user->ID,
+                'orderby' => array(
+                    'meta_value_num' => 'DESC',
+                    'title' => 'ASC'
+                ),
+                'meta_query' => array(
+                    'relation' => 'OR',
+                    array(
+                        'key' => '_floor_number',
+                        'compare' => 'EXISTS'
+                    ),
+                    array(
+                        'key' => '_floor_number',
+                        'compare' => 'NOT EXISTS'
+                    )
+                )
+            ));
+
+            // Get floors that allow user rooms (where _floor_allow_user_rooms = '1')
+            $allowed_floors = get_posts(array(
+                'post_type' => 'floor',
+                'posts_per_page' => -1,
+                'post_status' => 'publish',
+                'orderby' => array(
+                    'meta_value_num' => 'DESC',
+                    'title' => 'ASC'
+                ),
+                'meta_query' => array(
+                    'relation' => 'AND',
+                    array(
+                        'key' => '_floor_allow_user_rooms',
+                        'value' => '1',
+                        'compare' => '='
+                    ),
+                    array(
+                        'relation' => 'OR',
+                        array(
+                            'key' => '_floor_number',
+                            'compare' => 'EXISTS'
+                        ),
+                        array(
+                            'key' => '_floor_number',
+                            'compare' => 'NOT EXISTS'
+                        )
+                    )
+                )
+            ));
+
+            // Merge both arrays and remove duplicates by ID
+            $all_floors = array_merge($authored_floors, $allowed_floors);
+            $unique_floors = array();
+            $seen_ids = array();
+            
+            foreach ($all_floors as $floor) {
+                if (!in_array($floor->ID, $seen_ids)) {
+                    $unique_floors[] = $floor;
+                    $seen_ids[] = $floor->ID;
+                }
+            }
+            
+            $floors = $unique_floors;
         }
 
-        $floors = get_posts($args);
         $results = array();
 
         foreach ($floors as $floor) {
@@ -1218,6 +1288,63 @@ class Spiral_Tower_Room_Manager
         $results = array_slice($results, 0, 20);
 
         wp_send_json($results);
+    }
+
+    /**
+     * Enhance admin search to include author name
+     */
+    public function enhance_room_admin_search($query)
+    {
+        // Only run in admin, on main query, for room post type, when search is happening
+        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== 'room' || !$query->is_search()) {
+            return;
+        }
+
+        $search_term = $query->get('s');
+        if (empty($search_term)) {
+            return;
+        }
+
+        // Don't set meta_query - let the SQL search handle everything
+        // Just add the custom SQL search filter
+        add_filter('posts_search', array($this, 'modify_room_search_sql'), 10, 2);
+    }
+
+    /**
+     * Modify the SQL search to include author name
+     */
+    public function modify_room_search_sql($search, $query)
+    {
+        global $wpdb;
+
+        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== 'room' || !$query->is_search()) {
+            return $search;
+        }
+
+        $search_term = $query->get('s');
+        if (empty($search_term)) {
+            return $search;
+        }
+
+        // Remove filters to prevent infinite loops
+        remove_filter('posts_search', array($this, 'modify_room_search_sql'), 10);
+        remove_filter('posts_join', array($this, 'modify_room_search_join'), 10);
+
+        $search_term_like = '%' . $wpdb->esc_like($search_term) . '%';
+
+        $search = " AND (
+        ({$wpdb->posts}.post_title LIKE %s) 
+        OR ({$wpdb->posts}.post_content LIKE %s)
+        OR EXISTS (
+            SELECT 1 FROM {$wpdb->users} 
+            WHERE {$wpdb->users}.ID = {$wpdb->posts}.post_author 
+            AND ({$wpdb->users}.display_name LIKE %s OR {$wpdb->users}.user_login LIKE %s)
+        )
+    )";
+
+        $search = $wpdb->prepare($search, $search_term_like, $search_term_like, $search_term_like, $search_term_like);
+
+        return $search;
     }
 
 } // End Class Spiral_Tower_Room_Manager

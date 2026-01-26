@@ -77,7 +77,7 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
     <title><?php echo $page_title; ?></title>
     <?php wp_head(); ?>
 </head>
-
+<?php include 'menu.php'; ?>
 <body class="spiral-tower-profile-page">
     <div class="spiral-profile-container">
         <header class="profile-header">
@@ -111,7 +111,8 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
 
             <div class="edit-profile-section">
                 <?php if ($is_own_profile): ?>
-                    <a class="profile-user-button" href="<?php echo esc_url(get_edit_profile_url()); ?>" class="profile-button">
+                    <a class="profile-user-button" href="<?php echo esc_url(get_edit_profile_url()); ?>"
+                        class="profile-button">
                         Edit Profile
                     </a>
                     <a class="profile-user-button" href="<?php echo wp_logout_url(); ?>" class="profile-button">Log Out</a>
@@ -140,7 +141,8 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
             </div>
         <?php elseif ($is_own_profile): ?>
             <div class="profile-bio-section">
-                <p>You haven't added a bio yet. <a href="<?php echo esc_url(get_edit_profile_url()); ?>#description">Add one now</a>!</p>
+                <p>You haven't added a bio yet. <a href="<?php echo esc_url(get_edit_profile_url()); ?>#description">Add one
+                        now</a>!</p>
             </div>
         <?php endif; ?>
 
@@ -151,18 +153,18 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
                     Floors Created<br />
                     <div class="smaller">(<?php echo $user_floors->found_posts; ?>)</div>
                 </button>
-                
+
                 <?php if (!empty($all_achievements)): ?>
                     <button class="tab-button" data-tab="achievements">
                         Achievements<br />
                         <div class="smaller">(<?php echo $earned_count; ?> of <?php echo $total_count; ?>)</div>
                     </button>
                 <?php endif; ?>
-                
+
                 <button class="tab-button" data-tab="inventory">
                     Inventory
                 </button>
-                
+
                 <a href="<?php echo home_url(); ?>" class="tab-button tab-link">
                     Return to The Spiral Tower
                 </a>
@@ -182,7 +184,7 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
                                 $floor_number = get_post_meta(get_the_ID(), '_floor_number', true);
                                 $floor_number_alt_text = get_post_meta(get_the_ID(), '_floor_number_alt_text', true);
                                 $display_number = !empty($floor_number_alt_text) ? $floor_number_alt_text : "Floor {$floor_number}";
-                                
+
                                 // Get the thumbnail URL - back to medium size
                                 $thumbnail_url = get_the_post_thumbnail_url(get_the_ID(), 'medium');
                                 $background_style = $thumbnail_url ? 'style="background-image: url(' . esc_url($thumbnail_url) . ');"' : '';
@@ -205,7 +207,8 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
                             <?php if ($is_own_profile): ?>
                                 <p>You haven't created any floors yet.</p>
                                 <?php if (current_user_can('publish_floors')): ?>
-                                    <p><a href="<?php echo esc_url(admin_url('post-new.php?post_type=floor')); ?>">Create your first floor</a>!</p>
+                                    <p><a href="<?php echo esc_url(admin_url('post-new.php?post_type=floor')); ?>">Create your first
+                                            floor</a>!</p>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <p>This user hasn't created any floors yet.</p>
@@ -236,7 +239,8 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
                                                 data-description="<?php echo esc_html($achievement['description']); ?>" />
                                         </div>
                                         <?php if ($is_own_profile): ?>
-                                            <div class="achievement-description"><?php echo esc_html($achievement['description']) ?></div>
+                                            <div class="achievement-description"><?php echo esc_html($achievement['description']) ?>
+                                            </div>
                                         <?php endif; ?>
                                     </div>
                                 <?php endif;
@@ -250,12 +254,17 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
             <div class="tab-content" id="inventory-tab">
                 <div class="content-section">
                     <div class="inventory-iframe-container">
-                        <iframe src="https://spiral.bibbleskit.com/u/<?php echo esc_html($user->display_name); ?>" 
-                                frameborder="0" 
-                                width="100%" 
-                                height="600"
-                                sandbox="allow-scripts allow-same-origin"
-                                loading="lazy">
+                        <iframe src="https://spiral.bibbleskit.com/u/<?php
+                        $reddit_username = get_user_meta($user->ID, 'spiral_tower_reddit_username', true);
+                        $display_username = !empty($reddit_username) ? $reddit_username : $user->display_name;
+
+                        // Remove first character if it's an underscore
+                        if (strlen($display_username) > 0 && $display_username[0] === '_') {
+                            $display_username = substr($display_username, 1);
+                        }
+
+                        echo esc_html($display_username);
+                        ?>" frameborder="0" width="100%" height="600" sandbox="allow-scripts allow-same-origin" loading="lazy">
                         </iframe>
                     </div>
                 </div>
@@ -264,12 +273,12 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('=== TAB SCRIPT STARTING ===');
-            
+
             const tabButtons = document.querySelectorAll('.tab-button');
             const tabContents = document.querySelectorAll('.tab-content');
-            
+
             console.log('Found', tabButtons.length, 'buttons and', tabContents.length, 'contents');
 
             if (tabButtons.length === 0) {
@@ -283,10 +292,10 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
                     console.log('Skipping tab-link:', button.textContent.trim());
                     return;
                 }
-                
+
                 console.log('Setting up button', index, ':', button.getAttribute('data-tab'));
-                
-                button.addEventListener('click', function() {
+
+                button.addEventListener('click', function () {
                     const targetTab = this.getAttribute('data-tab');
                     console.log('=== TAB CLICKED:', targetTab, '===');
 
@@ -316,11 +325,11 @@ if (isset($spiral_tower_plugin->achievement_manager)) {
                     } else {
                         console.error('ERROR: Could not find content:', targetTab + '-tab');
                     }
-                    
+
                     console.log('=== TAB SWITCH COMPLETE ===');
                 });
             });
-            
+
             console.log('=== TAB SCRIPT COMPLETE ===');
         });
     </script>

@@ -191,7 +191,7 @@ class Spiral_Tower_Image_Generator
     /**
      * Generate an image using the DALL-E API
      */
-    private function generate_image_from_api($prompt)
+    public function generate_image_from_api($prompt)
     {
         $api_key = get_option('spiral_tower_dalle_api_key');
         $api_endpoint = get_option('spiral_tower_dalle_api_endpoint', 'https://shauntest.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01');
@@ -292,14 +292,14 @@ class Spiral_Tower_Image_Generator
     /**
      * Download an image from a URL and attach it to a post
      */
-    private function download_and_attach_image($image_url, $post_id)
+    public function download_and_attach_image($image_url, $post_id, $prompt = '')
     {
         require_once(ABSPATH . 'wp-admin/includes/image.php');
         require_once(ABSPATH . 'wp-admin/includes/file.php');
         require_once(ABSPATH . 'wp-admin/includes/media.php');
 
         // Get the image prompt for use in the attachment title/description
-        $image_prompt = get_post_meta($post_id, '_temp_generated_image_prompt', true);
+        $image_prompt = !empty($prompt) ? $prompt : get_post_meta($post_id, '_temp_generated_image_prompt', true);
         $post = get_post($post_id);
         $post_title = $post ? $post->post_title : '';
 

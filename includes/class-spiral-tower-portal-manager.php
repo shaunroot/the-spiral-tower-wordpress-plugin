@@ -921,6 +921,7 @@ class Spiral_Tower_Portal_Manager
                         <option value="floor" <?php selected($destination_type, 'floor'); ?>>Floor</option>
                         <option value="room" <?php selected($destination_type, 'room'); ?>>Room</option>
                         <option value="external_url" <?php selected($destination_type, 'external_url'); ?>>External URL</option>
+                        <option value="gallery_item" <?php selected($destination_type, 'gallery_item'); ?>>Gallery Item</option>
                     </select>
                 </div>
 
@@ -1456,6 +1457,12 @@ public function save_portal_meta($post_id)
         delete_post_meta($post_id, '_destination_external_url');
     }
 
+    // Handle Gallery Item destination type (no additional fields needed)
+    if ($destination_type_value === 'gallery_item') {
+        // Gallery Item doesn't need additional URL or ID fields
+        // The custom image from the portal will be used for the modal
+    }
+
     // Custom Size
     $use_custom_size = isset($_POST['use_custom_size']) ? '1' : '0';
     update_post_meta($post_id, '_use_custom_size', $use_custom_size);
@@ -1617,7 +1624,7 @@ public function add_portal_data_to_rest_api()
                 'origin_type' => ['type' => 'string'],
                 'origin_floor_id' => ['type' => ['string', 'null']],
                 'origin_room_id' => ['type' => ['string', 'null']],
-                'destination_type' => ['type' => 'string'],
+                'destination_type' => ['type' => 'string', 'enum' => ['floor', 'room', 'external_url', 'gallery_item']],
                 'destination_floor_id' => ['type' => ['string', 'null']],
                 'destination_room_id' => ['type' => ['string', 'null']],
                 'destination_external_url' => ['type' => ['string', 'null']],
@@ -1699,7 +1706,8 @@ public function add_portal_data_to_rest_api()
                     } else {
                         echo 'External URL: <em>(Not set)</em>';
                     }
-                    // --- END NEW ---
+                } elseif ($dest_type === 'gallery_item') {
+                    echo 'Gallery Item';
                 } else {
                     echo '<em>(Not set)</em>';
                 }
