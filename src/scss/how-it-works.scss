@@ -1,0 +1,288 @@
+.tower-how-it-works-page {
+   background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+   min-height: 100vh;
+   margin: 0;
+   font-family: 'Winky Sans', sans-serif;
+
+   .how-it-works-wrapper {
+       max-width: 1200px;
+       margin: 0 auto;
+       padding: 20px;
+   }
+
+   .how-it-works-header {
+       text-align: center;
+       margin-bottom: 40px;
+       color: white;
+
+       h1 {
+           font-size: 3rem;
+           margin: 0 0 20px 0;
+           text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+           font-family: 'Metamorphous', serif;
+           color: white;
+       }
+   }
+
+   .how-it-works-subtitle {
+       font-size: 1.3rem;
+       color: #b0c4de;
+       font-style: italic;
+       margin: 0;
+   }
+
+   .how-it-works-nav {
+       margin-bottom: 20px;
+
+       a {
+           color: #b69dff;
+           text-decoration: none;
+           font-size: 1.1rem;
+           transition: color 0.3s ease;
+
+           &:hover {
+               color: white;
+           }
+       }
+   }
+
+   .how-it-works-content {
+       display: grid;
+       grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+       gap: 30px;
+       margin-bottom: 40px;
+   }
+
+   .hiw-section {
+       background: linear-gradient(135deg, #2a1a4a 0%, #432675 100%);
+       padding: 25px;
+       backdrop-filter: blur(10px);
+       border: 1px solid rgba(255, 255, 255, 0.2);
+
+       h2 {
+           font-size: 2rem;
+           color: #b69dff;
+           margin: 0 0 15px 0;
+           font-family: 'Metamorphous', serif;
+           text-align: center;
+           border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+           padding-bottom: 10px;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           gap: 15px;
+
+           svg {
+               width: 28px;
+               height: 28px;
+               stroke: #ffd700;
+               fill: none;
+
+               path {
+                   stroke: #ffd700;
+               }
+
+               circle {
+                   stroke: #ffd700;
+               }
+
+               line {
+                   stroke: #ffd700;
+               }
+           }
+
+           img {
+               filter: brightness(0) saturate(100%) invert(84%) sepia(75%) saturate(2489%) hue-rotate(346deg) brightness(104%) contrast(101%);
+           }
+       }
+   }
+
+   .hiw-description {
+       font-size: 1.5rem;
+       line-height: 1.6;
+       color: #e0e0e0;
+
+       p {
+           margin-bottom: 1rem;
+       }
+
+       ul {
+           margin: 1rem 0;
+           padding-left: 1.5rem;
+       }
+
+       li {
+           margin-bottom: 0.5rem;
+           color: #d0d0d0;
+       }
+
+       strong {
+           color: #b69dff;
+           font-weight: bold;
+       }
+
+       a {
+           color: #b69dff;
+           text-decoration: none;
+           transition: color 0.3s ease;
+
+           &:hover {
+               color: #c4b1ff;
+               text-shadow: 0 0 5px rgba(182, 157, 255, 0.5);
+           }
+       }
+   }
+
+   .getting-started-section {
+       background: linear-gradient(135deg, #2a1a4a 0%, #432675 100%);
+       padding: 30px;
+       text-align: center;
+       backdrop-filter: blur(10px);
+       border: 1px solid rgba(255, 255, 255, 0.2);
+       margin-bottom: 30px;
+       grid-column: 1 / -1;
+
+       h2 {
+           font-size: 2.2rem;
+           color: #b69dff;
+           margin: 0 0 20px 0;
+           font-family: 'Metamorphous', serif;
+       }
+   }
+
+   .getting-started-buttons {
+       display: flex;
+       gap: 15px;
+       justify-content: center;
+       flex-wrap: wrap;
+       margin-top: 25px;
+   }
+
+   .cta-button {
+       display: inline-block;
+       padding: 12px 24px;
+       text-decoration: none;
+       border-radius: 6px;
+       font-weight: bold;
+       transition: all 0.3s ease;
+       font-size: 1rem;
+       border: 2px solid;
+       font-family: 'Winky Sans', sans-serif;
+
+       &.primary {
+           background: #b69dff;
+           color: #1a1a2e;
+           border-color: #b69dff;
+
+           &:hover {
+               background: #c4b1ff;
+               transform: translateY(-2px);
+               box-shadow: 0 5px 15px rgba(182, 157, 255, 0.4);
+           }
+       }
+
+       &.secondary {
+           background: transparent;
+           color: #87ceeb;
+           border-color: #87ceeb;
+
+           &:hover {
+               background: rgba(135, 206, 235, 0.2);
+               color: #b0e0ff;
+               transform: translateY(-2px);
+           }
+       }
+   }
+
+   .tower-navigation {
+       background: linear-gradient(135deg, #2a1a4a 0%, #432675 100%);
+       padding: 25px;
+       text-align: center;
+       backdrop-filter: blur(10px);
+       border: 1px solid rgba(255, 255, 255, 0.2);
+
+       h3 {
+           color: #b69dff;
+           font-family: 'Metamorphous', serif;
+           margin: 0 0 20px 0;
+           border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+           padding-bottom: 10px;
+       }
+   }
+
+   .nav-links {
+       display: flex;
+       gap: 15px;
+       justify-content: center;
+       flex-wrap: wrap;
+   }
+
+   .nav-link {
+       display: inline-block;
+       padding: 10px 20px;
+       background: rgba(255, 255, 255, 0.1);
+       color: #87ceeb;
+       text-decoration: none;
+       border-radius: 4px;
+       transition: all 0.3s ease;
+       border: 1px solid rgba(135, 206, 235, 0.3);
+       font-family: 'Winky Sans', sans-serif;
+
+       &:hover {
+           background: rgba(135, 206, 235, 0.2);
+           color: #b0e0ff;
+           transform: translateY(-1px);
+       }
+   }
+
+   @media (max-width: 768px) {
+       .how-it-works-wrapper {
+           padding: 10px;
+       }
+       
+       .how-it-works-content {
+           grid-template-columns: 1fr;
+           gap: 20px;
+       }
+       
+       .how-it-works-header h1 {
+           font-size: 2rem;
+       }
+       
+       .hiw-section {
+           padding: 20px;
+       }
+       
+       .getting-started-buttons,
+       .nav-links {
+           flex-direction: column;
+           align-items: center;
+       }
+       
+       .cta-button,
+       .nav-link {
+           width: 100%;
+           max-width: 300px;
+       }
+   }
+
+   &.how-it-works-template {
+       margin: 0;
+       padding: 0;
+       overflow-x: hidden;
+
+       * {
+           box-sizing: border-box;
+       }
+   }
+
+    @media (prefers-reduced-motion: reduce) {
+        * {
+            animation-duration: 2s !important;
+            transition-duration: 0.3s !important;
+        }
+    }
+
+   background: linear-gradient(135deg, #0f0f1a 0%, #16213e 50%, #0f0f1a 100%) !important;
+
+}
