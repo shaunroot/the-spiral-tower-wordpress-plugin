@@ -1310,6 +1310,9 @@ function spiral_tower_settings_page()
 {
     // Handle form submission
     if (isset($_POST['submit']) && wp_verify_nonce($_POST['spiral_tower_settings_nonce'], 'spiral_tower_settings')) {
+        // Image Generation Provider
+        update_option('spiral_tower_image_provider', sanitize_text_field($_POST['spiral_tower_image_provider']));
+
         // DALL-E Settings
         update_option('spiral_tower_dalle_api_key', sanitize_text_field($_POST['spiral_tower_dalle_api_key']));
         update_option('spiral_tower_dalle_api_endpoint', sanitize_text_field($_POST['spiral_tower_dalle_api_endpoint']));
@@ -1331,6 +1334,7 @@ function spiral_tower_settings_page()
     }
 
     // Get current values
+    $image_provider = get_option('spiral_tower_image_provider', 'dalle');
     $dalle_api_key = get_option('spiral_tower_dalle_api_key', '');
     $dalle_api_endpoint = get_option('spiral_tower_dalle_api_endpoint', 'https://shauntest.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01');
 
@@ -1350,25 +1354,55 @@ function spiral_tower_settings_page()
         <form method="post" action="">
             <?php wp_nonce_field('spiral_tower_settings', 'spiral_tower_settings_nonce'); ?>
 
-            <!-- DALL-E Settings -->
-            <h2>DALL-E Image Generation</h2>
+            <!-- Image Generation Settings -->
+            <h2>Image Generation</h2>
             <table class="form-table">
                 <tr valign="top">
-                    <th scope="row">DALL-E API Key</th>
+                    <th scope="row">Image Provider</th>
                     <td>
-                        <input type="password" name="spiral_tower_dalle_api_key"
-                            value="<?php echo esc_attr($dalle_api_key); ?>" class="regular-text" />
-                    </td>
-                </tr>
-                <tr valign="top">
-                    <th scope="row">DALL-E API Endpoint</th>
-                    <td>
-                        <input type="text" name="spiral_tower_dalle_api_endpoint"
-                            value="<?php echo esc_attr($dalle_api_endpoint); ?>" class="regular-text" />
-                        <p class="description">Azure OpenAI Service endpoint</p>
+                        <select name="spiral_tower_image_provider" id="spiral_tower_image_provider">
+                            <option value="dalle" <?php selected($image_provider, 'dalle'); ?>>DALL-E 3 (Azure OpenAI)</option>
+                            <option value="pollinations" <?php selected($image_provider, 'pollinations'); ?>>Pollinations.ai (Free)</option>
+                        </select>
+                        <p class="description">Select which image generation service to use</p>
                     </td>
                 </tr>
             </table>
+
+            <!-- DALL-E Settings -->
+            <div id="dalle-settings" style="<?php echo $image_provider !== 'dalle' ? 'display:none;' : ''; ?>">
+                <h3>DALL-E Settings</h3>
+                <table class="form-table">
+                    <tr valign="top">
+                        <th scope="row">DALL-E API Key</th>
+                        <td>
+                            <input type="password" name="spiral_tower_dalle_api_key"
+                                value="<?php echo esc_attr($dalle_api_key); ?>" class="regular-text" />
+                        </td>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row">DALL-E API Endpoint</th>
+                        <td>
+                            <input type="text" name="spiral_tower_dalle_api_endpoint"
+                                value="<?php echo esc_attr($dalle_api_endpoint); ?>" class="regular-text" />
+                            <p class="description">Azure OpenAI Service endpoint</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Pollinations Settings -->
+            <div id="pollinations-settings" style="<?php echo $image_provider !== 'pollinations' ? 'display:none;' : ''; ?>">
+                <h3>Pollinations.ai Settings</h3>
+                <p class="description">Pollinations.ai is a free image generation service. No API key required.</p>
+            </div>
+
+            <script>
+                document.getElementById('spiral_tower_image_provider').addEventListener('change', function() {
+                    document.getElementById('dalle-settings').style.display = this.value === 'dalle' ? '' : 'none';
+                    document.getElementById('pollinations-settings').style.display = this.value === 'pollinations' ? '' : 'none';
+                });
+            </script>
 
             <!-- Reddit Bot Settings -->
             <h2>Reddit Bot Configuration</h2>

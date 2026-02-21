@@ -189,15 +189,29 @@ class Spiral_Tower_Image_Generator
     }
 
     /**
-     * Generate an image using the DALL-E API
+     * Generate an image using the configured provider
      */
     public function generate_image_from_api($prompt)
+    {
+        $provider = get_option('spiral_tower_image_provider', 'dalle');
+
+        if ($provider === 'pollinations') {
+            return $this->generate_image_pollinations($prompt);
+        }
+
+        return $this->generate_image_dalle($prompt);
+    }
+
+    /**
+     * Generate an image using DALL-E API
+     */
+    private function generate_image_dalle($prompt)
     {
         $api_key = get_option('spiral_tower_dalle_api_key');
         $api_endpoint = get_option('spiral_tower_dalle_api_endpoint', 'https://shauntest.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01');
 
         if (empty($api_key) || empty($api_endpoint)) {
-            return new WP_Error('missing_api_config', 'API configuration is missing');
+            return new WP_Error('missing_api_config', 'DALL-E API configuration is missing');
         }
 
         $response = wp_remote_post(
@@ -229,6 +243,37 @@ class Spiral_Tower_Image_Generator
 
         return array(
             'url' => $data['data'][0]['url']
+        );
+    }
+
+    /**
+     * Generate an image using Pollinations.ai
+     */
+    private function generate_image_pollinations($prompt)
+    {
+        // Pollinations.ai returns the image directly from a URL
+        // We need to construct the URL and verify it works
+        $encoded_prompt = urlencode($prompt);
+        $image_url = 'https://image.pollinations.ai/prompt/' . $encoded_prompt . '?width=1024&height=1024&nologo=true';
+
+        // Verify the URL is accessible by making a HEAD request
+        $response = wp_remote_head($image_url, array(
+            'timeout' => 120,
+            'redirection' => 5
+        ));
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+
+        if ($status_code !== 200) {
+            return new WP_Error('api_error', 'Pollinations.ai returned status code: ' . $status_code);
+        }
+
+        return array(
+            'url' => $image_url
         );
     }
 
