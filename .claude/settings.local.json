@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "WebFetch(domain:image.pollinations.ai)",
+      "WebFetch(domain:pollinations.ai)",
+      "WebFetch(domain:enter.pollinations.ai)",
+      "WebFetch(domain:gen.pollinations.ai)",
+      "WebSearch",
+      "WebFetch(domain:ai.google.dev)",
+      "WebFetch(domain:generativelanguage.googleapis.com)",
+      "WebFetch(domain:platform.openai.com)",
+      "WebFetch(domain:help.openai.com)",
+      "Bash(sed -n '1,50p' \"/m/[ Code ]/www/shaunroot.net/spiral-tower-bot/reddit_bot.php\")",
+      "Bash(sed -n '1509,1530p' \"/m/[ Code ]/www/shaunroot.net/spiral-tower-bot/reddit_bot.php\")"
     ],
     "deny": [],
     "ask": []

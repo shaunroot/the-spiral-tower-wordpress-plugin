@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Image Generator Component
  * Handles DALL-E API integration for generating featured images
@@ -52,9 +52,22 @@ class Spiral_Tower_Image_Generator
      */
     public function render_image_generator_meta_box($post)
     {
-        // Check if API key is configured
-        if (!get_option('spiral_tower_dalle_api_key')) {
-            echo '<p>To use the image generator, please <a href="' . admin_url('edit.php?post_type=floor&page=spiral-tower-settings') . '">configure your DALL-E API key</a> first.</p>';
+        // Check if API key is configured for the selected provider
+        $provider = get_option('spiral_tower_image_provider', 'openai');
+        $has_key = false;
+        if ($provider === 'openai') {
+            $has_key = !empty(get_option('spiral_tower_openai_api_key'));
+        } elseif ($provider === 'huggingface') {
+            $has_key = !empty(get_option('spiral_tower_huggingface_api_key'));
+        } elseif ($provider === 'gemini') {
+            $has_key = !empty(get_option('spiral_tower_gemini_api_key'));
+        } elseif ($provider === 'dalle') {
+            $has_key = !empty(get_option('spiral_tower_dalle_api_key'));
+        } else {
+            $has_key = true; // Pollinations doesn't need a key
+        }
+        if (!$has_key) {
+            echo '<p>To use the image generator, please <a href="' . admin_url('edit.php?post_type=floor&page=spiral-tower-settings') . '">configure your API key</a> first.</p>';
             return;
         }
 
@@ -193,13 +206,275 @@ class Spiral_Tower_Image_Generator
      */
     public function generate_image_from_api($prompt)
     {
-        $provider = get_option('spiral_tower_image_provider', 'dalle');
+        $provider = get_option('spiral_tower_image_provider', 'openai');
+
+        if ($provider === 'openai') {
+            return $this->generate_image_openai($prompt);
+        }
+
+        if ($provider === 'huggingface') {
+            return $this->generate_image_huggingface($prompt);
+        }
+
+        if ($provider === 'gemini') {
+            return $this->generate_image_gemini($prompt);
+        }
 
         if ($provider === 'pollinations') {
             return $this->generate_image_pollinations($prompt);
         }
 
         return $this->generate_image_dalle($prompt);
+    }
+
+    /**
+     * Generate an image using OpenAI API (gpt-image-2)
+     */
+    private function generate_image_openai($prompt)
+    {
+        $api_key = get_option('spiral_tower_openai_api_key');
+
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_config', 'OpenAI API key is missing');
+        }
+
+        $response = wp_remote_post(
+            'https://api.openai.com/v1/images/generations',
+            array(
+                'headers' => array(
+                    'Content-Type' => 'application/json',
+                    'Authorization' => 'Bearer ' . $api_key,
+                ),
+                'body' => json_encode(array(
+                    'model' => 'gpt-image-2',
+                    'prompt' => $prompt,
+                    'n' => 1,
+                    'size' => '2048x2048',
+                )),
+                'timeout' => 120,
+            )
+        );
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if ($status_code < 200 || $status_code >= 300) {
+            $error_message = 'OpenAI API returned HTTP ' . $status_code;
+            if (isset($data['error']['message'])) {
+                $error_message .= ': ' . $data['error']['message'];
+            } elseif (!empty($body)) {
+                $error_message .= ': ' . substr($body, 0, 500);
+            }
+            return new WP_Error('api_error', $error_message);
+        }
+
+        // Check for URL response format first
+        if (isset($data['data'][0]['url'])) {
+            return array('url' => $data['data'][0]['url']);
+        }
+
+        // Handle base64 response format
+        if (isset($data['data'][0]['b64_json'])) {
+            $upload_dir = wp_upload_dir();
+            $filename = 'openai-temp-' . time() . '-' . wp_rand() . '.png';
+            $filepath = $upload_dir['path'] . '/' . $filename;
+
+            $decoded = base64_decode($data['data'][0]['b64_json']);
+            if ($decoded === false) {
+                return new WP_Error('api_error', 'Failed to decode image data from OpenAI');
+            }
+
+            if (file_put_contents($filepath, $decoded) === false) {
+                return new WP_Error('file_error', 'Failed to save generated image to disk');
+            }
+
+            return array('url' => $upload_dir['url'] . '/' . $filename);
+        }
+
+        $error_message = 'Unexpected OpenAI API response format';
+        if (!empty($body)) {
+            $error_message .= '. Response: ' . substr($body, 0, 500);
+        }
+        return new WP_Error('api_error', $error_message);
+    }
+
+    /**
+     * Generate an image using Hugging Face Inference API
+     */
+    private function generate_image_huggingface($prompt)
+    {
+        $api_key = get_option('spiral_tower_huggingface_api_key');
+
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_config', 'Hugging Face API token is missing');
+        }
+
+        $model = 'black-forest-labs/FLUX.1-schnell';
+        $url = 'https://router.huggingface.co/hf-inference/models/' . $model;
+
+        $response = wp_remote_post(
+            $url,
+            array(
+                'headers' => array(
+                    'Authorization' => 'Bearer ' . $api_key,
+                    'Content-Type' => 'application/json',
+                ),
+                'body' => json_encode(array(
+                    'inputs' => $prompt,
+                    'parameters' => array(
+                        'width' => 1024,
+                        'height' => 1024,
+                    ),
+                )),
+                'timeout' => 120,
+            )
+        );
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        $content_type = wp_remote_retrieve_header($response, 'content-type');
+
+        if ($status_code < 200 || $status_code >= 300) {
+            $body = wp_remote_retrieve_body($response);
+            $data = json_decode($body, true);
+            $error_message = 'Hugging Face API returned HTTP ' . $status_code;
+            if (isset($data['error'])) {
+                $error_message .= ': ' . $data['error'];
+            } elseif (!empty($body)) {
+                $error_message .= ': ' . substr($body, 0, 500);
+            }
+            return new WP_Error('api_error', $error_message);
+        }
+
+        // Response is raw image bytes
+        $image_bytes = wp_remote_retrieve_body($response);
+
+        if (empty($image_bytes)) {
+            return new WP_Error('api_error', 'Empty image response from Hugging Face');
+        }
+
+        // Determine extension from content type
+        $ext = '.png';
+        if (strpos($content_type, 'jpeg') !== false || strpos($content_type, 'jpg') !== false) {
+            $ext = '.jpg';
+        }
+
+        // Save to temp file in uploads
+        $upload_dir = wp_upload_dir();
+        $filename = 'hf-temp-' . time() . '-' . wp_rand() . $ext;
+        $filepath = $upload_dir['path'] . '/' . $filename;
+
+        if (file_put_contents($filepath, $image_bytes) === false) {
+            return new WP_Error('file_error', 'Failed to save generated image to disk');
+        }
+
+        return array(
+            'url' => $upload_dir['url'] . '/' . $filename,
+        );
+    }
+
+    /**
+     * Generate an image using Google Gemini API
+     */
+    private function generate_image_gemini($prompt)
+    {
+        $api_key = get_option('spiral_tower_gemini_api_key');
+
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_config', 'Gemini API key is missing');
+        }
+
+        $model = 'gemini-2.5-flash-image';
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent';
+
+        $response = wp_remote_post(
+            $url,
+            array(
+                'headers' => array(
+                    'Content-Type' => 'application/json',
+                    'x-goog-api-key' => $api_key,
+                ),
+                'body' => json_encode(array(
+                    'contents' => array(
+                        array(
+                            'parts' => array(
+                                array('text' => 'Generate an image: ' . $prompt),
+                            ),
+                        ),
+                    ),
+                    'generationConfig' => array(
+                        'responseModalities' => array('TEXT', 'IMAGE'),
+                    ),
+                )),
+                'timeout' => 90,
+            )
+        );
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if ($status_code < 200 || $status_code >= 300) {
+            $error_message = 'Gemini API returned HTTP ' . $status_code;
+            if (isset($data['error']['message'])) {
+                $error_message .= ': ' . $data['error']['message'];
+            } elseif (!empty($body)) {
+                $error_message .= ': ' . substr($body, 0, 500);
+            }
+            return new WP_Error('api_error', $error_message);
+        }
+
+        // Extract base64 image from response
+        $parts = isset($data['candidates'][0]['content']['parts']) ? $data['candidates'][0]['content']['parts'] : array();
+        $image_data = null;
+        $mime_type = 'image/png';
+
+        foreach ($parts as $part) {
+            if (isset($part['inlineData'])) {
+                $image_data = $part['inlineData']['data'];
+                $mime_type = $part['inlineData']['mimeType'];
+                break;
+            }
+        }
+
+        if (empty($image_data)) {
+            $error_message = 'No image data in Gemini response';
+            if (!empty($body)) {
+                $error_message .= '. Response: ' . substr($body, 0, 500);
+            }
+            return new WP_Error('api_error', $error_message);
+        }
+
+        // Save base64 image to a temp file in uploads
+        $upload_dir = wp_upload_dir();
+        $ext = ($mime_type === 'image/jpeg') ? '.jpg' : '.png';
+        $filename = 'gemini-temp-' . time() . '-' . wp_rand() . $ext;
+        $filepath = $upload_dir['path'] . '/' . $filename;
+
+        $decoded = base64_decode($image_data);
+        if ($decoded === false) {
+            return new WP_Error('api_error', 'Failed to decode image data from Gemini');
+        }
+
+        if (file_put_contents($filepath, $decoded) === false) {
+            return new WP_Error('file_error', 'Failed to save generated image to disk');
+        }
+
+        return array(
+            'url' => $upload_dir['url'] . '/' . $filename,
+        );
     }
 
     /**
@@ -234,11 +509,29 @@ class Spiral_Tower_Image_Generator
             return $response;
         }
 
+        $status_code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
 
+        // Handle HTTP-level errors
+        if ($status_code < 200 || $status_code >= 300) {
+            $error_message = 'Azure OpenAI API returned HTTP ' . $status_code;
+            if (isset($data['error']['message'])) {
+                $error_message .= ': ' . $data['error']['message'];
+            } elseif (!empty($body)) {
+                $error_message .= ': ' . substr($body, 0, 500);
+            }
+            return new WP_Error('api_error', $error_message);
+        }
+
         if (empty($data) || !isset($data['data']) || !isset($data['data'][0]['url'])) {
-            return new WP_Error('api_error', 'Failed to generate image or parse API response');
+            $error_message = 'Unexpected API response format';
+            if (isset($data['error']['message'])) {
+                $error_message .= ': ' . $data['error']['message'];
+            } elseif (!empty($body)) {
+                $error_message .= '. Response: ' . substr($body, 0, 500);
+            }
+            return new WP_Error('api_error', $error_message);
         }
 
         return array(
@@ -251,10 +544,9 @@ class Spiral_Tower_Image_Generator
      */
     private function generate_image_pollinations($prompt)
     {
-        // Pollinations.ai returns the image directly from a URL
-        // We need to construct the URL and verify it works
+        // Pollinations.ai returns the image directly from a GET URL
         $encoded_prompt = urlencode($prompt);
-        $image_url = 'https://image.pollinations.ai/prompt/' . $encoded_prompt . '?width=1024&height=1024&nologo=true';
+        $image_url = 'https://gen.pollinations.ai/image/' . $encoded_prompt . '?width=1024&height=1024&nologo=true&model=flux';
 
         // Verify the URL is accessible by making a HEAD request
         $response = wp_remote_head($image_url, array(

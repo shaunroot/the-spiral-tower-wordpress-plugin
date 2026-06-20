@@ -1313,6 +1313,21 @@ function spiral_tower_settings_page()
         // Image Generation Provider
         update_option('spiral_tower_image_provider', sanitize_text_field($_POST['spiral_tower_image_provider']));
 
+        // OpenAI Settings
+        if (isset($_POST['spiral_tower_openai_api_key'])) {
+            update_option('spiral_tower_openai_api_key', sanitize_text_field($_POST['spiral_tower_openai_api_key']));
+        }
+
+        // Hugging Face Settings
+        if (isset($_POST['spiral_tower_huggingface_api_key'])) {
+            update_option('spiral_tower_huggingface_api_key', sanitize_text_field($_POST['spiral_tower_huggingface_api_key']));
+        }
+
+        // Gemini Settings
+        if (isset($_POST['spiral_tower_gemini_api_key'])) {
+            update_option('spiral_tower_gemini_api_key', sanitize_text_field($_POST['spiral_tower_gemini_api_key']));
+        }
+
         // DALL-E Settings
         update_option('spiral_tower_dalle_api_key', sanitize_text_field($_POST['spiral_tower_dalle_api_key']));
         update_option('spiral_tower_dalle_api_endpoint', sanitize_text_field($_POST['spiral_tower_dalle_api_endpoint']));
@@ -1334,7 +1349,10 @@ function spiral_tower_settings_page()
     }
 
     // Get current values
-    $image_provider = get_option('spiral_tower_image_provider', 'dalle');
+    $image_provider = get_option('spiral_tower_image_provider', 'openai');
+    $openai_api_key = get_option('spiral_tower_openai_api_key', '');
+    $huggingface_api_key = get_option('spiral_tower_huggingface_api_key', '');
+    $gemini_api_key = get_option('spiral_tower_gemini_api_key', '');
     $dalle_api_key = get_option('spiral_tower_dalle_api_key', '');
     $dalle_api_endpoint = get_option('spiral_tower_dalle_api_endpoint', 'https://shauntest.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01');
 
@@ -1361,13 +1379,61 @@ function spiral_tower_settings_page()
                     <th scope="row">Image Provider</th>
                     <td>
                         <select name="spiral_tower_image_provider" id="spiral_tower_image_provider">
+                            <option value="openai" <?php selected($image_provider, 'openai'); ?>>OpenAI (gpt-image-1.5)</option>
+                            <option value="huggingface" <?php selected($image_provider, 'huggingface'); ?>>Hugging Face (Free)</option>
+                            <option value="gemini" <?php selected($image_provider, 'gemini'); ?>>Google Gemini</option>
                             <option value="dalle" <?php selected($image_provider, 'dalle'); ?>>DALL-E 3 (Azure OpenAI)</option>
-                            <option value="pollinations" <?php selected($image_provider, 'pollinations'); ?>>Pollinations.ai (Free)</option>
+                            <option value="pollinations" <?php selected($image_provider, 'pollinations'); ?>>Pollinations.ai</option>
                         </select>
                         <p class="description">Select which image generation service to use</p>
                     </td>
                 </tr>
             </table>
+
+            <!-- OpenAI Settings -->
+            <div id="openai-settings" style="<?php echo $image_provider !== 'openai' ? 'display:none;' : ''; ?>">
+                <h3>OpenAI Settings</h3>
+                <table class="form-table">
+                    <tr valign="top">
+                        <th scope="row">OpenAI API Key</th>
+                        <td>
+                            <input type="password" name="spiral_tower_openai_api_key"
+                                value="<?php echo esc_attr($openai_api_key); ?>" class="regular-text" />
+                            <p class="description">Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a></p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Hugging Face Settings -->
+            <div id="huggingface-settings" style="<?php echo $image_provider !== 'huggingface' ? 'display:none;' : ''; ?>">
+                <h3>Hugging Face Settings</h3>
+                <table class="form-table">
+                    <tr valign="top">
+                        <th scope="row">Hugging Face Token</th>
+                        <td>
+                            <input type="password" name="spiral_tower_huggingface_api_key"
+                                value="<?php echo esc_attr($huggingface_api_key); ?>" class="regular-text" />
+                            <p class="description">Get a free token from <a href="https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained" target="_blank">Hugging Face Settings</a> (enable "Inference Providers" permission)</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Gemini Settings -->
+            <div id="gemini-settings" style="<?php echo $image_provider !== 'gemini' ? 'display:none;' : ''; ?>">
+                <h3>Google Gemini Settings</h3>
+                <table class="form-table">
+                    <tr valign="top">
+                        <th scope="row">Gemini API Key</th>
+                        <td>
+                            <input type="password" name="spiral_tower_gemini_api_key"
+                                value="<?php echo esc_attr($gemini_api_key); ?>" class="regular-text" />
+                            <p class="description">Get your API key from <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
 
             <!-- DALL-E Settings -->
             <div id="dalle-settings" style="<?php echo $image_provider !== 'dalle' ? 'display:none;' : ''; ?>">
@@ -1399,6 +1465,9 @@ function spiral_tower_settings_page()
 
             <script>
                 document.getElementById('spiral_tower_image_provider').addEventListener('change', function() {
+                    document.getElementById('openai-settings').style.display = this.value === 'openai' ? '' : 'none';
+                    document.getElementById('huggingface-settings').style.display = this.value === 'huggingface' ? '' : 'none';
+                    document.getElementById('gemini-settings').style.display = this.value === 'gemini' ? '' : 'none';
                     document.getElementById('dalle-settings').style.display = this.value === 'dalle' ? '' : 'none';
                     document.getElementById('pollinations-settings').style.display = this.value === 'pollinations' ? '' : 'none';
                 });
@@ -2076,6 +2145,9 @@ function spiral_tower_add_admin_menu()
     );
 
     // Register ALL settings including the new Reddit ones
+    register_setting('spiral_tower_settings', 'spiral_tower_openai_api_key');
+    register_setting('spiral_tower_settings', 'spiral_tower_huggingface_api_key');
+    register_setting('spiral_tower_settings', 'spiral_tower_gemini_api_key');
     register_setting('spiral_tower_settings', 'spiral_tower_dalle_api_key');
     register_setting('spiral_tower_settings', 'spiral_tower_dalle_api_endpoint');
 
