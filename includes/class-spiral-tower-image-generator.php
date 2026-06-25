@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Image Generator Component
  * Handles DALL-E API integration for generating featured images
